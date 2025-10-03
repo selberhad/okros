@@ -1,15 +1,18 @@
 use crate::mccp::Decompressor;
 use crate::session::Session;
 use crate::scrollback::Attrib;
+use std::cell::RefCell;
 
 pub struct SessionEngine<D: Decompressor> {
     pub session: Session<D>,
     attached: bool,
+    ansi_cache: RefCell<Option<Vec<String>>>,
+    read_cursor: RefCell<usize>,  // Track which lines have been read in headless mode
 }
 
 impl<D: Decompressor> SessionEngine<D> {
     pub fn new(decomp: D, width: usize, height: usize, lines: usize) -> Self {
-        Self { session: Session::new(decomp, width, height, lines), attached: true }
+        Self { session: Session::new(decomp, width, height, lines), attached: true, ansi_cache: RefCell::new(None), read_cursor: RefCell::new(0) }
     }
 
     pub fn detach(&mut self) { self.attached = false; }
@@ -19,21 +22,83 @@ impl<D: Decompressor> SessionEngine<D> {
     pub fn feed_inbound(&mut self, chunk: &[u8]) {
         // Even if detached, we continue processing and buffering into scrollback
         self.session.feed(chunk);
+        // Invalidate ANSI cache since buffer changed
+        *self.ansi_cache.borrow_mut() = None;
     }
 
+    /// Returns viewport as ANSI-formatted strings (preserves colors)
+    /// Uses caching to avoid repeated conversion overhead
+    /// NOTE: For TTY mode - use get_scrollback() for headless mode
     pub fn viewport_text(&self) -> Vec<String> {
+        // Check cache first
+        if let Some(cached) = self.ansi_cache.borrow().as_ref() {
+            return cached.clone();
+        }
+
+        // Convert Attrib buffer to ANSI strings
         let width = self.session.scrollback.width;
         let height = self.session.scrollback.height;
         let slice = self.session.scrollback.viewport_slice();
         let mut out = Vec::with_capacity(height);
+
         for row in 0..height {
             let off = row * width;
             let row_slice = &slice[off .. off + width];
-            let mut bytes: Vec<u8> = row_slice.iter().map(|a| (a & 0xFF) as u8).collect();
-            // trim trailing spaces
-            while bytes.last() == Some(&b' ') { bytes.pop(); }
-            out.push(String::from_utf8_lossy(&bytes).to_string());
+            let line = crate::screen::attrib_row_to_ansi(row_slice);
+            out.push(line);
         }
+
+        // Cache result
+        *self.ansi_cache.borrow_mut() = Some(out.clone());
+        out
+    }
+
+    /// Returns only NEW lines since last read (for headless mode)
+    /// Advances read cursor automatically - won't return same line twice
+    pub fn get_new_lines(&self) -> Vec<String> {
+        let width = self.session.scrollback.width;
+        let total_rows = self.session.scrollback.rows_filled;
+        let cursor = *self.read_cursor.borrow();
+
+        // No new lines since last read
+        if cursor >= total_rows {
+            return Vec::new();
+        }
+
+        // Get lines from cursor to current end
+        let new_line_count = total_rows - cursor;
+        let start_offset = cursor * width;
+        let end_offset = total_rows * width;
+        let slice = &self.session.scrollback.buf[start_offset..end_offset];
+
+        let mut out = Vec::with_capacity(new_line_count);
+        for row in 0..new_line_count {
+            let off = row * width;
+            let row_slice = &slice[off .. off + width];
+            let line = crate::screen::attrib_row_to_ansi(row_slice);
+            out.push(line);
+        }
+
+        // Advance cursor
+        *self.read_cursor.borrow_mut() = total_rows;
+
+        out
+    }
+
+    /// Peek at recent lines without advancing cursor (for debugging)
+    pub fn peek_recent(&self, lines: usize) -> Vec<String> {
+        let width = self.session.scrollback.width;
+        let slice = self.session.scrollback.recent_lines(lines);
+        let row_count = slice.len() / width;
+        let mut out = Vec::with_capacity(row_count);
+
+        for row in 0..row_count {
+            let off = row * width;
+            let row_slice = &slice[off .. off + width];
+            let line = crate::screen::attrib_row_to_ansi(row_slice);
+            out.push(line);
+        }
+
         out
     }
 }
@@ -51,7 +116,33 @@ mod tests {
         assert!(!eng.is_attached());
         eng.attach();
         let rows = eng.viewport_text();
-        assert!(rows.iter().any(|r| r == "abc"));
+        assert!(rows.iter().any(|r| r.contains("abc")));
+    }
+
+    #[test]
+    fn engine_viewport_text_preserves_ansi_colors() {
+        let mut eng = SessionEngine::new(PassthroughDecomp::new(), 20, 3, 100);
+        eng.feed_inbound(b"\x1b[31mRed\x1b[0m\n");
+        let rows = eng.viewport_text();
+        // Should contain ANSI escape sequences
+        assert!(rows.iter().any(|r| r.contains("\x1b[")));
+        assert!(rows.iter().any(|r| r.contains("Red")));
+    }
+
+    #[test]
+    fn engine_ansi_cache_invalidated_on_feed() {
+        let mut eng = SessionEngine::new(PassthroughDecomp::new(), 10, 3, 100);
+        eng.feed_inbound(b"Line1\n");
+        let rows1 = eng.viewport_text();
+        let rows2 = eng.viewport_text();
+        // Cache hit - should be identical
+        assert_eq!(rows1, rows2);
+
+        // Feed new data - should invalidate cache
+        eng.feed_inbound(b"Line2\n");
+        let rows3 = eng.viewport_text();
+        assert_ne!(rows1, rows3);
+        assert!(rows3.iter().any(|r| r.contains("Line2")));
     }
 }
 

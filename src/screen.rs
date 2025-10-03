@@ -18,6 +18,34 @@ pub fn get_color_code(color: u8, set_bg: bool) -> String {
 fn vt_home() -> &'static str { "\u{1b}[H" }
 fn vt_goto(y1: usize, x1: usize) -> String { format!("\u{1b}[{};{}H", y1, x1) }
 
+/// Convert a row of Attrib cells to an ANSI-formatted string (for headless mode)
+/// Preserves all color information as escape sequences
+pub fn attrib_row_to_ansi(row: &[Attrib]) -> String {
+    let mut out = String::new();
+    let mut current_color: Option<u8> = None;
+
+    for &attr in row {
+        let color = (attr >> 8) as u8;
+        let ch = (attr & 0xFF) as u8;
+
+        // Emit color change if needed
+        if current_color != Some(color) {
+            out.push_str(&get_color_code(color, true));
+            current_color = Some(color);
+        }
+
+        // Emit character (replace control chars with space)
+        out.push(if ch >= 32 { ch as char } else { ' ' });
+    }
+
+    // Reset at end of line if we changed colors
+    if current_color.is_some() && current_color != Some(0x07) {
+        out.push_str("\x1b[0m");
+    }
+
+    out.trim_end().to_string()
+}
+
 pub struct DiffOptions<'a> { pub width: usize, pub height: usize, pub cursor_x: usize, pub cursor_y: usize, pub smacs: Option<&'a str>, pub rmacs: Option<&'a str>, pub set_bg_always: bool }
 impl<'a> Default for DiffOptions<'a>{ fn default()->Self{ Self{ width:0,height:0,cursor_x:0,cursor_y:0,smacs:None,rmacs:None,set_bg_always:true } } }
 
@@ -57,4 +85,34 @@ mod tests{ use super::*; fn cell(ch:u8,color:u8)->Attrib{ ((color as u16)<<8)| c
     #[test] fn bottom_right_special_no_acs_toggle(){ let w=2;let h=2; let prev=vec![cell(b' ',0); w*h]; let mut next=prev.clone(); next[w*h-1]=cell(0xEC,0); let s=diff_to_ansi(&prev,&next,&DiffOptions{ width:w,height:h,cursor_x:0,cursor_y:0,smacs:Some("[SM]"), rmacs:Some("[RM]"), set_bg_always:true}); assert!(!s.contains("[SM]")); assert!(!s.contains("[RM]")); }
     #[test] fn final_cursor_then_rmacs_order(){ let w=3;let h=2; let prev=vec![cell(b' ',0); w*h]; let mut next=prev.clone(); next[w+0]=cell(0xEC,0); let s=diff_to_ansi(&prev,&next,&DiffOptions{ width:w,height:h,cursor_x:2,cursor_y:0,smacs:Some("[SM]"), rmacs:Some("[RM]"), set_bg_always:true}); let goto=format!("\u{1b}[{};{}H",1,3); let i_g=s.rfind(&goto).unwrap(); let i_rm=s.rfind("[RM]").unwrap(); assert!(i_g<i_rm); assert!(s.ends_with("[RM]")); }
     #[test] fn no_bg_when_disabled(){ let w=2;let h=1; let prev=vec![cell(b' ',0x00); w*h]; let mut next=prev.clone(); next[0]=cell(b'X',0x01); let s=diff_to_ansi(&prev,&next,&DiffOptions{ width:w,height:h,cursor_x:0,cursor_y:0,smacs:None,rmacs:None,set_bg_always:false}); assert!(!s.contains(";40;")); }
+
+    #[test] fn attrib_row_basic() {
+        let row = vec![cell(b'H', 0x07), cell(b'i', 0x07)];
+        let s = super::attrib_row_to_ansi(&row);
+        assert_eq!(s, "\u{1b}[0mHi");
+    }
+
+    #[test] fn attrib_row_color_change() {
+        let row = vec![cell(b'A', 0x02), cell(b'B', 0x01), cell(b'C', 0x02)];
+        let s = super::attrib_row_to_ansi(&row);
+        assert!(s.contains("\u{1b}["));  // Should have ANSI escapes
+        assert!(s.contains('A'));
+        assert!(s.contains('B'));
+        assert!(s.contains('C'));
+    }
+
+    #[test] fn attrib_row_trims_trailing_spaces() {
+        let row = vec![cell(b'X', 0x07), cell(b' ', 0x07), cell(b' ', 0x07)];
+        let s = super::attrib_row_to_ansi(&row);
+        assert_eq!(s.trim_end(), s);  // Should already be trimmed
+        assert!(!s.ends_with(' '));
+    }
+
+    #[test] fn attrib_row_control_chars_as_spaces() {
+        let row = vec![cell(1, 0x07), cell(b'A', 0x07), cell(0, 0x07)];
+        let s = super::attrib_row_to_ansi(&row);
+        // Control chars become spaces, but trailing spaces are trimmed
+        assert!(s.starts_with("\u{1b}[0m A"));
+        assert!(s.contains('A'));
+    }
 }

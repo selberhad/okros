@@ -16,6 +16,7 @@ struct Command {
     data: Option<String>,
     from: Option<u64>,
     interval_ms: Option<u64>,
+    lines: Option<usize>,
 }
 
 #[derive(Debug, Serialize)]
@@ -105,7 +106,13 @@ fn handle_command(cmd: Command, state: &Arc<ControlState>) -> Event {
         "detach" => { let mut eng=state.engine.lock().unwrap(); eng.detach(); Event::Ok }
         "get_buffer" => {
             let eng = state.engine.lock().unwrap();
-            let lines = eng.viewport_text();
+            let lines = eng.get_new_lines();
+            Event::Buffer { lines }
+        }
+        "peek" => {
+            let eng = state.engine.lock().unwrap();
+            let count = cmd.lines.unwrap_or(20);
+            let lines = eng.peek_recent(count);
             Event::Buffer { lines }
         }
         "connect" => {

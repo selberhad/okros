@@ -4,11 +4,11 @@ pub struct Scrollback {
     pub width: usize,
     pub height: usize,
     lines: usize,
-    buf: Vec<Attrib>,
+    pub(crate) buf: Vec<Attrib>,
     canvas_off: usize,
     pub viewpoint: usize,
     pub top_line: usize,
-    rows_filled: usize,
+    pub(crate) rows_filled: usize,
     frozen: bool,
 }
 
@@ -26,6 +26,18 @@ impl Scrollback {
         for (i,b) in bytes.iter().take(self.width).enumerate(){ self.buf[start+i] = ((color as u16) << 8) | (*b as u16); }
     }
     pub fn viewport_slice(&self)->&[Attrib]{ &self.buf[self.viewpoint .. self.viewpoint + self.width*self.height] }
+
+    /// Get recent scrollback lines (for headless mode)
+    /// Returns last N lines from scrollback, not just viewport
+    pub fn recent_lines(&self, count: usize) -> &[Attrib] {
+        let total_rows = self.rows_filled.min(self.lines);
+        let rows_to_return = count.min(total_rows);
+        let start_row = total_rows - rows_to_return;
+        let start_offset = start_row * self.width;
+        let end_offset = start_offset + rows_to_return * self.width;
+        &self.buf[start_offset..end_offset]
+    }
+
     pub fn move_viewpoint_page(&mut self, down: bool){ let d=(self.height/2).max(1)*self.width; if down { self.viewpoint = (self.viewpoint + d).min(self.canvas_off); } else { self.viewpoint = self.viewpoint.saturating_sub(d); } }
     pub fn move_viewpoint_line(&mut self, down: bool){ let d=self.width; if down { self.viewpoint = (self.viewpoint + d).min(self.canvas_off); } else { self.viewpoint = self.viewpoint.saturating_sub(d); } }
     pub fn highlight_view(&self, line_off: usize, x: usize, len: usize) -> Vec<Attrib> { let mut v=self.viewport_slice().to_vec(); if line_off<self.height && x<self.width { let start=line_off*self.width + x; let end=(start+len).min(self.height*self.width); for a in &mut v[start..end]{ let ch=*a & 0x00FF; let mut color=(((*a)>>8) as u8) & !(0x80); let fg=color & 0x0F; let bg=(color & 0xF0)>>4; color=(fg<<4)|bg; *a=((color as u16)<<8)|ch; } } v }
