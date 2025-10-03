@@ -16,10 +16,11 @@
 - **UI**: ncurses wrapper, screen diff renderer, widgets (status/output/input), scrollback
 - **Plugins**: Python (pyo3) and Perl (raw FFI) with feature gates, interpreter hooks
 - **Headless Engine**: SessionEngine + control server (Unix socket, JSON Lines protocol)
+- **Offline Mode**: Internal MUD for testing/demo (5 rooms, 3 items, ANSI colors, `--offline` flag)
 - **Main Event Loop**: poll-based I/O on TTY + socket with 250ms timeout
-- **CLI Args**: `--headless`, `--instance <name>`, `--attach <name>` implemented
+- **CLI Args**: `--headless`, `--instance <name>`, `--attach <name>`, `--offline` implemented
 - **# Commands**: `#quit`, `#open <host> <port>` functional
-- **Tests**: 57 unit tests + 2 integration tests passing
+- **Tests**: 71 unit tests + 8 integration tests passing
 
 ### ⏸️ What Needs Validation
 - **Real MUD Connection**: Code exists, needs testing against live server
@@ -41,6 +42,7 @@
 **Goal**: Validate against real MUD servers and Perl bots
 
 **Tasks**:
+- [ ] **Offline mode test**: `cargo run --offline` → verify internal MUD works with real TTY
 - [ ] Manual smoke test: `cargo run` → `#open <mud-ip> <port>` → verify send/receive
 - [ ] Headless test:
   - Start: `cargo run --headless --instance test`
@@ -99,6 +101,7 @@ cargo test --all-features            # Include plugin tests
 **Run**:
 ```bash
 cargo run                            # Interactive mode (TTY UI)
+cargo run --offline                  # Offline mode (play internal MUD)
 cargo run --headless --instance test # Headless mode (control via Unix socket)
 cargo run --attach test              # Attach to headless instance
 MCL_CONNECT=127.0.0.1:4000 cargo run # Auto-connect to MUD on startup
@@ -106,9 +109,20 @@ MCL_CONNECT=127.0.0.1:4000 cargo run # Auto-connect to MUD on startup
 
 **Basic Usage** (interactive mode):
 ```
-#open 127.0.0.1 4000   # Connect to MUD
+#open 127.0.0.1 4000   # Connect to MUD (IPv4 only currently)
 type and press Enter   # Send to MUD
 #quit                  # Exit
+```
+
+**Offline Mode** (internal MUD):
+```
+cargo run --offline    # Play built-in text adventure
+look                   # Look around (starting room: Forest Clearing)
+n                      # Go north
+take sword             # Pick up rusty sword
+inventory              # Check inventory
+help                   # Show all commands
+quit                   # Exit
 ```
 
 ## Key Files

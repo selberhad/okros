@@ -84,22 +84,65 @@ See [TESTING.md](TESTING.md) for comprehensive testing guide.
 
 ## Usage
 
-### Interactive Mode
+### CLI Reference
 
 ```bash
-# Connect to a MUD server
-okros example.com 4000
+# Interactive mode (default)
+okros [mudname]                     # Connect to saved MUD profile
+okros                               # Start without connection (use #open command)
 
-# Connect with a saved MUD profile
-okros mudname
+# Offline demo mode
+okros --offline                     # Play internal MUD (no network required)
+
+# Headless mode (background daemon)
+okros --headless --instance NAME    # Start headless session
+okros --attach NAME                 # Attach to running session
+
+# Environment variables
+MCL_CONNECT=127.0.0.1:4000 okros   # Auto-connect on startup
+```
+
+### Interactive Mode
+
+Connect to a MUD server interactively:
+
+```bash
+# Auto-connect via environment variable
+MCL_CONNECT=example.com:4000 okros
+
+# Start client, then connect manually
+okros
+#open 127.0.0.1 4000
 ```
 
 **Key bindings:**
 - `PageUp/PageDown` - Scroll through history
 - `Arrow Up` - Command history
-- `Alt-Q` - Quit
+- `Alt-Q` - Quit (not yet implemented)
 - `Ctrl-C` - Cancel current line
 - `Home/End` - Navigate scrollback buffer
+
+**Internal commands:**
+- `#open <host> <port>` - Connect to MUD server (IPv4 only currently)
+- `#quit` - Exit client
+
+### Offline Mode (Internal MUD)
+
+Play a built-in text adventure for testing or offline demo:
+
+```bash
+okros --offline
+```
+
+**Features:**
+- 5 interconnected rooms (forest, clearing, cave, stream, village)
+- 3 collectible items (rusty sword, torch, iron key)
+- Full ANSI color output
+- No network connection required
+- Perfect for testing the UI without a MUD server
+
+**Commands:** `go <direction>`, `look`, `take <item>`, `drop <item>`, `inventory`, `help`, `quit`
+**Direction aliases:** `n`, `s`, `e`, `w`, `u`, `d`
 
 ### Headless Mode
 
