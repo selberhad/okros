@@ -1,13 +1,13 @@
 # Test Coverage Report
 
-**Last Updated**: 2025-10-03 02:49
+**Last Updated**: 2025-10-03 02:55
 **Tool**: cargo-llvm-cov
-**Overall Coverage**: **64.80%** lines | **70.62%** regions | **77.01%** functions
+**Overall Coverage**: **64.70%** lines | **70.50%** regions | **77.70%** functions
 
 ## Summary
 
 ```
-TOTAL                            4533              1332    70.62%         274                63    77.01%        1699               598    64.80%           0                 0         -
+TOTAL                            4573              1349    70.50%         278                62    77.70%        1745               616    64.70%           0                 0         -
 ```
 
 ## Coverage by Module
@@ -36,7 +36,7 @@ TOTAL                            4533              1332    70.62%         274   
 | `socket.rs` | 92.86% | 92.35% | 100.00% | 🟢 Excellent |
 | `status_line.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
 | `telnet.rs` | 100.00% | 99.02% | 100.00% | 🟢 Excellent |
-| `tty.rs` | 0.00% | 0.00% | 0.00% | 🔴 Needs Work |
+| `tty.rs` | 34.15% | 25.84% | 55.56% | 🔴 Needs Work |
 | `window.rs` | 89.19% | 84.51% | 85.71% | 🟡 Good |
 
 ## Coverage Tiers
@@ -71,13 +71,13 @@ TOTAL                            4533              1332    70.62%         274   
 ### 🔴 Needs Work (<40% lines)
 - `curses.rs` - 18.56% (ncurses FFI - TTY dependent)
 - `main.rs` - 0.00% (event loop - needs integration tests)
-- `tty.rs` - 0.00% (requires real TTY)
+- `tty.rs` - 34.15% (requires real TTY)
 
 ## Coverage Targets
 
 | Tier | Target | Current | Status |
 |------|--------|---------|--------|
-| Overall | ≥80% | 64.80% | ⏳ In Progress |
+| Overall | ≥80% | 64.70% | ⏳ In Progress |
 | Critical Paths | ≥95% | Check modules above | ✅ Met |
 | New Modules | ≥80% | - | Policy |
 
