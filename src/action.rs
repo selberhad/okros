@@ -30,6 +30,18 @@ impl std::fmt::Debug for Action {
     }
 }
 
+impl Clone for Action {
+    fn clone(&self) -> Self {
+        // NOTE: compiled regex is not cloned - must be recompiled with compile()
+        Self {
+            pattern: self.pattern.clone(),
+            commands: self.commands.clone(),
+            action_type: self.action_type,
+            compiled: None,
+        }
+    }
+}
+
 impl Action {
     pub fn new(
         pattern: impl Into<String>,

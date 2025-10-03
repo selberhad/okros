@@ -11,6 +11,7 @@ pub mod screen;
 pub mod scrollback;
 pub mod select;
 pub mod selectable;
+pub mod selection;
 pub mod socket;
 pub mod status_line;
 pub mod telnet;

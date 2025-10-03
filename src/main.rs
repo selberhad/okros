@@ -163,7 +163,7 @@ fn main() {
         let _ = fcntl(libc::STDIN_FILENO, F_SETFL, O_NONBLOCK);
     }
     // MUD instance (contains socket + aliases/actions/macros)
-    let mut mud = okros::mud::Mud::new();
+    let mut mud = okros::mud::Mud::empty();
     // Optional: try to connect if MCL_CONNECT=127.0.0.1:PORT is set
     let mut sock: Option<Socket> = None;
     if let Ok(addr) = std::env::var("MCL_CONNECT") {
