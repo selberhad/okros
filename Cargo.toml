@@ -1,9 +1,9 @@
 [package]
-name = "mcl-rust"
+name = "okros"
 version = "0.1.0"
 edition = "2021"
-description = "1:1 Rust port of MCL (MUD Client for Linux) with safety-third approach"
-license = "UNLICENSED"
+description = "Rust MUD client reviving MCL design for headless operation and LLM agents"
+license = "GPL-2.0"
 
 [features]
 default = []

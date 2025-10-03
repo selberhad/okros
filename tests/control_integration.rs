@@ -1,6 +1,6 @@
-use mcl_rust::control::{ControlServer, default_socket_path};
-use mcl_rust::engine::SessionEngine;
-use mcl_rust::mccp::PassthroughDecomp;
+use okros::control::{ControlServer, default_socket_path};
+use okros::engine::SessionEngine;
+use okros::mccp::PassthroughDecomp;
 use std::io::{Read, Write, BufRead};
 use std::os::unix::net::UnixStream;
 use std::thread;

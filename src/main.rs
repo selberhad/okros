@@ -1,13 +1,13 @@
 use std::io::{self, Read, Write, BufRead};
-use mcl_rust::input::{KeyDecoder, KeyEvent, KeyCode};
-use mcl_rust::screen::{self, DiffOptions};
-use mcl_rust::curses::get_acs_caps;
-use mcl_rust::session::Session;
-use mcl_rust::mccp::PassthroughDecomp;
-use mcl_rust::engine::SessionEngine;
-use mcl_rust::control::{ControlServer, default_socket_path};
-use mcl_rust::select::{poll_fds, READ, WRITE};
-use mcl_rust::socket::{Socket, ConnState};
+use okros::input::{KeyDecoder, KeyEvent, KeyCode};
+use okros::screen::{self, DiffOptions};
+use okros::curses::get_acs_caps;
+use okros::session::Session;
+use okros::mccp::PassthroughDecomp;
+use okros::engine::SessionEngine;
+use okros::control::{ControlServer, default_socket_path};
+use okros::select::{poll_fds, READ, WRITE};
+use okros::socket::{Socket, ConnState};
 use libc::{fcntl, F_SETFL, O_NONBLOCK};
 use std::net::Ipv4Addr;
 
@@ -49,7 +49,7 @@ fn main() {
     // Initialize embedded interpreters (matching main.cc:64, 101-105)
     #[cfg(feature = "python")]
     let mut python_interp = {
-        use mcl_rust::plugins::python::PythonInterpreter;
+        use okros::plugins::python::PythonInterpreter;
         match PythonInterpreter::new() {
             Ok(interp) => {
                 println!("Python interpreter initialized");
@@ -64,7 +64,7 @@ fn main() {
 
     #[cfg(feature = "perl")]
     let mut perl_interp = {
-        use mcl_rust::plugins::perl::PerlPlugin;
+        use okros::plugins::perl::PerlPlugin;
         match PerlPlugin::new() {
             Ok(interp) => {
                 println!("Perl interpreter initialized");
@@ -85,7 +85,7 @@ fn main() {
 
     #[cfg(feature = "python")]
     if let Some(ref mut interp) = python_interp {
-        use mcl_rust::plugins::stack::Interpreter;
+        use okros::plugins::stack::Interpreter;
         interp.set_int("now", current_time);
         interp.set_str("VERSION", env!("CARGO_PKG_VERSION"));
         interp.set_str("commandCharacter", "#");
@@ -96,7 +96,7 @@ fn main() {
 
     #[cfg(feature = "perl")]
     if let Some(ref mut interp) = perl_interp {
-        use mcl_rust::plugins::stack::Interpreter;
+        use okros::plugins::stack::Interpreter;
         interp.set_int("now", current_time);
         interp.set_str("VERSION", env!("CARGO_PKG_VERSION"));
         interp.set_str("commandCharacter", "#");
@@ -106,7 +106,7 @@ fn main() {
     }
 
     // Minimal demo: set raw mode, optional keypad app mode, then run a tiny event loop
-    let mut tty = match mcl_rust::tty::Tty::new() { Ok(t) => t, Err(e) => { eprintln!("tty init failed: {}", e); return; } };
+    let mut tty = match okros::tty::Tty::new() { Ok(t) => t, Err(e) => { eprintln!("tty init failed: {}", e); return; } };
     let _ = tty.enable_raw();
     let _ = tty.keypad_application_mode(true);
 
@@ -119,9 +119,9 @@ fn main() {
     // Session for processing incoming bytes (MCCP->Telnet->ANSI->Scrollback)
     let mut session = Session::new(PassthroughDecomp::new(), width, height.saturating_sub(2), 200);
     // Input line buffer
-    let mut input = mcl_rust::input_line::InputLine::new(width, 0x07);
+    let mut input = okros::input_line::InputLine::new(width, 0x07);
     // Status line
-    let mut status = mcl_rust::status_line::StatusLine::new(width, 0x07);
+    let mut status = okros::status_line::StatusLine::new(width, 0x07);
     status.set_text("MCL-Rust demo: type, Enter to echo; q quits");
 
     // Simple demo loop: read stdin nonblocking, normalize keys, print them; quit on 'q'
@@ -244,14 +244,14 @@ fn main() {
         // 4. Run interpreter hooks (main.cc:149)
         #[cfg(feature = "python")]
         if let Some(ref mut interp) = python_interp {
-            use mcl_rust::plugins::stack::Interpreter;
+            use okros::plugins::stack::Interpreter;
             let mut out = String::new();
             let _ = interp.run_quietly("sys/postoutput", "", &mut out, true);
         }
 
         #[cfg(feature = "perl")]
         if let Some(ref mut interp) = perl_interp {
-            use mcl_rust::plugins::stack::Interpreter;
+            use okros::plugins::stack::Interpreter;
             let mut out = String::new();
             let _ = interp.run_quietly("sys/postoutput", "", &mut out, true);
         }
@@ -273,7 +273,7 @@ fn main() {
 
             #[cfg(feature = "python")]
             if let Some(ref mut interp) = python_interp {
-                use mcl_rust::plugins::stack::Interpreter;
+                use okros::plugins::stack::Interpreter;
                 interp.set_int("now", now);
                 let mut out = String::new();
                 let _ = interp.run_quietly("sys/idle", "", &mut out, true);
@@ -281,7 +281,7 @@ fn main() {
 
             #[cfg(feature = "perl")]
             if let Some(ref mut interp) = perl_interp {
-                use mcl_rust::plugins::stack::Interpreter;
+                use okros::plugins::stack::Interpreter;
                 interp.set_int("now", now);
                 let mut out = String::new();
                 let _ = interp.run_quietly("sys/idle", "", &mut out, true);
@@ -293,7 +293,7 @@ fn main() {
     let _ = tty.keypad_application_mode(false);
 }
 
-fn render_surface(width: usize, height: usize, prev: &mut Vec<u16>, cur: &mut Vec<u16>, session: &Session<PassthroughDecomp>, input: &mcl_rust::input_line::InputLine, status: &mcl_rust::status_line::StatusLine, caps: &mcl_rust::curses::AcsCaps) {
+fn render_surface(width: usize, height: usize, prev: &mut Vec<u16>, cur: &mut Vec<u16>, session: &Session<PassthroughDecomp>, input: &okros::input_line::InputLine, status: &okros::status_line::StatusLine, caps: &okros::curses::AcsCaps) {
     // Compose status + session viewport + input into `cur`
     let mut surface = vec![0u16; width*height];
     // Status at row 0

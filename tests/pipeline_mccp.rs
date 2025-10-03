@@ -1,10 +1,10 @@
 #![cfg(feature = "mccp")]
 
-use mcl_rust::mccp::{Decompressor, MccpInflate};
-use mcl_rust::mccp::telopt::*;
-use mcl_rust::telnet::TelnetParser;
-use mcl_rust::ansi::{AnsiConverter, AnsiEvent};
-use mcl_rust::scrollback::Scrollback;
+use okros::mccp::{Decompressor, MccpInflate};
+use okros::mccp::telopt::*;
+use okros::telnet::TelnetParser;
+use okros::ansi::{AnsiConverter, AnsiEvent};
+use okros::scrollback::Scrollback;
 use flate2::{Compression, write::ZlibEncoder};
 use std::io::Write;
 

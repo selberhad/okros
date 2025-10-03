@@ -450,7 +450,7 @@ cargo flamegraph
 ```bash
 # Record
 cargo build --release
-perf record --call-graph dwarf ./target/release/mcl-rust
+perf record --call-graph dwarf ./target/release/okros
 
 # Report
 perf report

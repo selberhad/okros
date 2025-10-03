@@ -61,7 +61,7 @@ cargo build --release --features perl
 cargo build --release --all-features
 ```
 
-The compiled binary will be at `target/release/mcl-rust` (or `okros` after renaming).
+The compiled binary will be at `target/release/okros`.
 
 ### Running Tests
 

@@ -163,7 +163,7 @@ mod tests {
 ### Integration test
 ```rust
 // tests/my_integration_test.rs
-use mcl_rust::*;
+use okros::*;
 
 #[test]
 fn test_end_to_end_flow() {

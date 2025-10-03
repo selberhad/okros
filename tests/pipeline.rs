@@ -1,7 +1,7 @@
-use mcl_rust::mccp::{Decompressor, PassthroughDecomp};
-use mcl_rust::telnet::TelnetParser;
-use mcl_rust::ansi::{AnsiConverter, AnsiEvent};
-use mcl_rust::scrollback::Scrollback;
+use okros::mccp::{Decompressor, PassthroughDecomp};
+use okros::telnet::TelnetParser;
+use okros::ansi::{AnsiConverter, AnsiEvent};
+use okros::scrollback::Scrollback;
 
 #[test]
 fn pipeline_passthrough_telnet_ansi_scrollback() {
