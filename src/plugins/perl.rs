@@ -331,6 +331,89 @@ impl Interpreter for PerlPlugin {
             String::new()
         }
     }
+
+    /// Prepare regex pattern for trigger matching (C++ match_prepare)
+    /// Returns compiled Perl sub that matches pattern and sets $_ to commands if matched
+    fn match_prepare(&mut self, pattern: &str, commands: &str) -> Option<Box<dyn std::any::Any>> {
+        unsafe {
+            // Create Perl sub: sub { if (/$pattern/) { $_ = "$commands"; } else { $_ = ""; } }
+            let code = format!(
+                "sub {{ if (/{pat}/) {{ $_ = \"{cmd}\"; }} else {{ $_ = \"\"; }} }}",
+                pat = pattern.replace("\\", "\\\\").replace("\"", "\\\""),
+                cmd = commands.replace("\\", "\\\\").replace("\"", "\\\"")
+            );
+
+            if let Ok(c_code) = CString::new(code) {
+                let sv = perl_eval_pv(self.interp, c_code.as_ptr(), 1); // 1 = TRUE (croak on error)
+                if !sv.is_null() {
+                    // Box the SV pointer as opaque data
+                    return Some(Box::new(sv as usize));
+                }
+            }
+            None
+        }
+    }
+
+    /// Prepare regex substitution (C++ substitute_prepare)
+    /// Returns compiled Perl sub that does s/pattern/replacement/g
+    fn substitute_prepare(&mut self, pattern: &str, replacement: &str) -> Option<Box<dyn std::any::Any>> {
+        unsafe {
+            // Create Perl sub: sub { unless (s/$pattern/$replacement/g) { $_ = ""; } }
+            let code = format!(
+                "sub {{ unless (s/{pat}/{rep}/g) {{ $_ = \"\"; }} }}",
+                pat = pattern.replace("\\", "\\\\").replace("\"", "\\\""),
+                rep = replacement.replace("\\", "\\\\").replace("\"", "\\\"")
+            );
+
+            if let Ok(c_code) = CString::new(code) {
+                let sv = perl_eval_pv(self.interp, c_code.as_ptr(), 1);
+                if !sv.is_null() {
+                    return Some(Box::new(sv as usize));
+                }
+            }
+            None
+        }
+    }
+
+    /// Execute compiled regex (C++ match)
+    /// Sets $_ to text, calls compiled sub, returns result from $_
+    fn match_exec(&mut self, compiled: &dyn std::any::Any, text: &str) -> Option<String> {
+        unsafe {
+            // Extract SV pointer from Any
+            if let Some(&sv_ptr) = compiled.downcast_ref::<usize>() {
+                // Set $_ to the input text
+                if let Ok(c_text) = CString::new(text) {
+                    if let Ok(c_default) = CString::new("_") {
+                        let default_sv = perl_get_sv(self.interp, c_default.as_ptr(), GV_ADD);
+                        if !default_sv.is_null() {
+                            sv_setpv(self.interp, default_sv, c_text.as_ptr());
+
+                            // Call the compiled sub (sv_ptr points to it)
+                            // Note: This is simplified - C++ uses perl_call_sv with flags
+                            // For MVP, we'll just return the $_ value after "calling" the sub
+                            // TODO: Proper perl_call_sv implementation
+
+                            // For now, just eval the sub in scalar context
+                            // This is a simplified approach
+                            let eval_code = format!("{{ my $sub = {}; $sub->(); $_ }}", sv_ptr);
+                            if let Ok(c_eval) = CString::new(eval_code) {
+                                let result_sv = perl_eval_pv(self.interp, c_eval.as_ptr(), 0);
+                                if !result_sv.is_null() {
+                                    let mut len: libc::size_t = 0;
+                                    let ptr = sv_2pv(self.interp, result_sv, &mut len);
+                                    if !ptr.is_null() && len > 0 {
+                                        let cstr = CStr::from_ptr(ptr);
+                                        return Some(cstr.to_string_lossy().into_owned());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            None
+        }
+    }
 }
 
 impl Drop for PerlPlugin {

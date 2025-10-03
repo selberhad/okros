@@ -209,6 +209,76 @@ impl Interpreter for PythonInterpreter {
                 .unwrap_or_default()
         })
     }
+
+    /// Prepare regex pattern for trigger matching (Python version)
+    /// Returns compiled regex + commands as opaque data
+    fn match_prepare(&mut self, pattern: &str, commands: &str) -> Option<Box<dyn std::any::Any>> {
+        Python::with_gil(|py| {
+            // Import re module and compile pattern
+            let re_module = py.import_bound("re").ok()?;
+            let compiled = re_module.call_method1("compile", (pattern,)).ok()?;
+
+            // Store both compiled regex and commands string
+            let data = (compiled.unbind(), commands.to_string());
+            Some(Box::new(data) as Box<dyn std::any::Any>)
+        })
+    }
+
+    /// Prepare regex substitution (Python version)
+    fn substitute_prepare(&mut self, pattern: &str, replacement: &str) -> Option<Box<dyn std::any::Any>> {
+        Python::with_gil(|py| {
+            // Import re module and compile pattern
+            let re_module = py.import_bound("re").ok()?;
+            let compiled = re_module.call_method1("compile", (pattern,)).ok()?;
+
+            // Store compiled regex and replacement string
+            let data = (compiled.unbind(), replacement.to_string());
+            Some(Box::new(data) as Box<dyn std::any::Any>)
+        })
+    }
+
+    /// Execute compiled regex (Python version)
+    fn match_exec(&mut self, compiled: &dyn std::any::Any, text: &str) -> Option<String> {
+        use pyo3::prelude::*;
+
+        // Try to downcast as match pattern
+        if let Some(data) = compiled.downcast_ref::<(Py<PyAny>, String)>() {
+            return Python::with_gil(|py| {
+                let (regex, commands) = data;
+                let regex_bound = regex.bind(py);
+
+                // Try to match
+                if let Ok(match_result) = regex_bound.call_method1("search", (text,)) {
+                    if !match_result.is_none() {
+                        // Match found - return commands
+                        return Some(commands.clone());
+                    }
+                }
+                None
+            });
+        }
+
+        // Try to downcast as substitution pattern
+        if let Some(data) = compiled.downcast_ref::<(Py<PyAny>, String)>() {
+            return Python::with_gil(|py| {
+                let (regex, replacement) = data;
+                let regex_bound = regex.bind(py);
+
+                // Perform substitution
+                if let Ok(result) = regex_bound.call_method1("sub", (replacement.as_str(), text)) {
+                    if let Ok(result_str) = result.extract::<String>() {
+                        // Only return if substitution changed something
+                        if result_str != text {
+                            return Some(result_str);
+                        }
+                    }
+                }
+                None
+            });
+        }
+
+        None
+    }
 }
 
 #[cfg(test)]

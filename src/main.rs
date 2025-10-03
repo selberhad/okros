@@ -272,14 +272,37 @@ fn main() {
                                     } else if line.starts_with(b"#") {
                                         // Other # commands - just echo for now
                                         session.scrollback.print_line(&line, 0x07);
-                                    } else if let Some(ref mut s) = sock {
-                                        // Send to MUD
-                                        let mut send_buf = line.clone();
-                                        send_buf.push(b'\n');
-                                        unsafe { libc::write(s.as_raw_fd(), send_buf.as_ptr() as *const libc::c_void, send_buf.len()); }
                                     } else {
-                                        // No socket - just echo
-                                        session.scrollback.print_line(&line, 0x07);
+                                        // Check for alias expansion
+                                        let line_str = String::from_utf8_lossy(&line);
+                                        let mut send_text = line_str.to_string();
+
+                                        // Extract first word (command name)
+                                        if let Some(first_word_end) = line_str.find(char::is_whitespace) {
+                                            let cmd = &line_str[..first_word_end];
+                                            let args = &line_str[first_word_end..].trim_start();
+
+                                            // Check if command is an alias
+                                            if let Some(alias) = mud.find_alias(cmd) {
+                                                send_text = alias.expand(args);
+                                                status.set_text(format!("{} -> {}", cmd, send_text));
+                                            }
+                                        } else {
+                                            // No arguments, check if entire line is an alias
+                                            if let Some(alias) = mud.find_alias(&line_str) {
+                                                send_text = alias.expand("");
+                                                status.set_text(format!("{} -> {}", line_str.trim(), send_text));
+                                            }
+                                        }
+
+                                        // Send to MUD (or echo if no socket)
+                                        if let Some(ref mut s) = sock {
+                                            let mut send_buf = send_text.into_bytes();
+                                            send_buf.push(b'\n');
+                                            unsafe { libc::write(s.as_raw_fd(), send_buf.as_ptr() as *const libc::c_void, send_buf.len()); }
+                                        } else {
+                                            session.scrollback.print_line(&send_text.as_bytes(), 0x07);
+                                        }
                                     }
                                 }
                             }
@@ -308,6 +331,27 @@ fn main() {
                         let n = unsafe { libc::read(s.as_raw_fd(), buf.as_mut_ptr() as *mut libc::c_void, buf.len()) };
                         if n > 0 {
                             session.feed(&buf[..n as usize]);
+
+                            // Check triggers/actions on current incomplete line
+                            // TODO: This should check completed lines from scrollback,
+                            // but for MVP we check the current incomplete line
+                            let current_line = session.current_line();
+                            if !current_line.is_empty() {
+                                let line_str = String::from_utf8_lossy(&current_line);
+
+                                // Check triggers (pattern match → execute commands)
+                                // Note: Actions need Perl/Python interpreter for regex matching
+                                // For now, this is a placeholder - actual trigger checking
+                                // requires implementing match_prepare/match_exec in plugins
+                                for _action in &mud.action_list {
+                                    // TODO: Implement trigger checking
+                                    // if action.action_type == ActionType::Trigger {
+                                    //     if let Some(commands) = action.check_match(&line_str, &mut interpreter) {
+                                    //         // Execute commands
+                                    //     }
+                                    // }
+                                }
+                            }
                         } else if n == 0 {
                             // Connection closed
                             status.set_text("Connection closed.");
