@@ -48,7 +48,13 @@ impl TelnetParser {
 
 #[cfg(test)]
 mod tests { use super::*; use telnet::*;
+    #[test] fn plain_text_passthrough(){ let mut p=TelnetParser::new(); p.feed(b"hello"); assert_eq!(p.take_app_out(), b"hello"); assert!(p.take_responses().is_empty()); }
     #[test] fn eor_reply_only(){ let mut p=TelnetParser::new(); p.feed(&[IAC,WILL,TELOPT_EOR]); assert_eq!(p.take_responses(), vec![IAC,DO,TELOPT_EOR]); }
+    #[test] fn fragmented_will_eor(){ let mut p=TelnetParser::new(); p.feed(&[IAC]); p.feed(&[WILL]); p.feed(&[TELOPT_EOR]); assert_eq!(p.take_responses(), vec![IAC,DO,TELOPT_EOR]); }
+    #[test] fn do_and_wont_ignored(){ let mut p=TelnetParser::new(); p.feed(&[IAC,DO,1]); p.feed(&[IAC,WONT,31]); assert!(p.take_responses().is_empty()); }
+    #[test] fn iac_escaped_255_in_output(){ let mut p=TelnetParser::new(); p.feed(&[IAC,IAC]); assert_eq!(p.take_app_out(), vec![IAC]); }
+    #[test] fn ga_and_eor_prompt_events(){ let mut p=TelnetParser::new(); p.feed(b"abc"); p.feed(&[IAC,GA]); p.feed(b"def"); assert_eq!(p.take_app_out(), b"abcdef"); assert_eq!(p.drain_prompt_events(),1); p.feed(&[IAC,EOR]); assert_eq!(p.drain_prompt_events(),1); }
+    #[test] fn fragmented_ga_splices_prompt(){ let mut p=TelnetParser::new(); p.feed(b"hello "); p.feed(&[IAC]); p.feed(&[GA]); p.feed(b"world"); assert_eq!(p.take_app_out(), b"hello world"); assert_eq!(p.drain_prompt_events(),1); }
     #[test] fn sb_ignored(){ let mut p=TelnetParser::new(); p.feed(&[IAC,SB,1, IAC,SE]); assert!(p.take_app_out().is_empty()); }
+    #[test] fn sb_allows_iac_iac_literal(){ let mut p=TelnetParser::new(); p.feed(&[IAC,SB,31]); p.feed(&[IAC,IAC]); p.feed(&[IAC,SE]); assert!(p.take_app_out().is_empty()); }
 }
-

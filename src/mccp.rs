@@ -24,6 +24,34 @@ impl Decompressor for MccpStub{
     fn response(&mut self)->Option<Vec<u8>>{ if self.responses.is_empty(){None}else{Some(std::mem::take(&mut self.responses))} }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use super::telopt::*;
+
+    #[test]
+    fn stub_will_v2_triggers_do_v2() {
+        let mut d = MccpStub::new();
+        d.receive(&[IAC, WILL, COMPRESS2]);
+        assert_eq!(d.response().unwrap(), vec![IAC, DO, COMPRESS2]);
+    }
+
+    #[test]
+    fn stub_v1_after_v2_triggers_dont() {
+        let mut d = MccpStub::new();
+        d.receive(&[IAC, WILL, COMPRESS2]); let _ = d.response();
+        d.receive(&[IAC, WILL, COMPRESS]);
+        assert_eq!(d.response().unwrap(), vec![IAC, DONT, COMPRESS]);
+    }
+
+    #[test]
+    fn stub_start_sequences_stripped() {
+        let mut d = MccpStub::new();
+        d.receive(&[IAC, SB, COMPRESS2, IAC, SE]);
+        assert_eq!(d.take_output(), Vec::<u8>::new());
+    }
+}
+
 #[cfg(feature="mccp")]
 pub struct MccpInflate{ residual:Vec<u8>, out:Vec<u8>, responses:Vec<u8>, got_v2:bool, compressing:bool, error:bool, comp:usize, uncomp:usize, dec:Option<flate2::Decompress> }
 #[cfg(feature="mccp")]
@@ -36,3 +64,50 @@ impl Decompressor for MccpInflate{ fn receive(&mut self,input:&[u8]){ use telopt
     fn response(&mut self)->Option<Vec<u8>>{ if self.responses.is_empty(){None}else{Some(std::mem::take(&mut self.responses))} }
 }
 
+#[cfg(all(test, feature="mccp"))]
+mod mccp_real_tests {
+    use super::*;
+    use super::telopt::*;
+    use flate2::{Compression, write::ZlibEncoder};
+    use std::io::Write;
+
+    fn compress_bytes(data: &[u8]) -> Vec<u8> {
+        let mut enc = ZlibEncoder::new(Vec::new(), Compression::default());
+        enc.write_all(data).unwrap();
+        enc.finish().unwrap()
+    }
+
+    #[test]
+    fn v2_handshake_and_decompress() {
+        let mut d = MccpInflate::new();
+        d.receive(&[IAC, WILL, COMPRESS2]);
+        assert_eq!(d.response().unwrap(), vec![IAC, DO, COMPRESS2]);
+        d.receive(&[IAC, SB, COMPRESS2, IAC, SE]);
+        let payload = compress_bytes(b"hello");
+        let mid = payload.len()/2; d.receive(&payload[..mid]); d.receive(&payload[mid..]);
+        let mut out = Vec::new(); while d.pending(){ out.extend(d.take_output()); }
+        assert_eq!(out, b"hello");
+        assert!(!d.error());
+    }
+
+    #[test]
+    fn v1_handshake_and_decompress() {
+        let mut d = MccpInflate::new();
+        d.receive(&[IAC, WILL, COMPRESS]);
+        assert_eq!(d.response().unwrap(), vec![IAC, DO, COMPRESS]);
+        d.receive(&[IAC, SB, COMPRESS, WILL, SE]);
+        let payload = compress_bytes(b"v1");
+        d.receive(&payload);
+        let mut out = Vec::new(); while d.pending(){ out.extend(d.take_output()); }
+        assert_eq!(out, b"v1");
+    }
+
+    #[test]
+    fn invalid_stream_sets_error() {
+        let mut d = MccpInflate::new();
+        d.receive(&[IAC, WILL, COMPRESS2]); let _ = d.response();
+        d.receive(&[IAC, SB, COMPRESS2, IAC, SE]);
+        d.receive(&[0,1,2,3]);
+        assert!(d.error());
+    }
+}

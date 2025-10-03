@@ -34,5 +34,9 @@ impl Scrollback {
 #[cfg(test)]
 mod tests{ use super::*;
     #[test] fn cleared_tail(){ let mut sb=Scrollback::new(5,2,10); sb.print_line(b"abc",0x10); let v=sb.viewport_slice(); let bytes:Vec<u8>=v[0..5].iter().map(|a| (*a&0xFF) as u8).collect(); assert_eq!(&bytes,b"abc  "); }
+    #[test] fn view_bounds_saturate(){ let mut sb=Scrollback::new(5,2,20); for _ in 0..8{ sb.print_line(b"aaaaa",0);} for _ in 0..10 { sb.move_viewpoint_page(false);} assert_eq!(sb.viewpoint,0); for _ in 0..50 { sb.move_viewpoint_page(true);} assert_eq!(sb.viewpoint,sb.canvas_ptr()); }
+    #[test] fn follow_tail_and_freeze(){ let mut sb=Scrollback::new(4,2,16); sb.print_line(b"1111",0); sb.print_line(b"2222",0); sb.print_line(b"3333",0); let v=sb.viewport_slice().to_vec(); let bottom:String=String::from_utf8(v[4..8].iter().map(|a| (*a&0xFF) as u8).collect()).unwrap(); assert_eq!(bottom,"3333"); let vp=sb.viewpoint; sb.set_frozen(true); sb.print_line(b"4444",0); assert_eq!(sb.viewpoint,vp); }
+    #[test] fn highlight_clips(){ let mut sb=Scrollback::new(3,2,6); sb.print_line(b"abc",0x21); sb.print_line(b"def",0x21); let v=sb.viewport_slice().to_vec(); let hl=sb.highlight_view(0,2,10); assert_eq!(hl.len(),v.len()); assert_eq!(v[0],hl[0]); assert_eq!(v[1],hl[1]); for idx in 2..hl.len(){ assert_ne!((v[idx]>>8) as u8,(hl[idx]>>8) as u8); } }
+    #[test] fn viewpoint_invariants_under_mixed_moves(){ let mut sb=Scrollback::new(5,3,50); for i in 0..40u8 { let ch=b'A'+(i%26); sb.print_line(&[ch,ch,ch,ch,ch],0);} for i in 0..200 { match i%4 { 0=>sb.move_viewpoint_line(false),1=>sb.move_viewpoint_line(true),2=>sb.move_viewpoint_page(false),_=>sb.move_viewpoint_page(true), } assert!(sb.viewpoint <= sb.canvas_ptr()); let slice=sb.viewport_slice(); assert_eq!(slice.len(), sb.width*sb.height); } }
+    #[test] fn compaction_top_line_increments_by_block(){ let mut sb=Scrollback::new(4,2,8); for _ in 0..20 { sb.print_line(b"xxxx",0);} assert_eq!(sb.top_line % 6, 0); assert!(sb.top_line >= 6); }
 }
-

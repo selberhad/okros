@@ -65,6 +65,7 @@ impl AnsiConverter {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::telnet::TelnetParser;
 
     #[test]
     fn basic_and_fragmented_color() {
@@ -80,5 +81,27 @@ mod tests {
         assert_eq!((c & 0x70)>>4, 0);
         assert!(matches!(ev[3], AnsiEvent::Text(b'B')));
     }
-}
 
+    #[test]
+    fn multiple_sequences_reset_and_bright() {
+        let mut ac = AnsiConverter::new();
+        let ev = ac.feed(b"\x1b[1;44;33mZ\x1b[0m");
+        if let AnsiEvent::SetColor(col)=ev[0]{ assert_ne!(col&0x80,0); assert_eq!(((col&0x70)>>4),1); assert_eq!(col&0x0F,6);} else { panic!() }
+        assert!(matches!(ev[1], AnsiEvent::Text(b'Z')));
+        if let AnsiEvent::SetColor(col)=ev[2]{ assert_eq!(col&0x0F,7); assert_eq!(((col&0x70)>>4),0); assert_eq!(col&0x80,0);} else { panic!() }
+        // bright fg sets bold
+        let ev2 = ac.feed(b"\x1b[91m"); if let AnsiEvent::SetColor(c)=ev2[0]{ assert_ne!(c&0x80,0); assert_eq!(c&0x0F,4); }
+    }
+
+    #[test]
+    fn telnet_then_ansi_pipeline() {
+        let mut t = TelnetParser::new();
+        t.feed(b"A"); t.feed(&[0x1B]); t.feed(b"[32mB");
+        let app = t.take_app_out();
+        let mut ac = AnsiConverter::new();
+        let ev = ac.feed(&app);
+        assert!(matches!(ev[0], AnsiEvent::Text(b'A')));
+        if let AnsiEvent::SetColor(col)=ev[1]{ assert_eq!(col&0x0F,2);} else { panic!() }
+        assert!(matches!(ev[2], AnsiEvent::Text(b'B')));
+    }
+}
