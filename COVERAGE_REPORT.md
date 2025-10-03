@@ -1,20 +1,20 @@
 # Test Coverage Report
 
-**Last Updated**: 2025-10-03 04:54
+**Last Updated**: 2025-10-03 05:12
 **Tool**: cargo-llvm-cov
-**Overall Coverage**: **65.72%** lines | **70.94%** regions | **78.35%** functions
+**Overall Coverage**: **65.71%** lines | **70.94%** regions | **78.35%** functions
 
 ## Summary
 
 ```
-TOTAL                            4842              1407    70.94%         291                63    78.35%        1876               643    65.72%           0                 0         -
+TOTAL                            4845              1408    70.94%         291                63    78.35%        1878               644    65.71%           0                 0         -
 ```
 
 ## Coverage by Module
 
 | Module | Line Coverage | Region Coverage | Functions | Status |
 |--------|--------------|-----------------|-----------|--------|
-| `ansi.rs` | 95.65% | 90.32% | 100.00% | 🟢 Excellent |
+| `ansi.rs` | 94.37% | 90.00% | 100.00% | 🟢 Excellent |
 | `config.rs` | 90.00% | 87.50% | 71.43% | 🟢 Excellent |
 | `control.rs` | 39.74% | 34.20% | 46.67% | 🔴 Needs Work |
 | `curses.rs` | 18.56% | 13.55% | 40.00% | 🔴 Needs Work |
@@ -42,7 +42,7 @@ TOTAL                            4842              1407    70.94%         291   
 ## Coverage Tiers
 
 ### 🟢 Excellent (≥90% lines)
-- `ansi.rs` - 95.65%
+- `ansi.rs` - 94.37%
 - `config.rs` - 90.00%
 - `input.rs` - 92.50%
 - `mud.rs` - 94.44%
@@ -77,7 +77,7 @@ TOTAL                            4842              1407    70.94%         291   
 
 | Tier | Target | Current | Status |
 |------|--------|---------|--------|
-| Overall | ≥80% | 65.72% | ⏳ In Progress |
+| Overall | ≥80% | 65.71% | ⏳ In Progress |
 | Critical Paths | ≥95% | Check modules above | ✅ Met |
 | New Modules | ≥80% | - | Policy |
 
