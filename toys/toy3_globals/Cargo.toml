@@ -1,0 +1,15 @@
+[package]
+name = "toy3_globals"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "raw_static_test"
+path = "src/raw_static_test.rs"
+
+[[bin]]
+name = "oncecell_test"
+path = "src/oncecell_test.rs"
+
+[dependencies]
+once_cell = "1.20"
