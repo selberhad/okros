@@ -140,7 +140,39 @@ echo "$BUFFER" | jq -r '.lines[]'
 # NEVER skip step 3 - always read responses
 ```
 
-### 1. Read Before Every Action
+### 1. NEVER Guess - Always Use MUD Output
+
+**CRITICAL: If you can't see the information you need in the MUD output, that's a BUG in okros, not a reason to guess.**
+
+**❌ FORBIDDEN:**
+```bash
+# NEVER guess based on "common MUD patterns"
+echo '{"cmd":"sock_send","data":"adventurer\n"}' | nc -U /tmp/okros/mybot.sock  # WRONG!
+# Each MUD is unique - "adventurer" might not even be a valid class
+
+# NEVER assume commands work the same across MUDs
+echo '{"cmd":"sock_send","data":"north\n"}' | nc -U /tmp/okros/mybot.sock  # Maybe this MUD uses "n" not "north"?
+```
+
+**✅ REQUIRED:**
+```bash
+# 1. Read what the MUD actually tells you
+BUFFER=$(echo '{"cmd":"get_buffer"}' | nc -U /tmp/okros/mybot.sock)
+echo "$BUFFER" | jq -r '.lines[]'
+
+# Output shows: "Choose class: Berserker, Elementalist, Shadowdancer"
+
+# 2. Use EXACTLY what the MUD listed
+echo '{"cmd":"sock_send","data":"Berserker\n"}' | nc -U /tmp/okros/mybot.sock
+```
+
+**If the MUD output is missing or unclear:**
+- That's a bug in okros prompt capture - file an issue
+- Use `peek` with larger line counts to see more context
+- Check if help text scrolled off (press enter to continue, then re-read)
+- **DO NOT guess or assume "standard MUD behavior" - there is no standard**
+
+### 2. Read Before Every Action
 
 MUDs are **conversational** - they ask questions and expect specific responses.
 
@@ -414,8 +446,8 @@ The offline MUD is deterministic and perfect for:
 ### ❌ Don't ignore prompts
 MUDs use prompts to guide you (character creation, dialogs, menus). You MUST read and respond to each one individually.
 
-### ❌ Don't assume structure
-MUDs have NO standard format. Each MUD is different. Always parse flexibly.
+### ❌ Don't assume structure or guess
+MUDs have NO standard format. Each MUD is completely different with unique commands, classes, races, and mechanics. NEVER guess based on "common patterns" - always use what the MUD explicitly tells you. If you can't see the information, that's a bug to fix, not a reason to guess.
 
 ### ❌ Don't send partial commands
 Always append `\n` to your commands: `"look\n"`, not `"look"`
