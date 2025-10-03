@@ -1,9 +1,8 @@
 # okros - Rust MUD Client
 
-> **📚 Doc-Driven Development (DDD) in Action**
-> This project exemplifies [DDD Porting Mode](DDD.md): a reference-driven translation workflow combining Discovery (validate risky patterns via toy models) + Execution (systematic translation). Evidence: [12 toys validating FFI/unsafe patterns](toys/) (including [internal MUD](toys/toy12_internal_mud/) for e2e testing), [historical porting record](PORTING_HISTORY.md), [architectural documentation](CODE_MAP.md), and [95% completion with comprehensive docs](ORIENTATION.md). See [DDD.md](DDD.md) for the full methodology.
+**okros** (from _ochre_, rusty mud) is a modern MUD client written in Rust, reviving the design principles of MCL (MUD Client for Linux). Built for headless/detachable operation, it's perfect for automation, LLM agents, and cloud deployments.
 
-**okros** (from _ochre_, rusty mud) is a modern MUD client written in Rust, reviving the design principles of MCL (MUD Client for Linux). MCL was a powerful, feature-rich Linux MUD client that went unmaintained circa 2000 and offline by 2010. okros resurrects its core concepts while bringing them into the modern era with headless/detachable operation, perfect for automation, LLM agents, and cloud deployments.
+> **Current Status**: ~95% complete - all core features implemented, validation pending with real MUD servers. See [ORIENTATION.md](ORIENTATION.md) for detailed status.
 
 ## Features
 
@@ -265,17 +264,11 @@ okros is a 1:1 Rust port of MCL using a "safety third" approach - liberal use of
 
 ## Development Status
 
-okros is under active development. Current status:
+**Implementation**: ~95% complete (all tiers done)
+**Testing**: 83 tests passing | 65% coverage
+**Validation**: Pending real MUD server testing
 
-- ✅ Tier 1 (Foundation) - Complete
-- ✅ Tier 2 (Core) - Complete
-- ✅ Tier 3 (UI) - Complete
-- ✅ Tier 4 (Logic) - Complete (session/engine; aliases/actions deferred to scripts)
-- ✅ Tier 5 (Plugins) - Complete (Python & Perl)
-- ✅ Tier 6 (Main & Engine) - Complete (event loop, CLI args, headless & control server)
-- ⏸️  Tier 7 (Integration) - Validation pending (implementation complete, needs real MUD testing)
-
-See [PORTING_HISTORY.md](PORTING_HISTORY.md) for detailed porting history and [FUTURE_WORK.md](FUTURE_WORK.md) for remaining tasks.
+See [ORIENTATION.md](ORIENTATION.md) for current status, [PORTING_HISTORY.md](PORTING_HISTORY.md) for implementation history, and [FUTURE_WORK.md](FUTURE_WORK.md) for remaining tasks.
 
 ## Comparison with Original MCL
 

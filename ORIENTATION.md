@@ -20,7 +20,7 @@
 - **Main Event Loop**: poll-based I/O on TTY + socket with 250ms timeout
 - **CLI Args**: `--headless`, `--instance <name>`, `--attach <name>`, `--offline`, `--headless --offline` (combined) implemented
 - **# Commands**: `#quit`, `#open <host> <port>` functional
-- **Tests**: 71 unit tests + 8 integration tests passing
+- **Tests**: 83 total tests passing (75 unit + 8 integration) | 65% coverage
 
 ### ⏸️ What Needs Validation
 - **Real MUD Connection**: Code exists, needs testing against live server

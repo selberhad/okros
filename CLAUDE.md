@@ -144,7 +144,7 @@ This project follows **Doc-Driven Development (DDD)** in **Porting Mode** - a re
 
 **Current status**: Root CODE_MAP.md exists, tracks toys and overall structure
 
-### Porting Workflow (Execution Mode - Complete ✅)
+### Porting Workflow (Execution Mode)
 1. **Choose next module**: Follow PORTING_HISTORY.md tier order (Foundation → Core → UI → Logic → App)
 2. **Study C++ source**: Read C++ .cc/.h files thoroughly, understand behavior
 3. **Port to Rust**: Create .rs file, use unsafe/FFI freely, preserve structure
@@ -152,7 +152,7 @@ This project follows **Doc-Driven Development (DDD)** in **Porting Mode** - a re
 5. **Update CODE_MAP.md**: Document ported module before committing
 6. **Commit**: Logical commits matching porting steps (e.g., `feat(foundation): port String - Step 6`)
 
-**Status**: All porting complete (~95%). Remaining work in FUTURE_WORK.md (validation, post-MVP features).
+See ORIENTATION.md for current porting status.
 
 ### Toy Development Workflow (Discovery Mode - As Needed)
 1. **Identify complex subsystem**: C++ code needs understanding before porting
@@ -190,9 +190,8 @@ This project follows **Doc-Driven Development (DDD)** in **Porting Mode** - a re
 
 ## Key Files Reference
 
-**Current Status**: ~95% COMPLETE - Discovery phase done (12/12 toys including internal MUD), Execution phase done (all tiers complete), validation pending (needs real MUD testing)
-
-**File Structure**: See `CODE_MAP.md` for complete project structure and status
+**File Structure**: See `CODE_MAP.md` for complete project structure
+- See `ORIENTATION.md` for current project status
 - `./CODE_MAP.md` - Root directory structure, toys status, src/ layout
 - `src/CODE_MAP.md` - Ported Rust modules with C++ origins
 - `src/plugins/CODE_MAP.md` - Plugin system (Python, Perl)
