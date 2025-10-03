@@ -711,6 +711,8 @@ mod tests {
         assert_eq!(pl.drain_decomp_responses(), vec![IAC, DO, TELOPT_COMPRESS]);
         // Start sequence v1: IAC SB 85 WILL SE
         pl.feed(&[IAC, SB, TELOPT_COMPRESS, WILL, SE]);
+        // During compression, version should be 1
+        assert_eq!(pl.decomp.version(), 1);
         // Compressed payload
         let payload = compress_bytes(b"v1-ok");
         pl.feed(&payload);
@@ -781,6 +783,34 @@ mod tests {
         // Then Text('Z') then SetColor(reset white on black)
         assert!(matches!(ev2[1], AnsiEvent::Text(b'Z')));
         if let AnsiEvent::SetColor(col) = ev2[2] { assert_eq!(col & 0x0F, 7); assert_eq!((col & 0xF0)>>4, 0); assert_eq!(col & 0x80, 0);} else { panic!("expected reset SetColor"); }
+    }
+
+    #[test]
+    fn ansi_sgr_multiple_sequences() {
+        let mut ac = AnsiConverter::new();
+        let ev = ac.feed(b"\x1b[31mX\x1b[0mY");
+        // Expect SetColor(red), Text('X'), SetColor(reset), Text('Y')
+        assert!(matches!(ev[0], AnsiEvent::SetColor(_)));
+        if let AnsiEvent::SetColor(col) = ev[0] {
+            assert_eq!(col & 0x0F, 4);
+            assert_eq!((col & 0x70)>>4, 0);
+        }
+        assert!(matches!(ev[1], AnsiEvent::Text(b'X')));
+        if let AnsiEvent::SetColor(col) = ev[2] {
+            assert_eq!(col & 0x0F, 7);
+            assert_eq!((col & 0x70)>>4, 0);
+            assert_eq!(col & 0x80, 0);
+        } else { panic!("expected reset SetColor"); }
+        assert!(matches!(ev[3], AnsiEvent::Text(b'Y')));
+    }
+
+    #[test]
+    fn ansi_sgr_malformed_is_ignored_and_text_passes() {
+        let mut ac = AnsiConverter::new();
+        // ESC ] is not CSI; should be canceled and next text passes through
+        let mut ev = ac.feed(&[0x1B]);
+        ev.extend(ac.feed(b"]A"));
+        assert!(matches!(ev.last().unwrap(), AnsiEvent::Text(b'A')));
     }
 
     #[test]
