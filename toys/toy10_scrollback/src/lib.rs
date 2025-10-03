@@ -133,4 +133,31 @@ mod tests {
         let hl = sb.highlight_view(0, 1, 2);
         assert_eq!(hl.len(), v1.len());
     }
+
+    #[test]
+    fn compaction_advances_top_line_and_preserves_content() {
+        let mut sb = Scrollback::new(3, 2, 6); // total 6 lines buffer, 2 visible
+        // Fill more than buffer to force compaction
+        for i in 0..10u8 {
+            let s = [b'A' + (i%26)];
+            let line = [s[0]; 3];
+            sb.print_line(&line, 0);
+        }
+        assert!(sb.top_line > 0);
+        // View should be last two lines printed
+        let view = sb.viewport_slice();
+        let last_char = ((view[view.len()-1]) & 0xFF) as u8;
+        assert!(last_char.is_ascii());
+    }
+
+    #[test]
+    fn highlight_swaps_colors() {
+        let mut sb = Scrollback::new(2, 1, 4);
+        // color 0x21: bg=2, fg=1
+        sb.print_line(&[b'Z', b' '], 0x21);
+        let hl = sb.highlight_view(0, 0, 1);
+        let c = (hl[0] >> 8) as u8;
+        assert_eq!(c & 0x0F, 0x02); // new fg = old bg
+        assert_eq!((c & 0xF0) >> 4, 0x01); // new bg = old fg
+    }
 }

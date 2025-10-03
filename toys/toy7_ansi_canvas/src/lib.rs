@@ -130,4 +130,34 @@ mod tests {
         let end = s.find("[RM]").expect("rmacs present");
         assert!(start < end);
     }
+
+    #[test]
+    fn begins_with_vt_home_and_ends_with_cursor_goto() {
+        let w=2; let h=2;
+        let prev = vec![cell(b' ', 0); w*h];
+        let mut next = prev.clone();
+        next[0] = cell(b'X', 0);
+        let s = diff_to_ansi(&prev, &next, &DiffOptions{ width:w, height:h, cursor_x:1, cursor_y:1, smacs:None, rmacs:None, set_bg_always:true });
+        assert!(s.starts_with("\u{1b}[H"));
+        assert!(s.ends_with("\u{1b}[2;2H"));
+    }
+
+    #[test]
+    fn skip_bottom_right_cell() {
+        let w=3; let h=3;
+        let prev = vec![cell(b' ', 0); w*h];
+        let mut next = prev.clone();
+        next[w*h-1] = cell(b'Z', 0); // bottom-right
+        let s = diff_to_ansi(&prev, &next, &DiffOptions{ width:w, height:h, cursor_x:0, cursor_y:0, smacs:None, rmacs:None, set_bg_always:true });
+        // should not move to bottom-right
+        assert!(!s.contains("\u{1b}[3;3H"), "unexpected write to bottom-right: {}", s);
+    }
+
+    #[test]
+    fn white_on_black_maps_to_reset() {
+        // When color is fg=white(7), bg=black(0), no bold → 0m, but our reverse map makes fg 37/bg 40.
+        // get_color_code should collapse that to CSI 0m.
+        let code = get_color_code(0x07, true);
+        assert_eq!(code, "\u{1b}[0m");
+    }
 }
