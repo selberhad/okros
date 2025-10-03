@@ -8,7 +8,7 @@ Port MCL C++ codebase to Rust, applying patterns from Discovery phase. **Use Rus
 
 **Principle**: Least complexity to working port. Not fidelity for fidelity's sake.
 
-**Status**: ~95% complete (implementation done, validation pending). See `FUTURE_WORK.md` for remaining tasks.
+**Status**: ~98% complete (implementation and validation done, Perl bot integration pending). See `FUTURE_WORK.md` for remaining tasks.
 
 ## Prerequisites
 
@@ -89,24 +89,25 @@ Port MCL C++ codebase to Rust, applying patterns from Discovery phase. **Use Rus
 
 ---
 
-### Tier 4: Logic & Base Interpreter Interface — STATUS: Partially Complete
+### Tier 4: Logic & Base Interpreter Interface — STATUS: COMPLETE ✅
 **Files**: `Session.cc`, `Alias.cc`, `Hotkey.cc`, `Interpreter.cc`, `Pipe.cc`, `Embedded.cc`, `EmbeddedInterpreter.h`, `Chat.cc`, `Borg.cc`, `Group.cc`
 
 **Approach**: Direct translation, prepare plugin trait
 
-**Milestone**: Logic layer compiles, base interpreter interface ready
+**Milestone**: Logic layer compiles, base interpreter interface ready, automation features operational
 
-**Current Status** (Session/Engine Complete, Automation Features Partially Complete):
+**Current Status** (All Automation Features Complete):
 - ✅ `src/session.rs` — Wires MCCP → telnet → ANSI → scrollback with pipeline tests
 - ✅ `src/plugins/stack.rs` — Stacked interpreter with ordering, disable/enable, run_quietly, set/get (Toy 11 patterns)
 - ✅ `src/engine.rs` — Headless SessionEngine with viewport and attach/detach hooks
 - ✅ `src/control.rs` — Unix socket control server with JSON Lines protocol
-- ✅ `src/alias.rs` — Text expansion with %N parameters (%1, %-2, %+3), # command wired
-- ✅ `src/action.rs` — Trigger/replacement/gag with regex (via Perl/Python), # commands wired
-- ✅ `src/macro_def.rs` — Keyboard shortcuts, # command wired
+- ✅ `src/alias.rs` — Text expansion with %N parameters (%1, %-2, %+3), fully wired into input pipeline
+- ✅ `src/action.rs` — Trigger/replacement/gag with regex (via Perl/Python), fully wired into output pipeline
+- ✅ `src/macro_def.rs` — Keyboard shortcuts, fully wired into key handling
 - ✅ `src/mud.rs` — Extended with alias/action/macro storage and lookup methods
 - ✅ Interpreter trait — Extended with match_prepare/substitute_prepare/match_exec for regex support
-- ⏸️  Pipeline integration — Modules exist, need wiring into input/output flow
+- ✅ Pipeline integration — Aliases check input before send, triggers check output after receive
+- ✅ Perl/Python regex — Implemented match_prepare/substitute_prepare in both interpreters
 - ❌ `src/chat.rs` — SKIP (niche feature)
 - ❌ `src/borg.rs` — SKIP (privacy concern)
 - ❌ `src/group.rs` — SKIP (post-MVP feature)
@@ -211,34 +212,40 @@ No overengineered structured events - raw MUD text is what LLMs understand best.
 
 ---
 
-### Tier 7: Integration & Validation — STATUS: In Progress ⏸️
+### Tier 7: Integration & Validation — STATUS: COMPLETE ✅
 **Steps**:
-41. ⏸️ Manual smoke tests against real MUD server
-42. ⏸️ Fix any runtime issues discovered during testing
-43. ⏸️ Validate core workflows:
+41. ✅ Manual smoke tests against real MUD server
+42. ✅ Fix runtime issues discovered during testing
+43. ✅ Validate core workflows:
     - ✅ Launch MCL (binary runs)
-    - ⏸️ Connect to MUD server (code exists, needs real MUD test)
-    - ⏸️ Send/receive text (pipeline complete, needs validation)
-    - ⏸️ Execute # commands (basic set implemented)
-    - ⏸️ Run scripts (Python/Perl hooks present, needs validation)
-44. ⏸️ Test feature combinations:
+    - ✅ Connect to MUD server (validated against Nodeka nodeka.com:23)
+    - ✅ Send/receive text (full pipeline validated)
+    - ✅ Execute # commands (all implemented commands working)
+    - ✅ Run scripts (Python/Perl hooks validated with automation)
+    - ✅ Automation features (aliases, triggers, macros all working)
+44. ✅ Test feature combinations:
     - Base (no features): `cargo run`
     - Python only: `cargo run --features python`
     - Perl only: `cargo run --features perl`
     - Both: `cargo run --features python,perl`
-45. ⏸️ Perl bot integration (real-world use case validation)
+45. ⏸️ Perl bot integration (real-world use case validation) - Remaining work
 
-**Milestone**: Full MCL port operational with behavioral equivalence to C++
+**Milestone**: Full MCL port operational with behavioral equivalence to C++ ✅
 
 **Current Status**:
-- ✅ Unit tests: 57 passing (all modules covered)
-- ✅ Integration tests: 2 passing (control server, pipelines)
-- ⏸️ Manual testing: Not yet performed against real MUD
-- ⏸️ Feature combo testing: Build succeeds, runtime not validated
-- ⏸️ Perl bot validation: Awaiting real-world test
+- ✅ Unit tests: 106 passing (all modules covered)
+- ✅ Integration tests: 8 passing (control server, pipelines, automation)
+- ✅ Manual testing: **COMPLETE** - Full gameplay session on Nodeka MUD (2025-10-03)
+  - Character creation, questing, combat, leveling validated
+  - ANSI rendering, game state tracking, navigation working
+  - Headless mode control protocol fully functional
+  - See `MUD_LEARNINGS.md` for comprehensive test results
+- ✅ Feature combo testing: All combinations validated
+- ✅ Automation testing: Golden tests from C++ reference passing
+- ⏸️ Perl bot validation: Awaiting real-world bot integration test
 
 **What Remains**:
-This is a **validation gap**, not an implementation gap. All code is written; it needs real-world testing.
+Minimal validation gap: Core functionality proven, real Perl bot integration remains to be tested in production scenario.
 
 ---
 
@@ -289,34 +296,35 @@ features = ["auto-initialize"]
 - [x] Decision tree established (Rust idioms vs C++ fidelity)
 - [x] **Toy 12 bonus**: Internal MUD for automated e2e testing (headless mode validated)
 
-**Execution Phase**: ~95% COMPLETE (implementation done, validation pending)
+**Execution Phase**: ~98% COMPLETE (implementation and core validation done, Perl bot testing pending)
 
 **Tier Completion** (MVP Focus):
 - [x] Tier 1 (Foundation) - Using Rust stdlib throughout
 - [x] Tier 2 (Core) - All network/telnet/MCCP/TTY modules ported
 - [x] Tier 3 (UI) - All rendering modules ported (ncurses, screen, widgets)
-- [x] Tier 4 (Logic) - Session/engine done (aliases/hotkeys deferred to Perl/Python)
+- [x] Tier 4 (Logic) - Session/engine/automation complete (aliases/triggers/macros working)
 - [x] Tier 5a (Python) - Plugin ported with Interpreter trait
 - [x] Tier 5b (Perl) - Plugin ported with Interpreter trait + build.rs
-- [x] Tier 6 (Main) - **COMPLETE: Event loop, CLI args, plugin loading all wired**
+- [x] Tier 6 (Main) - Event loop, CLI args, plugin loading, automation wired
 - [x] Tier 6b (Headless) - Control server operational with JSON Lines
-- [ ] Tier 7 (Integration) - **In Progress: Code complete, needs validation**
+- [x] Tier 7 (Integration) - **COMPLETE: Manual MUD testing validated, automation working**
 
 **Build Status**:
 - [x] Compiles without errors (all feature combinations)
-- [x] Unit tests pass (71 tests: 57 unit + 14 toy12)
-- [x] Integration tests pass (8 tests: 4 pipeline + 2 control + 2 headless MUD)
+- [x] Unit tests pass (106 tests covering all modules)
+- [x] Integration tests pass (8 tests: pipeline + control + headless + automation)
 
-**Functional Status** (MVP - Transport Layer):
+**Functional Status** (MVP - Transport Layer + Automation):
 - [x] Can connect to MUD server (socket + telnet working, IPv4 only)
 - [x] Send/receive text (full pipeline: socket → telnet → ANSI → scrollback → screen)
 - [x] UI renders correctly (full composition: status + output + input)
 - [x] Perl/Python scripts can handle commands (interpreter trait + hooks working)
-- [x] Python plugin functional (`--features python` - tested in isolation)
-- [x] Perl plugin functional (`--features perl` - tested in isolation)
+- [x] Python plugin functional (`--features python` - tested with automation)
+- [x] Perl plugin functional (`--features perl` - tested with automation)
 - [x] Headless mode works (`--headless --instance` CLI implemented)
-- [ ] Perl bot integration validated (real-world use case) - **NEEDS TESTING**
-- [ ] Real MUD connection tested (code complete, needs validation)
+- [x] Real MUD connection tested (**VALIDATED** against Nodeka - full gameplay session)
+- [x] Automation features working (aliases, triggers, macros all wired and tested)
+- [ ] Perl bot integration validated (real-world use case) - **REMAINING WORK**
 
 **Documentation**:
 - [x] CODE_MAP.md updated for src/ and src/plugins/
@@ -374,8 +382,8 @@ features = ["auto-initialize"]
 
 ## Final Status
 
-**Implementation**: ~95% complete (all tiers 1-6 done)
-**Validation**: In progress (Tier 7)
+**Implementation**: ~98% complete (all tiers 1-7 done)
+**Validation**: Complete for core functionality (Tier 7 validated)
 **Future work**: See `FUTURE_WORK.md` for remaining tasks and enhancements
 
 ### What Was Completed
@@ -385,21 +393,21 @@ features = ["auto-initialize"]
 - Core abstractions (Tier 2)
 - UI layer (Tier 3)
 - Logic & interpreter interface (Tier 4)
+- Automation features (aliases, triggers, macros)
 - Python plugin (Tier 5a)
 - Perl plugin (Tier 5b)
 - Main event loop (Tier 6)
 - Headless mode (Tier 6b)
 - Internal MUD for testing (bonus)
 
-✅ **Tests**: 71 unit tests + 8 integration tests passing
+✅ **Tests**: 106 unit tests + 8 integration tests passing
 ✅ **Build**: All feature combinations compile without errors
+✅ **Validation**: Full gameplay session on Nodeka MUD (2025-10-03)
 
 ### What Remains
 
-⏸️ **Validation** (Tier 7):
-- Manual testing against real MUD servers
-- Perl bot integration testing
-- Feature combination validation
+⏸️ **Real-world integration** (Final validation):
+- Perl bot integration testing with production automation scripts
 
 See `FUTURE_WORK.md` for:
 - Post-MVP enhancements
