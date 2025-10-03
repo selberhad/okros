@@ -1,0 +1,8 @@
+[package]
+name = "internal_mud"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "mud"
+path = "main.rs"
