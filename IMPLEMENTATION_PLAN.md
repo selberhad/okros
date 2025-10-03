@@ -51,14 +51,16 @@ Port MCL C++ codebase to Rust, applying patterns from Discovery phase. **Use Rus
 **Milestone**: Core types compile, network/config functional
 
 **Current Status**:
-- ✅ `src/selectable.rs`, `src/select.rs` — Selection/poll abstractions with tests
+- ✅ `src/selectable.rs`, `src/select.rs` — Poll/select abstractions with tests (Selectable.cc only, not Selection.cc)
 - ✅ `src/socket.rs` — Nonblocking IPv4 socket (raw fd) with loopback tests (Toy 9 patterns)
-- ✅ `src/config.rs` — Basic config struct and helpers with tests
-- ✅ `src/mud.rs` — Socket/config wiring with loopback tests
+- ✅ `src/config.rs` — Basic config struct and helpers with tests (minimal, no file parsing)
+- ✅ `src/mud.rs` — Socket/config wiring with loopback tests (minimal, no MUD list)
 - ✅ `src/tty.rs` — Raw mode + keypad app mode (Toy 6 patterns)
 - ✅ `src/input.rs` — Key decoder with ESC sequence normalization (Toy 6 patterns)
 - ✅ `src/telnet.rs` — Telnet parser (EOR-only replies, SB stripping, prompt events) with unit tests (Toy 8 patterns)
 - ✅ `src/mccp.rs` — Decompressor trait + real inflate behind `mccp` feature using flate2 (Toy 8 patterns)
+
+**Note**: Selection.cc (UI list widget) NOT ported - deferred post-MVP (see section 6 below)
 
 ---
 
@@ -370,11 +372,21 @@ features = ["auto-initialize"]
 
 **All implementation is COMPLETE. Focus is now on validation and polish.**
 
-1. **Tier 7 (Integration & Validation)** - **CRITICAL PATH TO MVP**
+1. **Internal MUD Integration** - **NEXT IMMEDIATE STEP** (Option 1: MVP approach)
+   - Port `toys/toy12_internal_mud/` to `src/offline_mud/` module
+   - Add `--offline` CLI flag to main.rs
+   - Wire internal MUD World + Session direct feed (no socket)
+   - Validate with existing toy12 integration tests
+   - **Use case**: Deterministic e2e testing without external MUD dependency
+   - **Estimated effort**: 2-3 hours
+   - **Defers**: Connect menu / MUDSelection widget (post-MVP, see section 6)
+
+2. **Tier 7 (Integration & Validation)** - **CRITICAL PATH TO MVP**
    - Manual smoke test: connect to real MUD server
      - Test: `cargo run` → `#open <mud-ip> <port>` → verify send/receive
      - Test: headless mode → Unix socket control → verify buffering
      - Test: `--attach` to running headless instance
+   - **Internal MUD smoke test**: `cargo run --offline` → verify game works
    - Feature combination testing:
      - `cargo run` (base - no plugins)
      - `cargo run --features python` (Python enabled)
@@ -384,41 +396,49 @@ features = ["auto-initialize"]
      - This is the ultimate validation of the transport layer design
      - Verify scripts can automate MUD play via control socket
 
-2. **Polish & Bug Fixes** (as discovered during testing)
+3. **Polish & Bug Fixes** (as discovered during testing)
    - Fix any panics/crashes found during MUD connection
    - Address edge cases in telnet/ANSI parsing
    - Improve error messages for better UX
 
-3. **Documentation Sync** (in progress)
+4. **Documentation Sync** (in progress)
    - [x] Update IMPLEMENTATION_PLAN.md to reflect completion
    - [ ] Update ORIENTATION.md to reflect MVP status
    - [ ] Update README.md if needed
 
 ### Optional Enhancements (Post-MVP)
 
-4. **DNS Hostname Resolution** (nice-to-have)
+5. **DNS Hostname Resolution** (nice-to-have)
    - Currently only IPv4 addresses work (e.g., `#open 127.0.0.1 4000`)
    - Add hostname lookup (e.g., `#open example.com 4000`)
    - Low priority - can be handled by wrapper scripts
 
-5. **Extended # Commands** (if needed)
+6. **Extended # Commands** (if needed)
    - Current set: `#quit`, `#open`
    - C++ MCL has many more (see Interpreter.cc)
    - Defer to Perl/Python scripts for most commands
 
 ### Deferred to Post-1.0 (Not Needed for MVP)
 
-6. **Client-Side Command Processing** - **Perl/Python handles this**
+7. **Connect Menu & Config File Parsing** - **Post-MVP enhancement**
+   - Selection.cc (UI list widget) - base class for menus
+   - MUDSelection widget - connect menu triggered by Alt-O
+   - Config file parsing (~/.mcl/config) - load MUD definitions
+   - MUD list storage (MUDList class) - manage saved MUDs
+   - **MVP approach**: Use `--offline` flag to launch internal MUD directly
+   - **Future approach**: Port Selection/MUDSelection, add internal MUD as default entry #0
+
+8. **Client-Side Command Processing** - **Perl/Python handles this**
    - Alias.cc (command expansion) - scripts handle
    - Hotkey.cc (keyboard macros) - scripts handle
    - Advanced interpreter (# commands) - minimal set sufficient
 
-7. **Advanced MCL Features** - **Out of scope**
+9. **Advanced MCL Features** - **Out of scope**
    - Chat.cc (peer-to-peer chat) - niche feature
    - Borg.cc (phone-home stats) - privacy concern
    - Group.cc (grouped sessions) - post-MVP
 
-8. **Cross-Platform & Performance** - **Future work**
+10. **Cross-Platform & Performance** - **Future work**
    - macOS/Windows support (currently Linux-only)
    - Performance profiling and optimization
    - Idiomatic Rust refactoring pass
