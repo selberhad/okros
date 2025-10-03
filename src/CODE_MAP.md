@@ -20,8 +20,8 @@ Brief index mapping Rust modules to their C++ counterparts (when applicable). Up
 - `socket.rs` → `Socket.cc` (nonblocking IPv4 socket over raw fd; Toy 9 patterns).
 - `tty.rs` → `TTY.cc` (raw mode + keypad app mode; Toy 6 patterns).
 - `input.rs` → Key decoder (ESC sequence normalization; from `TTY.cc` + Toy 6).
-- `config.rs` → `Config.cc` (basic config; loopback helpers for tests).
-- `mud.rs` → `MUD.cc` (socket/config wiring; small helper tests).
+- `config.rs` → `Config.cc` (config file parser; old/new format; MUD list; auto-injects Offline MUD).
+- `mud.rs` → `MUD.cc` (MUD definitions with name/hostname/port/inheritance; MudList collection; alias/action/macro storage).
 - `telnet.rs` → `Telnet.cc` (IAC parsing, SB handling; Toy 8 patterns).
 - `mccp.rs` → `Mccp.cc` (decompressor trait + flate2 inflate; gated by `mccp` feature; Toy 8 patterns).
 - `scrollback.rs` → Scrollback/ring buffer (from `OutputWindow.cc` + Toy 10 patterns).
@@ -34,12 +34,17 @@ Brief index mapping Rust modules to their C++ counterparts (when applicable). Up
 - `output_window.rs` → `OutputWindow.cc` (rendering and color attrs).
 - `input_line.rs` → `InputLine.cc` (line editor basics).
 - `status_line.rs` → `StatusLine.cc` (status UI stripe).
+- `selection.rs` → `Selection.cc` (base scrollable list widget; arrow navigation, letter jump).
+- `mud_selection.rs` → `MUDSelection` class from `Selection.cc` (specialized MUD connect menu).
 
 ## Logic Layer (Tier 4)
 
 - `session.rs` → `Session.cc` (pipeline MCCP→Telnet→ANSI→Scrollback).
 - `engine.rs` → Headless engine (no strict C++ analog; extraction from `main.cc` event loop).
 - `control.rs` → New (Unix domain control server; headless/attach support).
+- `alias.rs` → `Alias.cc` (text expansion with %N parameters; wired into input pipeline).
+- `action.rs` → `Action.cc` (triggers/replacements/gags with regex; wired into output pipeline).
+- `macro_def.rs` → `Hotkey.cc` (keyboard shortcuts; wired into key handling).
 
 ## Plugins (Tier 5)
 

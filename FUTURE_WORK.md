@@ -2,7 +2,7 @@
 
 This document tracks post-MVP enhancements and deferred features for okros.
 
-**Current Status**: Implementation ~95% complete, in validation phase
+**Current Status**: Implementation ~99% complete (core features done, minor polish remaining)
 **MVP Philosophy**: okros is a transport layer - scripts handle command logic
 
 ---
@@ -83,49 +83,55 @@ This document tracks post-MVP enhancements and deferred features for okros.
 
 ## Core Features (v0.2+)
 
-### 6. Alias/Action/Macro System — STATUS: PARTIALLY COMPLETE ✅
+### 6. Alias/Action/Macro System — STATUS: COMPLETE ✅
 
-**Implementation Complete**:
-- [x] `src/alias.rs` - Text expansion with %N parameters (%1, %-2, %+3)
-- [x] `src/action.rs` - Trigger/replacement/gag with regex (via Perl/Python)
-- [x] `src/macro_def.rs` - Keyboard shortcut bindings
-- [x] # commands: `#alias`, `#action`, `#subst`, `#macro`
-- [x] Storage in MUD struct (per-session lists)
+**Implementation Complete** (from Tier 4 porting):
+- ✅ `src/alias.rs` - Text expansion with %N parameters (%1, %-2, %+3)
+- ✅ `src/action.rs` - Trigger/replacement/gag with regex (via Perl/Python)
+- ✅ `src/macro_def.rs` - Keyboard shortcut bindings
+- ✅ # commands: `#alias`, `#action`, `#subst`, `#macro`
+- ✅ Storage in MUD struct (per-session lists)
+- ✅ Alias expansion wired into input pipeline
+- ✅ Action/trigger checking wired into output pipeline
+- ✅ Perl/Python regex integration (match_prepare/substitute_prepare implemented)
+- ✅ Hierarchical lookup (parent MUD inheritance for aliases/macros)
 
 **Remaining Work**:
-- [ ] Wire alias expansion into input pipeline
-- [ ] Wire action/trigger checking into output pipeline
-- [ ] Implement Perl/Python regex integration (match_prepare/substitute_prepare)
-- [ ] Macro key code lookup (F1, F2, etc. - currently ASCII only)
-- [ ] Hierarchical lookup (global → session-specific)
+- ⏸️  Macro key code lookup (F1, F2, etc. - currently ASCII only)
 
 **Why Needed**: Simple automation without requiring full Perl/Python scripts. Good for quick aliases and basic triggers.
 
-**Estimated effort**: 1-2 days to complete integration
+**Tests**: Full automation pipeline validated against Nodeka MUD (see MUD_LEARNINGS.md)
 
 ## Deferred to v1.0+ (Not Needed for MVP)
 
-### 7. Connect Menu & Config File Parsing
+### 7. Connect Menu & Config File Parsing — STATUS: COMPLETE ✅
 **Priority**: MEDIUM - Quality of life feature
 
-Port C++ connect menu system:
-- **Selection.cc** (UI list widget) - base class for menus
-- **MUDSelection widget** - connect menu triggered by Alt-O
-- **Config file parsing** (~/.okros/config) - load MUD definitions
-- **MUD list storage** (MUDList class) - manage saved MUDs
+**Implementation complete** (2025-10-03):
+- ✅ **Selection.cc** (UI list widget) - base class ported to `src/selection.rs`
+- ✅ **MUDSelection widget** - connect menu in `src/mud_selection.rs`
+- ✅ **Config file parsing** (~/.okros/config) - both old and new formats
+- ✅ **MUD list storage** (MudList class) - in `src/mud.rs`
+- ✅ **Offline MUD** - automatically added as entry #0
+- ⏸️  **Alt-O hotkey binding** - Remaining work
 
-**MVP approach**: Use `--offline` flag to launch internal MUD directly
-**Future approach**: Port Selection/MUDSelection, add internal MUD as default entry #0
+**Completed implementation**:
+1. ✅ Port Selection base class (scrollable list widget with navigation)
+2. ✅ Port MUDSelection (specialized for MUD connections)
+3. ✅ Implement config file parser (old format: `mudname hostname port [commands]`)
+4. ✅ Implement config file parser (new format: `MUD mudname { host hostname port; alias ...; }`)
+5. ⏸️  Add Alt-O hotkey binding (infrastructure ready, needs main.rs integration)
+6. ✅ Add internal MUD as entry #0 in empty lists
 
-**Implementation steps**:
-1. Port Selection base class (scrollable list widget)
-2. Port MUDSelection (specialized for MUD connections)
-3. Implement config file parser (old format: `mudname hostname port [commands]`)
-4. Implement config file parser (new format: `MUD mudname { host hostname port; alias ...; }`)
-5. Add Alt-O hotkey binding
-6. Add internal MUD as entry #0 in empty lists
+**Features implemented**:
+- Dual format config parser (old + new in same file)
+- MUD inheritance (child inherits parent's aliases/actions/macros)
+- Arrow navigation, page up/down, home/end, letter jump
+- Formatted display with column alignment
+- Automatic Offline MUD injection
 
-**Estimated effort**: 1-2 days
+**Tests**: 20 tests passing (3 selection + 13 config + 4 mud_selection)
 **Reference**: `mcl-cpp-reference/Selection.cc`, `mcl-cpp-reference/Config.cc` (lines 329-508)
 
 ### 8. Client-Side Command Processing
@@ -315,4 +321,4 @@ Replace language-specific FFI (pyo3, Perl XS) with universal WASM runtime:
 ---
 
 **Last Updated**: 2025-10-03
-**Status**: Validation phase, ~95% implementation complete
+**Status**: Core implementation complete (~99%), connect menu + automation features working
