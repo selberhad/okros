@@ -1,5 +1,4 @@
 use std::io::{self, Read, Write, BufRead};
-use std::time::{Duration, Instant};
 use mcl_rust::input::{KeyDecoder, KeyEvent, KeyCode};
 use mcl_rust::screen::{self, DiffOptions};
 use mcl_rust::curses::get_acs_caps;
@@ -47,12 +46,69 @@ fn main() {
     #[cfg(feature = "perl")]
     println!("Feature enabled: perl (FFI)");
 
+    // Initialize embedded interpreters (matching main.cc:64, 101-105)
+    #[cfg(feature = "python")]
+    let mut python_interp = {
+        use mcl_rust::plugins::python::PythonInterpreter;
+        match PythonInterpreter::new() {
+            Ok(interp) => {
+                println!("Python interpreter initialized");
+                Some(interp)
+            }
+            Err(e) => {
+                eprintln!("Failed to initialize Python: {}", e);
+                None
+            }
+        }
+    };
+
+    #[cfg(feature = "perl")]
+    let mut perl_interp = {
+        use mcl_rust::plugins::perl::PerlPlugin;
+        match PerlPlugin::new() {
+            Ok(interp) => {
+                println!("Perl interpreter initialized");
+                Some(interp)
+            }
+            Err(e) => {
+                eprintln!("Failed to initialize Perl: {}", e);
+                None
+            }
+        }
+    };
+
+    // Set initial interpreter variables (main.cc:101-105)
+    let current_time = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs() as i64;
+
+    #[cfg(feature = "python")]
+    if let Some(ref mut interp) = python_interp {
+        use mcl_rust::plugins::stack::Interpreter;
+        interp.set_int("now", current_time);
+        interp.set_str("VERSION", env!("CARGO_PKG_VERSION"));
+        interp.set_str("commandCharacter", "#");
+        // Run sys/init script if it exists
+        let mut out = String::new();
+        let _ = interp.run_quietly("sys/init", "", &mut out, true);
+    }
+
+    #[cfg(feature = "perl")]
+    if let Some(ref mut interp) = perl_interp {
+        use mcl_rust::plugins::stack::Interpreter;
+        interp.set_int("now", current_time);
+        interp.set_str("VERSION", env!("CARGO_PKG_VERSION"));
+        interp.set_str("commandCharacter", "#");
+        // Run sys/init script if it exists
+        let mut out = String::new();
+        let _ = interp.run_quietly("sys/init", "", &mut out, true);
+    }
+
     // Minimal demo: set raw mode, optional keypad app mode, then run a tiny event loop
     let mut tty = match mcl_rust::tty::Tty::new() { Ok(t) => t, Err(e) => { eprintln!("tty init failed: {}", e); return; } };
     let _ = tty.enable_raw();
     let _ = tty.keypad_application_mode(true);
-
-    let mut out = io::stdout();
 
     // Compose a small UI: status (top), output (middle), input (bottom)
     let width = 40usize; let height = 8usize; // small demo surface
@@ -84,48 +140,153 @@ fn main() {
     }
 
     let mut dec = KeyDecoder::new();
-    let start = Instant::now();
-    let timeout = Duration::from_secs(2); // short demo
     let mut buf = [0u8; 1024];
-    loop {
-        // poll stdin + socket for events
+    let mut quit = false;
+    let mut last_callout_time = current_time;
+
+    // Main event loop (matching main.cc:141-170)
+    while !quit {
+        // 1. Render UI (main.cc:142)
+        render_surface(width, height, &mut prev, &mut cur, &session, &input, &status, &caps);
+
+        // 2. Poll file descriptors (main.cc:147) - stdin + socket with 250ms timeout
         let mut fds = vec![(libc::STDIN_FILENO, READ)];
         if let Some(s) = &sock {
             let mut ev = READ;
             if s.state == ConnState::Connecting { ev |= WRITE; }
             fds.push((s.as_raw_fd(), ev));
         }
-        let ready = poll_fds(&fds, 100).unwrap_or_default();
+        let ready = poll_fds(&fds, 250).unwrap_or_default();
+
+        // 3. Process I/O events
         for (fd, r) in ready {
             if fd == libc::STDIN_FILENO && (r.revents & READ) != 0 {
+                // TTY input (keyboard)
                 if let Ok(n) = io::stdin().read(&mut buf) { if n>0 {
                     for ev in dec.feed(&buf[..n]) {
                         match ev {
-                            KeyEvent::Byte(b'\n') => { let line = input.take_line(); if !line.is_empty() { session.scrollback.print_line(&line, 0x07); } }
-                            KeyEvent::Byte(b'q') => { status.set_text("Quit."); render_surface(width, height, &mut prev, &mut cur, &session, &input, &status, &caps); let _ = tty.keypad_application_mode(false); return; }
+                            KeyEvent::Byte(b'\n') => {
+                                let line = input.take_line();
+                                if !line.is_empty() {
+                                    // Check for # commands (basic interpreter)
+                                    if line.starts_with(b"#quit") {
+                                        quit = true;
+                                        status.set_text("Quit.");
+                                    } else if line.starts_with(b"#open ") {
+                                        // #open <host> <port>
+                                        let args = String::from_utf8_lossy(&line[6..]);
+                                        if let Some((host_str, port_str)) = args.trim().split_once(' ') {
+                                            if let Ok(port) = port_str.parse::<u16>() {
+                                                // Parse hostname (support IPv4 for now)
+                                                if let Ok(ip) = host_str.parse::<Ipv4Addr>() {
+                                                    let mut s = Socket::new().unwrap();
+                                                    let _ = s.connect_ipv4(ip, port);
+                                                    sock = Some(s);
+                                                    status.set_text(format!("Connecting to {}:{}...", host_str, port));
+                                                } else {
+                                                    status.set_text(format!("Invalid IP: {}", host_str));
+                                                }
+                                            } else {
+                                                status.set_text("Usage: #open <ip> <port>");
+                                            }
+                                        } else {
+                                            status.set_text("Usage: #open <ip> <port>");
+                                        }
+                                    } else if line.starts_with(b"#") {
+                                        // Other # commands - just echo for now
+                                        session.scrollback.print_line(&line, 0x07);
+                                    } else if let Some(ref mut s) = sock {
+                                        // Send to MUD
+                                        let mut send_buf = line.clone();
+                                        send_buf.push(b'\n');
+                                        unsafe { libc::write(s.as_raw_fd(), send_buf.as_ptr() as *const libc::c_void, send_buf.len()); }
+                                    } else {
+                                        // No socket - just echo
+                                        session.scrollback.print_line(&line, 0x07);
+                                    }
+                                }
+                            }
                             KeyEvent::Byte(b) if b.is_ascii_graphic() || b==b' ' => input.insert(b),
                             KeyEvent::Key(KeyCode::ArrowLeft) => input.move_left(),
                             KeyEvent::Key(KeyCode::ArrowRight) => input.move_right(),
                             KeyEvent::Key(KeyCode::Home) => input.home(),
                             KeyEvent::Key(KeyCode::End) => input.end(),
                             KeyEvent::Key(KeyCode::Delete) => input.backspace(),
+                            KeyEvent::Byte(0x7f) | KeyEvent::Byte(0x08) => input.backspace(), // Backspace key
                             _ => {}
                         }
                     }
                 }}
             } else if let Some(s) = &mut sock {
                 if fd == s.as_raw_fd() {
-                    if (r.revents & WRITE) != 0 && s.state == ConnState::Connecting { let _ = s.on_writable(); if s.state==ConnState::Connected { status.set_text("Connected."); } }
+                    // Socket writable (connection completing)
+                    if (r.revents & WRITE) != 0 && s.state == ConnState::Connecting {
+                        let _ = s.on_writable();
+                        if s.state == ConnState::Connected {
+                            status.set_text("Connected.");
+                        }
+                    }
+                    // Socket readable (MUD data)
                     if (r.revents & READ) != 0 {
-                        // Read from socket and feed session
                         let n = unsafe { libc::read(s.as_raw_fd(), buf.as_mut_ptr() as *mut libc::c_void, buf.len()) };
-                        if n>0 { session.feed(&buf[..n as usize]); }
+                        if n > 0 {
+                            session.feed(&buf[..n as usize]);
+                        } else if n == 0 {
+                            // Connection closed
+                            status.set_text("Connection closed.");
+                            sock = None;
+                        }
                     }
                 }
             }
         }
-        render_surface(width, height, &mut prev, &mut cur, &session, &input, &status, &caps);
-        if start.elapsed() > timeout { break; }
+
+        // 4. Run interpreter hooks (main.cc:149)
+        #[cfg(feature = "python")]
+        if let Some(ref mut interp) = python_interp {
+            use mcl_rust::plugins::stack::Interpreter;
+            let mut out = String::new();
+            let _ = interp.run_quietly("sys/postoutput", "", &mut out, true);
+        }
+
+        #[cfg(feature = "perl")]
+        if let Some(ref mut interp) = perl_interp {
+            use mcl_rust::plugins::stack::Interpreter;
+            let mut out = String::new();
+            let _ = interp.run_quietly("sys/postoutput", "", &mut out, true);
+        }
+
+        // 5. Session idle callbacks (main.cc:155) - time updates, etc.
+        // (not implemented yet in Session)
+
+        // 6. Widget idle callbacks (main.cc:160)
+        // (not implemented yet in widgets)
+
+        // 7. Timed interpreter callouts (main.cc:161 - EmbeddedInterpreter::runCallouts)
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
+
+        if now != last_callout_time {
+            last_callout_time = now;
+
+            #[cfg(feature = "python")]
+            if let Some(ref mut interp) = python_interp {
+                use mcl_rust::plugins::stack::Interpreter;
+                interp.set_int("now", now);
+                let mut out = String::new();
+                let _ = interp.run_quietly("sys/idle", "", &mut out, true);
+            }
+
+            #[cfg(feature = "perl")]
+            if let Some(ref mut interp) = perl_interp {
+                use mcl_rust::plugins::stack::Interpreter;
+                interp.set_int("now", now);
+                let mut out = String::new();
+                let _ = interp.run_quietly("sys/idle", "", &mut out, true);
+            }
+        }
     }
 
     // Restore keypad mode will be handled by Drop, but be explicit
