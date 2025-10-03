@@ -1,9 +1,9 @@
-# Repository Guidelines
+# Repository Guidelines — Quick Reference
 
-Condensed 1:1 summary of `CLAUDE.md`. For details, see CLAUDE.md.
+Condensed summary of `CLAUDE.md`. For details, see CLAUDE.md or ORIENTATION.md.
 
 ## Project Overview
-1:1 port of MCL (MUD Client for Linux) from C++ to Rust with "safety third" approach - liberal unsafe/FFI for maximum fidelity to reference implementation.
+**okros** - Rust port of MCL (MUD Client for Linux), ~70% complete. Transport layer for Perl/Python bots and LLM agents. Simplicity first: use Rust idioms when simpler, preserve C++ patterns when it reduces complexity.
 
 ## Tech Stack & Architecture
 - **Language**: Rust (unsafe permitted), **Reference**: `mcl-cpp-reference/` (~11k LOC)
@@ -25,23 +25,29 @@ cargo test --all-features      # All tests
 - ✅ Perl for dev scripts (unless shell/Python has clear advantage)
 
 ## Operational Modes
-**Discovery**: Complex C++ subsystems - build toys, extract patterns
-**Execution**: Direct C++ → Rust translation following PLAN.md tiers
+**Discovery**: Complex C++ subsystems - build toys, extract patterns (11/11 complete)
+**Execution**: Direct C++ → Rust translation following tier-by-tier approach (~70% done)
 
-## Core Methodology
-**Document Types**: PLAN.md (strategy), SPEC.md (toys), LEARNINGS.md (toys), CODE_MAP.md (tracking)
-**Principles**: Rust idioms when simpler, C++ structure when useful, tier-by-tier (Foundation → App)
+## Core Methodology (DDD Porting Mode)
+**Key Documents**:
+- ORIENTATION.md (start here), IMPLEMENTATION_PLAN.md (living status)
+- SPEC.md (toys), LEARNINGS.md (toys), CODE_MAP.md (tracking)
 
-## Discovery Mode
+**Principles**:
+- Simplicity first (Rust idioms when simpler, C++ patterns when useful)
+- Behavioral equivalence (not structural)
+- MVP philosophy (client = transport, scripts = logic)
+
+## Discovery Mode (11/11 toys complete)
 - When: C++ obscure, FFI unclear, integration complex
-- Output: Toys in `toys/` as reference artifacts
-- Cycle: LEARNINGS.md (goals) → research/impl loop → LEARNINGS.md (findings) → port to src/
-- **Key**: Start with questions, iterate to answers
+- Output: Toys in `toys/` (ncurses, Python/Perl FFI, telnet/MCCP, scrollback, plugins)
+- Status: All risky patterns validated
+- **Key**: Start with questions, iterate to answers, extract portable patterns
 
-## Execution Mode
+## Execution Mode (~70% complete)
 - When: Straightforward C++ → Rust translation
-- Output: Ported modules in `src/`
-- Discipline: Side-by-side comparison, preserve structure
+- Output: Ported modules in `src/` (network, UI, plugins done; event loop pending)
+- Next: Wire main event loop, add CLI args, end-to-end validation
 
 ## Documentation Structure
 **CODE_MAP.md**: One per directory with .rs files - update BEFORE structural commits
@@ -59,9 +65,10 @@ Propose specific next action, wait for approval.
 Example: "Next step: Port String.cc to src/string.rs following Step 6 of PLAN.md"
 
 ## Key Files
-- **PLAN.md**: Master strategy (Discovery + Execution phases)
-- **TOY_PLAN.md**: Discovery phase (5 toys)
-- **IMPLEMENTATION_PLAN.md**: Execution phase (tier-by-tier)
-- **DDD.md**: Methodology (project-agnostic)
-- **PLAYBOOK.md**: Condensed workflow
+- **ORIENTATION.md**: Executive summary (START HERE)
+- **IMPLEMENTATION_PLAN.md**: Living status (tier-by-tier, updated continuously)
+- **README.md**: User-facing overview
+- **TOY_PLAN.md / TOY_PLAN_2.md**: Discovery phase (11 toys complete)
+- **DDD.md**: Methodology (includes Porting Mode)
+- **CODE_MAP.md**: Project structure and C++ origins
 - **mcl-cpp-reference/**: C++ source (~29 .cc, ~50 .h)

@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is the MCL Rust Port project - a 1:1 port of MCL (MUD Client for Linux) from C++ to Rust using a "safety third" approach. The goal is maximum fidelity to the reference C++ implementation (~11k LOC), with liberal use of unsafe/FFI to match C++ behavior exactly.
+This is **okros** - a Rust port of MCL (MUD Client for Linux) reviving its design for modern use cases. The project translates ~11k LOC of C++ to Rust with a "simplicity first" approach: use Rust idioms when simpler, match C++ patterns when it reduces complexity, liberal use of unsafe/FFI where needed.
+
+**Philosophy**: okros is a transport layer. Perl/Python scripts handle command logic (aliases, triggers, automation).
 
 ## Tech Stack & Architecture
 
@@ -63,22 +65,25 @@ The porting workflow operates in two distinct modes:
 
 ## Core Methodology
 
-This project follows **Doc-Driven Development (DDD)** adapted for C++ → Rust porting with "safety third" approach.
+This project follows **Doc-Driven Development (DDD)** in **Porting Mode** - a reference-driven translation workflow combining Discovery (validate risky patterns) + Execution (systematic translation). See `DDD.md` for full methodology.
 
 ### Document Types & Usage (Porting Context)
-- **TOY_PLAN.md**: Discovery phase strategy (toys 1-5, current progress)
-- **IMPLEMENTATION_PLAN.md**: Execution phase strategy (tier-by-tier port)
+- **ORIENTATION.md**: Executive summary (START HERE - what is this, where are we, what's next)
+- **IMPLEMENTATION_PLAN.md**: Living status document (tier-by-tier, updated continuously with reality)
+- **TOY_PLAN.md / TOY_PLAN_2.md**: Discovery phase strategy (11 toys completed)
 - **SPEC.md**: C++ behavior to replicate (for Discovery mode toys)
 - **LEARNINGS.md**: FFI/unsafe patterns discovered (for Discovery mode toys)
 - **CODE_MAP.md**: Living map of ported modules (updated before structural commits)
-- **README.md**: Project overview and porting approach
+- **README.md**: User-facing project overview
 
 ### Universal Principles (Porting)
-- **1:1 fidelity first**: Match C++ structure/behavior exactly, defer idiomatic Rust to second pass
+- **Simplicity first**: Use Rust idioms when simpler, preserve C++ patterns when it reduces complexity
 - **"Safety third"**: Liberal use of unsafe, raw pointers, FFI to replicate C++ patterns
 - **Tier-by-tier**: Port in dependency order (Foundation → Core → UI → Logic → App)
 - **Reference-driven**: Always compare with C++ source, test against C++ MCL behavior
+- **Behavioral equivalence**: Same inputs → same outputs (structure can differ)
 - **Document deviations**: Mark any differences from C++ with comments
+- **Scope evolution**: MVP philosophy may emerge (defer features to scripts)
 
 ## Discovery Mode Methodology
 
@@ -184,12 +189,12 @@ This project follows **Doc-Driven Development (DDD)** adapted for C++ → Rust p
 
 ## Key Files Reference
 
-**Current Status**: Discovery phase COMPLETE (5/5 toys validated) — Execution phase scaffolded (Cargo.toml, src/ initialized)
+**Current Status**: ~70% COMPLETE - Discovery phase done (11/11 toys), Execution phase in progress (network/UI/plugins done, event loop pending)
 
 **File Structure**: See `CODE_MAP.md` for complete project structure and status
-- `./CODE_MAP.md` - Root directory structure, toys status, future src/ layout
-- `src/CODE_MAP.md` - Ported Rust modules (create when porting begins)
-- `tests/CODE_MAP.md` - Test organization (create when tests added)
+- `./CODE_MAP.md` - Root directory structure, toys status, src/ layout
+- `src/CODE_MAP.md` - Ported Rust modules with C++ origins
+- `src/plugins/CODE_MAP.md` - Plugin system (Python, Perl)
 
 **Reference Code**:
 - `mcl-cpp-reference/` - Original C++ codebase (~11k LOC, 29 .cc files, ~50 headers)
@@ -197,9 +202,11 @@ This project follows **Doc-Driven Development (DDD)** adapted for C++ → Rust p
 - `mcl-cpp-reference/h/*.h` - C++ headers for reference
 
 **Core Documentation**:
-- `CODE_MAP.md` - Project structure and status (START HERE for orientation)
-- `TOY_PLAN.md` - Discovery phase strategy and progress (toys 1-5)
-- `IMPLEMENTATION_PLAN.md` - Execution phase strategy (tier-by-tier port)
-- `DDD.md` - Methodology adapted for Rust porting
+- `ORIENTATION.md` - Executive summary (START HERE for quick overview)
+- `IMPLEMENTATION_PLAN.md` - Living status document (tier-by-tier, updated continuously)
+- `README.md` - User-facing overview (okros MUD client)
+- `DDD.md` - Doc-Driven Development methodology (includes Porting Mode)
+- `CODE_MAP.md` - Project structure and porting status
+- `TOY_PLAN.md` / `TOY_PLAN_2.md` - Discovery phase (11 toys completed)
 - `PLAYBOOK.md` - Condensed porting workflow guide
 - `AGENTS.md` - Quick reference summary
