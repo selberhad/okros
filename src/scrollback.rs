@@ -32,9 +32,11 @@ impl Scrollback {
     /// Get recent scrollback lines (for headless mode)
     /// Returns last N lines from scrollback, not just viewport
     pub fn recent_lines(&self, count: usize) -> &[Attrib] {
-        let total_rows = self.rows_filled.min(self.lines);
-        let rows_to_return = count.min(total_rows);
-        let start_row = total_rows - rows_to_return;
+        // Calculate how many actual lines are in the buffer
+        // The buffer holds 'lines' rows total, but some may be empty
+        let lines_in_buffer = self.total_lines_written.min(self.lines);
+        let rows_to_return = count.min(lines_in_buffer);
+        let start_row = lines_in_buffer - rows_to_return;
         let start_offset = start_row * self.width;
         let end_offset = start_offset + rows_to_return * self.width;
         &self.buf[start_offset..end_offset]

@@ -478,6 +478,47 @@ MUDs use two types of prompts:
 
 Both types are now properly captured by `get_buffer` and `peek` commands.
 
+## Known Limitations: Full-Screen Displays
+
+**IMPORTANT: Some MUD content cannot be captured in headless mode.**
+
+### The Problem
+
+Some MUDs use ANSI cursor positioning (e.g., `ESC[H`, `ESC[row;colH`) to draw full-screen displays like:
+- Help pages during character creation
+- Complex menus
+- Character sheets
+- Maps
+
+When a MUD uses cursor positioning to draw text at arbitrary screen locations (instead of line-by-line output), okros's scrollback buffer cannot capture it. The scrollback only captures newline-terminated text via `print_line()`.
+
+### Example: Class Selection Help
+
+During Nodeka character creation, typing "help" at the class selection prompt displays a full-screen list of classes. However, this help screen:
+- Uses cursor positioning to draw the list
+- Gets cleared when you press enter
+- Never appears in the scrollback buffer
+- Results in an empty buffer or just "Press enter to continue"
+
+### Workarounds
+
+1. **Try the command anyway** - If you know a valid option (e.g., "Fallad" for Nodeka), just try it:
+   ```bash
+   echo '{"cmd":"sock_send","data":"Fallad\n"}' | nc -U /tmp/okros/instance.sock
+   ```
+
+2. **Use TTY mode instead** - Run `okros` interactively (not headless) to see the full-screen displays
+
+3. **Check MUD documentation** - Look up valid options on the MUD's website or wiki
+
+4. **Trial and error** - If the MUD rejects your input, it will tell you and you can try again
+
+### This is NOT a Bug
+
+This is a fundamental limitation of headless mode. okros was designed as a line-oriented MUD client for TTY use. Full-screen cursor-positioned displays are visible in TTY mode but cannot be captured in scrollback history for headless/agent mode.
+
+**Bottom line**: If you can't see expected information in the buffer, it might be cursor-positioned content. Try the command anyway based on external knowledge of the MUD.
+
 ## Advanced: Stream Mode
 
 For real-time monitoring, use stream mode:
