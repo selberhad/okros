@@ -173,6 +173,37 @@ These are intentional trade-offs for the MVP:
 - **Plugin manager** - Install/update scripts from repository
 - **Sandboxing** - Limit plugin capabilities (file access, network, etc.)
 
+### WASM Plugin System (v2)
+**Priority**: FUTURE - Post-v1.0 architectural enhancement
+
+Replace language-specific FFI (pyo3, Perl XS) with universal WASM runtime:
+- **Multi-language support** - Any WASM-capable language (Rust, C, C++, Go, AssemblyScript, etc.)
+- **Sandboxing by default** - WASM's capability-based security model
+- **Hot reload** - WASM modules can be loaded/unloaded dynamically
+- **Performance** - Near-native execution, no interpreter overhead
+- **Distribution** - Single `.wasm` file per plugin, no language runtime dependencies
+
+**Implementation approach**:
+- Runtime: `wasmtime` or `wasmer` (both mature Rust WASM runtimes)
+- Host API: WASI + custom okros extensions (MUD events, send commands, buffer access)
+- Plugin interface: Standardized event handlers (on_line, on_prompt, on_connect, etc.)
+- Backward compat: Keep Perl/Python support alongside WASM (feature gates)
+
+**Example plugin workflow**:
+1. Write plugin in any language (Rust, Go, C++, etc.)
+2. Compile to WASM with okros bindings
+3. Drop `.wasm` file in `~/.okros/plugins/`
+4. Client loads at runtime, calls event handlers
+
+**Benefits over current FFI**:
+- No per-language integration (current: pyo3 for Python, raw FFI for Perl)
+- Sandboxed by default (current: full process access)
+- Cross-platform (WASM is portable, native FFI is not)
+- Version isolation (each plugin brings its own runtime)
+
+**Estimated effort**: 2-3 weeks for MVP WASM runtime integration
+**Reference**: `wasmtime` embedding guide, WASI preview 2 spec
+
 ### Toy12 (Internal MUD) Enhancements
 - More rooms, items, NPCs (richer offline demo)
 - Save/load game state (persistent offline world)
