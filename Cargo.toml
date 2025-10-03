@@ -10,14 +10,15 @@ default = []
 # Enabling `python` pulls in the optional `pyo3` dependency
 python = ["pyo3"]
 perl = []
+mccp = ["flate2"]
 
 [dependencies]
 libc = "0.2"
 ncurses = "5.101"
 bitflags = "2.4"
+flate2 = { version = "1.0", optional = true }
 
 [dependencies.pyo3]
 version = "0.20"
 optional = true
 features = ["auto-initialize"]
-
