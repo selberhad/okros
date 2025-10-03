@@ -21,7 +21,7 @@ Port MCL C++ codebase to Rust, applying patterns from Discovery phase. **Use Rus
 
 ## Tier-by-Tier Port Strategy
 
-### Tier 1: Foundation Types
+### Tier 1: Foundation Types — STATUS: In Progress
 **Files**: `String.cc`, `Buffer.cc`, `StaticBuffer.cc`, `Color.cc`, `List.h`
 
 **Approach**: Use Rust stdlib unless C++ has non-standard behavior
@@ -36,18 +36,22 @@ Port MCL C++ codebase to Rust, applying patterns from Discovery phase. **Use Rus
 
 **Milestone**: Foundation types available (mostly stdlib), any adapters tested
 
+**Current Status**:
+- Using `String`/`Vec<u8>` directly; no custom wrappers needed.
+- ANSI SGR → attrib converter implemented (src/ansi.rs) with fragmentation and bright color cases.
+
 **Key decision**: Don't reimplement what Rust stdlib provides better
 
 ---
 
-### Tier 2: Core Abstractions
+### Tier 2: Core Abstractions — STATUS: Mostly Complete
 **Files**: `Selectable.cc`, `Selection.cc`, `TTY.cc`, `Config.cc`, `MUD.cc`, `Socket.cc`
 
 **Approach**: Direct translation with Toy 3 patterns for any globals
 
 **Steps**:
 6. Port `Selectable`/`Selection` → `src/selectable.rs` (trait + structs)
-7. Port `TTY` → `src/tty.rs` (unsafe wrapper around terminal FDs)
+7. Port `TTY` → `src/tty.rs` (unsafe wrapper around terminal FDs) — DONE (raw mode + keypad app mode)
 8. Port `Config` → `src/config.rs` (struct with C-like initialization)
 9. Port `MUD` → `src/mud.rs` (struct with socket state)
 10. Port `Socket` → `src/socket.rs` (`std::net::TcpStream` wrapper or raw FD)
@@ -55,34 +59,49 @@ Port MCL C++ codebase to Rust, applying patterns from Discovery phase. **Use Rus
 
 **Milestone**: Core types compile, network/config functional
 
+**Current Status**:
+- `src/selectable.rs`, `src/select.rs` — Selection/poll abstractions present with tests.
+- `src/socket.rs` — Nonblocking IPv4 socket (raw fd) with loopback connect/refused tests.
+- `src/config.rs` — Basic config struct and helpers present with tests.
+- `src/mud.rs` — Socket/config wiring with loopback tests.
+- `src/tty.rs` — DONE earlier (raw mode + keypad app mode).
+- `src/telnet.rs` — Telnet parser ported (EOR-only replies; SB stripping; prompt events). Unit tests ported.
+- `src/mccp.rs` — Decompressor trait + real inflate behind `mccp` feature using flate2. Unit + integration tests ported.
+- `src/input.rs` — Key decoder (ESC sequence normalization) added with tests.
+
 ---
 
-### Tier 3: UI Layer
+### Tier 3: UI Layer — STATUS: Partially Complete
 **Files**: `Curses.cc`, `Window.cc`, `OutputWindow.cc`, `InputLine.cc`, `InputBox.cc`, `StatusLine.cc`, `Screen.cc`
 
 **Approach**: Apply Toy 2 ncurses patterns
 
 **Steps**:
 12. Add ncurses dependency (choice from Toy 2: `ncurses-rs` or `pancurses`)
-13. Port `Curses` → `src/curses.rs` using Toy 2 wrapper patterns
+13. Port `Curses` → `src/curses.rs` using Toy 2 wrapper patterns — READ-ONLY CAPS (smacs/rmacs via ncurses tigetstr)
 14. Port `Window` → `src/window.rs` (base widget)
 15. Port `OutputWindow` → `src/output_window.rs`
 16. Port `InputLine`, `InputBox` → `src/input_line.rs`, `src/input_box.rs`
 17. Port `StatusLine` → `src/status_line.rs`
-18. Port `Screen` → `src/screen.rs` (screen manager)
-19. Integration tests (render basic UI)
+18. Port `Screen` → `src/screen.rs` (screen manager) — DONE (diff renderer + scroll-region planner)
+19. Integration tests (render basic UI) — screen unit tests cover renderer/ACS/scroll planner; end-to-end ANSI pipeline tested.
 
 **Milestone**: UI compiles, basic rendering works
 
+**Current Status**:
+- `src/screen.rs` — DONE (diff renderer + scroll-region planner) with unit tests.
+- `src/window.rs`, `src/output_window.rs`, `src/input_line.rs`, `src/status_line.rs` — initial ports with unit tests.
+- `src/curses.rs` — skeleton following Toy 2 patterns; to be finalized with termcaps.
+
 ---
 
-### Tier 4: Logic & Base Interpreter Interface
+### Tier 4: Logic & Base Interpreter Interface — STATUS: Partially Complete
 **Files**: `Session.cc`, `Alias.cc`, `Hotkey.cc`, `Interpreter.cc`, `Pipe.cc`, `Embedded.cc`, `EmbeddedInterpreter.h`, `Chat.cc`, `Borg.cc`, `Group.cc`
 
 **Approach**: Direct translation, prepare plugin trait
 
 **Steps**:
-20. Port `Session` → `src/session.rs` (state machine)
+20. Port `Session` → `src/session.rs` (state machine) — DONE (wires mccp→telnet→ansi→scrollback)
 21. Port `Alias`, `Hotkey` → `src/alias.rs`, `src/hotkey.rs` (command tables)
 22. Port `Interpreter`, `Pipe` → `src/interpreter.rs`, `src/pipe.rs`
 23. Port `Embedded`/`EmbeddedInterpreter` → `src/embedded.rs` (base trait)
@@ -90,6 +109,12 @@ Port MCL C++ codebase to Rust, applying patterns from Discovery phase. **Use Rus
 25. Integration tests (command processing)
 
 **Milestone**: Logic layer compiles, base interpreter interface ready
+
+**Current Status**:
+- `src/session.rs` — DONE: wires MCCP → telnet → ANSI → scrollback; pipeline tests added.
+- `src/plugins/stack.rs` — Stacked interpreter ported; tests for ordering, disable/enable, run_quietly, set/get.
+- `src/engine.rs` — Headless SessionEngine providing viewport and attach/detach hooks.
+- `src/control.rs` — Minimal control server (Unix socket) with commands: `status`, `attach`, `detach`, `send` (buffer append), `get_buffer`, `stream`, and `sock_send`.
 
 ---
 
@@ -125,13 +150,13 @@ Port MCL C++ codebase to Rust, applying patterns from Discovery phase. **Use Rus
 
 ---
 
-### Tier 6: Application & Main Loop
+### Tier 6: Application & Main Loop — STATUS: In Progress
 **Files**: `main.cc`
 
 **Approach**: Apply Toy 3 global patterns, wire everything together
 
 **Steps**:
-36. Port `main.cc` → `src/main.rs` (initialization sequence)
+36. Port `main.cc` → `src/main.rs` (initialization sequence) — Minimal demo: raw TTY + keypad app mode; tiny ANSI diff render; short input loop with key normalization.
 37. Set up global state using patterns from Toy 3
 38. Implement main event loop
 39. Conditional interpreter loading:
@@ -140,6 +165,42 @@ Port MCL C++ codebase to Rust, applying patterns from Discovery phase. **Use Rus
 40. Wire up all subsystems (UI, networking, commands, interpreters)
 
 **Milestone**: Binary compiles and runs
+
+---
+
+### Tier 6b: Non-Interactive/Detachable Mode (LLM-Friendly)
+
+Objective: Support a headless mode suitable for LLM agents and automation. Allow sessions to detach/reattach, buffering data while detached.
+
+Design:
+- Engine/Daemon: Factor event loop into a reusable `SessionEngine` that can run without a TTY. In headless mode, it continues to poll sockets, process MCCP/telnet/ANSI, and append to a ring buffer (Scrollback).
+- Control channel: Provide a local control API for attach/detach and commands (send text, get buffer, get status). Options:
+  - Unix domain socket (default) or TCP localhost port
+  - Simple JSON Lines protocol for commands/events
+  - Authentication: local filesystem permissions on the socket path
+- Attach client: Interactive frontend connects to the engine, subscribes to streamed output (tail from a cursor), and forwards keystrokes/commands.
+- Buffering semantics: While detached, inbound text accumulates in the ring buffer (configurable size); readers provide a cursor/token to resume from last seen position. Drop policy: oldest lines evicted on overflow.
+- CLI flags:
+  - `--headless --instance <name>`: run engine only, publish control socket at `$XDG_RUNTIME_DIR/mcl/<name>.sock`
+  - `--attach <name>`: connect to running engine and attach TTY UI
+  - `--json` (optional): non-interactive JSON-in/JSON-out over stdin/stdout for simplified agent integration
+
+Steps:
+1. Extract current poll loop into `SessionEngine` (no TTY dependencies), parametrized over a `Decompressor` and `Socket`.
+2. Add control server (Unix socket) with minimal commands: `attach`, `detach`, `send {data}`, `get_buffer {from}`, `status`.
+3. Implement ring-buffer cursoring and event streaming (server pushes `output {chunk, cursor}` to clients).
+4. Build `mclctl` subcommand or `--attach` client in the main binary to attach and render via Screen.
+5. Tests:
+   - Headless engine continues to receive bytes from a loopback server while no client is attached; later attach and verify buffered output is delivered.
+   - Multiple attaches/detaches; ensure cursors work and buffer eviction is handled.
+   - JSON mode: pipe commands in; receive events out deterministically.
+
+Milestone: Engine runs headless; attach/reattach works; buffer persists between attaches within retention limits.
+
+**Current Status**:
+- SessionEngine extracted and headless-safe; ring buffer via Scrollback.
+- Control server implemented over Unix socket with JSON Lines protocol.
+- Streaming (`stream`) and buffer retrieval (`get_buffer`) implemented; attach/detach toggles engine state.
 
 ---
 
@@ -268,9 +329,10 @@ features = ["auto-initialize"]
 
 ---
 
-## Next Steps
+## Next Steps (Updated)
 
-1. Review Toy LEARNINGS.md files for patterns
-2. Initialize Cargo workspace with dependencies
-3. Begin Tier 1: Port String.cc using Toy 1 patterns
-4. Follow tier-by-tier sequence with milestone validation
+1. Tier 3: Port `Window`, `OutputWindow`, `InputLine`, `InputBox`, `StatusLine` and wire `screen` rendering to `session` frames.
+2. Tier 2: Port `Selectable`/`Selection`, `Config`, `MUD`, `Socket` (nonblocking connect semantics from Toy 9).
+3. Tier 6: Expand main loop to real event loop (select/poll abstraction), use key decoder + session + screen diffs.
+4. Tier 5: Optional — Port Python/Perl interpreters behind features.
+5. Tier 7: Manual smoke tests + golden tests vs C++.
