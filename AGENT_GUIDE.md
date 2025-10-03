@@ -21,11 +21,58 @@ echo '{"cmd":"get_buffer"}' | nc -U /tmp/okros/mybot.sock
 
 ## Helper Scripts
 
-### mud_cmd.sh - Send Command and Read Response
+### Session Management
 
+**start_headless.sh** - Start or restart a headless session:
+```bash
+./scripts/start_headless.sh [instance] [host:port]
+# Defaults: instance=nodeka, host:port=nodeka.com:23
+# Gracefully stops existing session, starts new one, auto-connects
+```
+
+**stop_headless.sh** - Gracefully stop a headless session:
+```bash
+./scripts/stop_headless.sh [instance]
+# Sends quit command, waits for cleanup
+```
+
+**list_sessions.sh** - Show all running headless sessions:
+```bash
+./scripts/list_sessions.sh
+# Lists all active sessions with socket paths
+```
+
+**session_status.sh** - Detailed session information:
+```bash
+./scripts/session_status.sh [instance]
+# Shows: status, socket path, log files, process IDs
+```
+
+### Output/Buffer Access
+
+**mud_cmd.sh** - Send command and read response:
 ```bash
 ./scripts/mud_cmd.sh <socket> <command>
 # Sends command, waits 2s, shows last 5 lines
+```
+
+**get_buffer.sh** - Fetch full scrollback buffer:
+```bash
+./scripts/get_buffer.sh [instance]
+# Returns entire viewport buffer (current screen contents)
+```
+
+**recent_lines.sh** - Get last N lines from scrollback:
+```bash
+./scripts/recent_lines.sh [instance] [num_lines]
+# Defaults: instance=nodeka, num_lines=10
+```
+
+**watch_output.sh** - Continuously watch MUD output:
+```bash
+./scripts/watch_output.sh [instance] [num_lines] [interval]
+# Defaults: instance=nodeka, num_lines=20, interval=1s
+# Like tail -f for MUD output (Ctrl+C to stop)
 ```
 
 ### Test Credentials

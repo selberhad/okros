@@ -172,10 +172,19 @@ echo '{"cmd":"status"}' | nc -U /tmp/okros/demo.sock
 echo '{"cmd":"stream"}' | nc -U /tmp/okros/ar.sock
 ```
 
-**Helper script** for interactive testing:
+**Helper scripts** for session management and output access:
 ```bash
-# Send command and view response (waits 2s, shows last 5 lines)
-./scripts/mud_cmd.sh /tmp/okros/ar.sock "look"
+# Session Management
+./scripts/start_headless.sh nodeka nodeka.com:23  # Start/restart session
+./scripts/stop_headless.sh nodeka                 # Gracefully stop session
+./scripts/list_sessions.sh                        # Show all running sessions
+./scripts/session_status.sh nodeka                # Detailed session info
+
+# Output/Buffer Access
+./scripts/mud_cmd.sh /tmp/okros/nodeka.sock "look"  # Send command + show response
+./scripts/get_buffer.sh nodeka                      # Get full scrollback buffer
+./scripts/recent_lines.sh nodeka 20                 # Get last N lines
+./scripts/watch_output.sh nodeka                    # Continuously watch output
 ```
 
 **Test credentials** are stored in `.env` (gitignored) - see `.env.example` for format.
@@ -186,7 +195,7 @@ echo '{"cmd":"stream"}' | nc -U /tmp/okros/ar.sock
 
 **See [AGENT_GUIDE.md](AGENT_GUIDE.md) for complete LLM agent documentation** including:
 - Control protocol reference
-- Helper scripts (`scripts/mud_cmd.sh`)
+- Helper scripts (session management, buffer access, command sending)
 - Test credentials (`.env`)
 - Critical rules (no command spamming, never guess MUD commands)
 - Common pitfalls and troubleshooting
@@ -235,7 +244,7 @@ sock.close()
 The control server uses JSON Lines (one JSON object per line):
 
 **Commands:**
-```json
+```javascript
 {"cmd":"status"}                               // Get session/game status
 {"cmd":"attach"}                               // Attach to session
 {"cmd":"detach"}                               // Detach from session
@@ -249,7 +258,7 @@ The control server uses JSON Lines (one JSON object per line):
 ```
 
 **Responses:**
-```json
+```javascript
 {"event":"Ok"}
 {"event":"Status","attached":true}                              // Network mode
 {"event":"Status","location":"cave","inventory_count":2}        // Offline mode
