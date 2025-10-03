@@ -95,8 +95,9 @@ okros                               # Start without connection (use #open comman
 okros --offline                     # Play internal MUD (no network required)
 
 # Headless mode (background daemon)
-okros --headless --instance NAME    # Start headless session
-okros --attach NAME                 # Attach to running session
+okros --headless --instance NAME              # Start headless session (network)
+okros --headless --offline --instance NAME    # Headless offline MUD (for testing/LLM agents)
+okros --attach NAME                           # Attach to running session
 
 # Environment variables
 MCL_CONNECT=127.0.0.1:4000 okros   # Auto-connect on startup
@@ -149,21 +150,30 @@ okros --offline
 Run a MUD session as a background daemon:
 
 ```bash
-# Start headless session named "ar"
+# Start headless session (network mode)
 okros --headless --instance ar example.com 4000
+
+# Start headless offline MUD (perfect for LLM testing)
+okros --headless --offline --instance demo
 
 # Attach to running session
 okros --attach ar
 
 # Send commands to session
-echo '{"cmd":"send","data":"look\n"}' | nc -U ~/.mcl/control/ar.sock
+echo '{"cmd":"send","data":"look\n"}' | nc -U /tmp/okros/ar.sock
 
 # Get buffered output
-echo '{"cmd":"get_buffer"}' | nc -U ~/.mcl/control/ar.sock
+echo '{"cmd":"get_buffer"}' | nc -U /tmp/okros/ar.sock
+
+# Check game status (offline mode only)
+echo '{"cmd":"status"}' | nc -U /tmp/okros/demo.sock
+# Returns: {"event":"Status","inventory_count":0,"location":"clearing"}
 
 # Stream live output
-echo '{"cmd":"stream"}' | nc -U ~/.mcl/control/ar.sock
+echo '{"cmd":"stream"}' | nc -U /tmp/okros/ar.sock
 ```
+
+**Headless Offline Mode** is perfect for LLM agent development and testing - no network required, deterministic behavior, and full JSON control protocol.
 
 ### LLM Agent Integration
 
@@ -172,11 +182,13 @@ okros headless mode is designed for simplicity - LLM agents just need to read te
 ```python
 import socket
 import json
-import os
+
+# Start headless offline MUD for testing (no real MUD server needed)
+# $ okros --headless --offline --instance demo
 
 # Connect to headless okros instance
 sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-sock.connect(os.path.expanduser("~/.mcl/control/ar.sock"))
+sock.connect("/tmp/okros/demo.sock")
 
 # Read MUD output
 sock.sendall(json.dumps({"cmd": "get_buffer"}).encode() + b'\n')
@@ -188,13 +200,21 @@ mud_text = "\n".join(response.get("lines", []))
 # (Your LLM logic here)
 
 # Send command back to MUD
-action = "north\n"  # LLM's decision
+action = "take rusty sword\n"  # LLM's decision
 sock.sendall(json.dumps({"cmd": "send", "data": action}).encode() + b'\n')
+sock.recv(4096)  # Read OK response
+
+# Check game state (offline mode provides structured status)
+sock.sendall(json.dumps({"cmd": "status"}).encode() + b'\n')
+status = json.loads(sock.recv(4096))
+# Returns: {"event":"Status","inventory_count":1,"location":"clearing"}
 
 sock.close()
 ```
 
 **Philosophy**: No structured events, no complex parsing - just raw MUD text. LLMs already understand natural language; let them do what they do best.
+
+**Tip**: Use `--headless --offline` for LLM agent development - provides a deterministic test environment with the `status` command for validation.
 
 ### Control Server Protocol
 
@@ -202,26 +222,27 @@ The control server uses JSON Lines (one JSON object per line):
 
 **Commands:**
 ```json
-{"cmd":"status"}
-{"cmd":"attach"}
-{"cmd":"detach"}
-{"cmd":"send","data":"north\n"}
-{"cmd":"get_buffer","from":0}
-{"cmd":"stream","interval_ms":200}
-{"cmd":"sock_send","data":"raw telnet bytes"}
+{"cmd":"status"}                               // Get session/game status
+{"cmd":"attach"}                               // Attach to session
+{"cmd":"detach"}                               // Detach from session
+{"cmd":"send","data":"north\n"}                // Send command to MUD
+{"cmd":"get_buffer","from":0}                  // Get buffered output
+{"cmd":"stream","interval_ms":200}             // Stream live output
+{"cmd":"sock_send","data":"raw telnet bytes"}  // Send raw bytes (network mode)
 ```
 
 **Responses:**
 ```json
 {"event":"Ok"}
-{"event":"Status","attached":true}
+{"event":"Status","attached":true}                              // Network mode
+{"event":"Status","location":"cave","inventory_count":2}        // Offline mode
 {"event":"Buffer","lines":["You are standing in a room.","Exits: north, south"]}
 {"event":"Error","message":"not connected"}
 ```
 
 ### Configuration
 
-Create `~/.okros/config` (or `~/.mcl/mclrc` for MCL compatibility):
+Create `~/.okros/config`:
 
 ```
 MUD example {

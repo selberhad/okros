@@ -12,16 +12,26 @@ use libc::{fcntl, F_SETFL, O_NONBLOCK};
 use std::net::Ipv4Addr;
 
 fn main() {
-    // CLI: --headless --instance NAME | --attach NAME | --offline
+    // CLI: --headless [--offline] --instance NAME | --attach NAME | --offline
     let args: Vec<String> = std::env::args().collect();
     if args.len() > 2 && args[1] == "--headless" {
-        let inst = args.get(3).cloned().unwrap_or_else(|| "default".to_string());
-        let path = default_socket_path(&inst);
-        let eng = SessionEngine::new(PassthroughDecomp::new(), 80, 20, 2000);
-        let srv = ControlServer::new(path.clone(), eng);
-        eprintln!("Headless engine; control socket at {}", path.display());
-        let _ = srv.run();
-        return;
+        // Check for --offline flag in args
+        let offline = args.iter().any(|a| a == "--offline");
+
+        if offline {
+            // Headless offline mode: control socket + internal MUD
+            run_headless_offline_mode(&args);
+            return;
+        } else {
+            // Regular headless mode: control socket + network
+            let inst = args.get(3).cloned().unwrap_or_else(|| "default".to_string());
+            let path = default_socket_path(&inst);
+            let eng = SessionEngine::new(PassthroughDecomp::new(), 80, 20, 2000);
+            let srv = ControlServer::new(path.clone(), eng);
+            eprintln!("Headless engine; control socket at {}", path.display());
+            let _ = srv.run();
+            return;
+        }
     } else if args.len() > 2 && args[1] == "--attach" {
         let inst = args.get(2).cloned().unwrap_or_else(|| "default".to_string());
         let path = default_socket_path(&inst);
@@ -395,6 +405,149 @@ fn run_offline_mode() {
 
     // Restore keypad mode
     let _ = tty.keypad_application_mode(false);
+}
+
+fn run_headless_offline_mode(args: &[String]) {
+    use okros::offline_mud::{World, parse};
+    use serde_json::json;
+    use std::os::unix::net::UnixListener;
+    use std::io::{BufRead, BufReader, Write};
+    use std::thread;
+
+    // Parse instance name from args
+    let inst = args.iter()
+        .position(|a| a == "--instance")
+        .and_then(|i| args.get(i + 1))
+        .cloned()
+        .unwrap_or_else(|| "default".to_string());
+
+    let path = default_socket_path(&inst);
+
+    // Remove existing socket if present
+    let _ = std::fs::remove_file(&path);
+
+    // Create Unix socket listener
+    let listener = match UnixListener::bind(&path) {
+        Ok(l) => l,
+        Err(e) => {
+            eprintln!("Failed to bind socket: {}", e);
+            return;
+        }
+    };
+
+    eprintln!("Headless offline MUD; control socket at {}", path.display());
+
+    // Server state: World + Session
+    struct OfflineMudServer {
+        world: World,
+        session: Session<PassthroughDecomp>,
+    }
+
+    impl OfflineMudServer {
+        fn new() -> Self {
+            let mut world = World::new();
+            let session = Session::new(PassthroughDecomp::new(), 80, 24, 2000);
+
+            // Show initial room
+            let initial = world.execute(parse("look").unwrap());
+            let mut server = Self { world, session };
+            server.session.feed(initial.as_bytes());
+            server
+        }
+
+        fn handle_command(&mut self, cmd_json: &str) -> String {
+            let cmd: serde_json::Value = match serde_json::from_str(cmd_json) {
+                Ok(v) => v,
+                Err(_) => return json!({"event":"Error","message":"Invalid JSON"}).to_string(),
+            };
+
+            let cmd_type = cmd["cmd"].as_str().unwrap_or("");
+
+            match cmd_type {
+                "send" => {
+                    let data = cmd["data"].as_str().unwrap_or("");
+
+                    // Parse MUD command
+                    match parse(data.trim()) {
+                        Ok(mud_cmd) => {
+                            // Execute in World
+                            let output = self.world.execute(mud_cmd);
+
+                            // Feed to Session pipeline (ANSI → scrollback)
+                            self.session.feed(output.as_bytes());
+
+                            json!({"event":"Ok"}).to_string()
+                        }
+                        Err(e) => {
+                            // Parse error - show in session
+                            let err_msg = format!("\x1b[31m{}\x1b[0m\n", e);
+                            self.session.feed(err_msg.as_bytes());
+                            json!({"event":"Ok"}).to_string()
+                        }
+                    }
+                }
+                "get_buffer" => {
+                    // Extract scrollback as lines
+                    let viewport = self.session.scrollback.viewport_slice();
+                    let text: String = viewport
+                        .iter()
+                        .map(|&a| (a & 0xFF) as u8 as char)
+                        .collect();
+
+                    let lines: Vec<String> = text
+                        .lines()
+                        .map(|s| s.trim_end().to_string())
+                        .filter(|s| !s.is_empty())
+                        .collect();
+
+                    json!({"event":"Buffer","lines":lines}).to_string()
+                }
+                "status" => {
+                    let location = self.world.player.location;
+                    let inv_count = self.world.player.inventory.len();
+                    json!({
+                        "event":"Status",
+                        "location":location,
+                        "inventory_count":inv_count
+                    }).to_string()
+                }
+                _ => json!({"event":"Error","message":"Unknown command"}).to_string(),
+            }
+        }
+    }
+
+    // Create shared server state
+    use std::sync::{Arc, Mutex};
+    let server = Arc::new(Mutex::new(OfflineMudServer::new()));
+
+    // Accept connections and handle them
+    for stream in listener.incoming() {
+        match stream {
+            Ok(s) => {
+                let server_clone = server.clone();
+                thread::spawn(move || {
+                    let mut reader = BufReader::new(match s.try_clone() {
+                        Ok(s) => s,
+                        Err(_) => return,
+                    });
+                    let mut writer = s;
+                    let mut line = String::new();
+
+                    while reader.read_line(&mut line).unwrap_or(0) > 0 {
+                        let response = {
+                            let mut srv = server_clone.lock().unwrap();
+                            srv.handle_command(line.trim())
+                        };
+                        if writeln!(writer, "{}", response).is_err() {
+                            break;
+                        }
+                        line.clear();
+                    }
+                });
+            }
+            Err(e) => eprintln!("control: accept error: {}", e),
+        }
+    }
 }
 
 fn render_surface(width: usize, height: usize, prev: &mut Vec<u16>, cur: &mut Vec<u16>, session: &Session<PassthroughDecomp>, input: &okros::input_line::InputLine, status: &okros::status_line::StatusLine, caps: &okros::curses::AcsCaps) {

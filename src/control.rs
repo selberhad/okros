@@ -168,7 +168,7 @@ fn stream_loop(stream: &mut UnixStream, engine: &Arc<Mutex<SessionEngine<Passthr
 pub fn default_socket_path(instance: &str) -> PathBuf {
     let base = std::env::var("XDG_RUNTIME_DIR").unwrap_or_else(|_| "/tmp".to_string());
     let mut p = PathBuf::from(base);
-    p.push("mcl"); let _ = std::fs::create_dir_all(&p);
+    p.push("okros"); let _ = std::fs::create_dir_all(&p);
     p.push(format!("{}.sock", instance));
     p
 }

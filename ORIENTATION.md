@@ -18,7 +18,7 @@
 - **Headless Engine**: SessionEngine + control server (Unix socket, JSON Lines protocol)
 - **Offline Mode**: Internal MUD for testing/demo (5 rooms, 3 items, ANSI colors, `--offline` flag)
 - **Main Event Loop**: poll-based I/O on TTY + socket with 250ms timeout
-- **CLI Args**: `--headless`, `--instance <name>`, `--attach <name>`, `--offline` implemented
+- **CLI Args**: `--headless`, `--instance <name>`, `--attach <name>`, `--offline`, `--headless --offline` (combined) implemented
 - **# Commands**: `#quit`, `#open <host> <port>` functional
 - **Tests**: 71 unit tests + 8 integration tests passing
 
@@ -46,7 +46,7 @@
 - [ ] Manual smoke test: `cargo run` → `#open <mud-ip> <port>` → verify send/receive
 - [ ] Headless test:
   - Start: `cargo run --headless --instance test`
-  - Connect via Unix socket: `~/.mcl/control/test.sock`
+  - Connect via Unix socket: `/tmp/okros/test.sock`
   - Send commands: `{"cmd":"send","data":"look\n"}`
   - Get buffer: `{"cmd":"get_buffer"}`
 - [ ] Attach test: `cargo run --attach test` → verify screen renders buffered data
@@ -176,7 +176,7 @@ quit                   # Exit
 → YES! Build with `--features python` or `--features perl`, hooks implemented
 
 **"How do I test headless mode?"**
-→ `cargo run --headless --instance test`, then connect to `~/.mcl/control/test.sock`
+→ `cargo run --headless --instance test`, then connect to `/tmp/okros/test.sock`
 
 **"What's left to do?"**
 → Validation: Connect to real MUD, test with Perl bot, find/fix edge case bugs

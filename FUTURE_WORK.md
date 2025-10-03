@@ -90,7 +90,7 @@ This document tracks post-MVP enhancements and deferred features for okros.
 Port C++ connect menu system:
 - **Selection.cc** (UI list widget) - base class for menus
 - **MUDSelection widget** - connect menu triggered by Alt-O
-- **Config file parsing** (~/.mcl/config) - load MUD definitions
+- **Config file parsing** (~/.okros/config) - load MUD definitions
 - **MUD list storage** (MUDList class) - manage saved MUDs
 
 **MVP approach**: Use `--offline` flag to launch internal MUD directly
