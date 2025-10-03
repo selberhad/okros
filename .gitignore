@@ -36,3 +36,8 @@ test2
 # Environment files
 .env
 .env.local
+
+# Coverage artifacts
+target/llvm-cov/
+*.profraw
+*.profdata

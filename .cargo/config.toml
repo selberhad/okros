@@ -1,0 +1,28 @@
+# Cargo configuration and custom aliases
+
+[alias]
+# Testing
+t = "test"
+tw = "test --lib -- --test-threads=1"  # Watch mode friendly
+ttt = "!./test-with-tty.sh"  # TTY tests
+cov = "llvm-cov --html"  # Coverage report
+
+# Building
+b = "build"
+br = "build --release"
+bp = "build --features python"
+bperl = "build --features perl"
+ball = "build --all-features"
+
+# Running
+rp = "run --features python"
+rperl = "run --features perl"
+rall = "run --all-features"
+
+# Code quality
+lint = "clippy -- -D warnings"
+fmt-check = "fmt -- --check"
+check-all = "check --all-features"
+
+# Maintenance
+clean-all = "!cargo clean && rm -rf target"

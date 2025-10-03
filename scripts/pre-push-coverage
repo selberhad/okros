@@ -1,0 +1,36 @@
+#!/bin/bash
+# Git pre-push hook: Update coverage report before pushing
+# This ensures COVERAGE_REPORT.md stays in sync with code changes
+
+echo "🔬 Running pre-push coverage check..."
+
+# Run coverage report generation
+if ! ./scripts/generate-coverage-report.sh; then
+    echo "❌ Coverage report generation failed"
+    exit 1
+fi
+
+# Check if COVERAGE_REPORT.md was modified
+if git diff --exit-code COVERAGE_REPORT.md > /dev/null; then
+    echo "✅ Coverage report is up-to-date"
+else
+    echo ""
+    echo "📊 Coverage report has been updated!"
+    echo ""
+    echo "Changes detected in COVERAGE_REPORT.md"
+    echo ""
+    echo "Please review and commit the updated coverage report:"
+    echo "  git add COVERAGE_REPORT.md"
+    echo "  git commit --amend --no-edit"
+    echo ""
+    echo "Or to skip this hook: git push --no-verify"
+
+    # Show what changed
+    echo ""
+    echo "Coverage changes:"
+    git diff COVERAGE_REPORT.md | grep -E "^\+|^-" | grep -E "%|Coverage" | head -10
+
+    exit 1
+fi
+
+exit 0
