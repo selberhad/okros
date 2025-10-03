@@ -9,17 +9,20 @@ Brief index mapping Rust modules to their C++ counterparts (when applicable). Up
 - `selectable.rs` → `Selectable.cc` (trait) and `Selection.cc` helpers.
 - `select.rs` → poll wrapper analogous to `Selection.cc`.
 - `socket.rs` → `Socket.cc` (nonblocking IPv4 socket over raw fd).
-- `tty.rs` → `TTY.cc` (raw mode + keypad app mode; Toy 2 patterns).
+- `tty.rs` → `TTY.cc` (raw mode + keypad app mode; Toy 6 patterns).
+- `input.rs` → Key decoder (ESC sequence normalization; from `TTY.cc` + Toy 6).
 - `config.rs` → `Config.cc` (basic config; loopback helpers for tests).
 - `mud.rs` → `MUD.cc` (socket/config wiring; small helper tests).
 - `session.rs` → `Session.cc` (pipeline MCCP→Telnet→ANSI→Scrollback).
 - `engine.rs` → Headless engine (no strict C++ analog; extraction from `main.cc` event loop).
 - `control.rs` → New (Unix domain control server; headless/attach support).
-- `screen.rs` → `Screen.cc` (renderer + scroll region planner).
+- `screen.rs` → `Screen.cc` (renderer + scroll region planner; Toy 7 patterns).
 - `window.rs` → `Window.cc` (base widget).
 - `output_window.rs` → `OutputWindow.cc` (rendering and color attrs).
 - `input_line.rs` → `InputLine.cc` (line editor basics).
 - `status_line.rs` → `StatusLine.cc` (status UI stripe).
+- `curses.rs` → `Curses.cc` (minimal ncurses wrapper; terminfo/ACS; Toy 2 patterns).
+- `color.rs` → Color/attribute constants.
 
 Tests
 - Unit tests are colocated via `mod tests` in each file.

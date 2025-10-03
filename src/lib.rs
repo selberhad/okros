@@ -17,6 +17,10 @@ pub mod engine;
 pub mod control;
 pub mod plugins {
     pub mod stack;
+    #[cfg(feature = "python")]
+    pub mod python;
+    #[cfg(feature = "perl")]
+    pub mod perl;
 }
 pub mod session;
 pub mod tty;
