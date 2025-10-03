@@ -1,0 +1,15 @@
+[package]
+name = "toy5_perl"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "perl_ffi_test"
+path = "src/perl_ffi_test.rs"
+
+[dependencies]
+libc = "0.2"
+
+[build-dependencies]
+
+# Note: We'll add build.rs if needed to find perl and link properly
