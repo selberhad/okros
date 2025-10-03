@@ -864,6 +864,51 @@ mod tests {
     }
 
     #[test]
+    fn ansi_sgr_multiple_params_with_unknown_mid_list() {
+        let mut ac = AnsiConverter::new();
+        // Bold + unknown + red
+        let ev = ac.feed(b"\x1b[1;999;31m");
+        if let AnsiEvent::SetColor(col) = ev[0] {
+            assert_ne!(col & 0x80, 0); // bold
+            assert_eq!(col & 0x0F, 4); // fg red
+            assert_eq!((col & 0x70)>>4, 0); // bg black
+        } else { panic!("expected SetColor"); }
+    }
+
+    #[test]
+    fn ansi_sgr_nested_resets_result_in_white_on_black() {
+        let mut ac = AnsiConverter::new();
+        let ev = ac.feed(b"\x1b[31m\x1b[0m\x1b[0m");
+        // Expect SetColor(red), then reset, then reset again
+        assert!(matches!(ev[0], AnsiEvent::SetColor(_)));
+        for i in [1usize,2usize] {
+            if let AnsiEvent::SetColor(col) = ev[i] {
+                assert_eq!(col & 0x0F, 7);
+                assert_eq!((col & 0x70)>>4, 0);
+                assert_eq!(col & 0x80, 0);
+            } else { panic!("expected SetColor reset"); }
+        }
+    }
+
+    #[test]
+    fn telnet_then_ansi_converter_pipeline() {
+        // Simulate Session pipeline: telnet cleans IAC; then ANSI converter parses SGR
+        let mut p = TelnetParser::new();
+        // Feed plain text with ANSI SGR split across chunks
+        p.feed(b"A");
+        p.feed(&[0x1B]);
+        p.feed(b"[32mB");
+        let mut ac = AnsiConverter::new();
+        let app = p.take_app_out();
+        let ev = ac.feed(&app);
+        assert!(matches!(ev[0], AnsiEvent::Text(b'A')));
+        if let AnsiEvent::SetColor(col) = ev[1] {
+            assert_eq!(col & 0x0F, 2); // green
+        } else { panic!("expected SetColor"); }
+        assert!(matches!(ev[2], AnsiEvent::Text(b'B')));
+    }
+
+    #[test]
     fn ansi_sgr_bright_foreground_sets_bold() {
         let mut ac = AnsiConverter::new();
         let ev = ac.feed(b"\x1b[91m"); // bright red
