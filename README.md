@@ -1,6 +1,6 @@
 # okros - Rust MUD Client
 
-**okros** (from _ochre_, rusty mud) is a modern MUD client written in Rust, inspired by and based on MCL (MUD Client for Linux). okros brings the power of a native MUD client to the modern era with headless/detachable operation, perfect for automation, LLM agents, and cloud deployments.
+**okros** (from _ochre_, rusty mud) is a modern MUD client written in Rust, reviving the design principles of MCL (MUD Client for Linux). MCL was a beloved Linux MUD client that went unmaintained circa 2000 and offline by 2010. okros resurrects its core concepts while bringing them into the modern era with headless/detachable operation, perfect for automation, LLM agents, and cloud deployments.
 
 ## Features
 
@@ -170,9 +170,9 @@ okros is under active development. Current status:
 
 See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for detailed progress.
 
-## Comparison with MCL
+## Comparison with Original MCL
 
-okros preserves MCL's core functionality while modernizing the implementation:
+okros revives MCL's design philosophy while modernizing the implementation:
 
 | Feature | MCL (C++) | okros (Rust) |
 |---------|-----------|--------------|
@@ -186,9 +186,11 @@ okros preserves MCL's core functionality while modernizing the implementation:
 
 ## License
 
-okros is released under the GPL v2, matching the original MCL license.
+okros is released under the GPL v2.
 
-Based on MCL (MUD Client for Linux) by Erwin S. Andreasen.
+## Historical Note
+
+okros is a from-scratch Rust implementation inspired by MCL (MUD Client for Linux), originally written by Erwin S. Andreasen. MCL was last maintained around 2000 and went offline circa 2010. This project revives MCL's design philosophy and feature set using a modern reference implementation discovered in the wild, bringing it back to life for contemporary use cases while preserving its spirit.
 
 ## Contributing
 
@@ -203,7 +205,8 @@ See [CLAUDE.md](CLAUDE.md) for development guidelines.
 
 ## Acknowledgments
 
-- **MCL** - Original C++ implementation by Erwin S. Andreasen
+- **Erwin S. Andreasen** - Original MCL author and visionary MUD client designer
+- **MCL Community** - Players and scripters who made MCL legendary in its heyday
 - **Rust Community** - For excellent FFI and async tooling
 - **pyo3** - Python integration without the C API pain
 - **Discovery Phase** - Validated via 11 toy implementations in [toys/](toys/)
