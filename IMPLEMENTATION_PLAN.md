@@ -91,7 +91,7 @@ Port MCL C++ codebase to Rust, applying patterns from Discovery phase. **Use Rus
 **Current Status**:
 - `src/screen.rs` — DONE (diff renderer + scroll-region planner) with unit tests.
 - `src/window.rs`, `src/output_window.rs`, `src/input_line.rs`, `src/status_line.rs` — initial ports with unit tests.
-- `src/curses.rs` — skeleton following Toy 2 patterns; to be finalized with termcaps.
+- `src/curses.rs` — DONE (minimal ncurses wrapper; terminfo/ACS queries) with init_curses(), get_acs_caps(), get_acs_codes().
 
 ---
 
@@ -118,35 +118,46 @@ Port MCL C++ codebase to Rust, applying patterns from Discovery phase. **Use Rus
 
 ---
 
-### Tier 5a: Python Plugin (Optional Feature)
+### Tier 5a: Python Plugin (Optional Feature) — STATUS: COMPLETE ✅
 **Files**: `plugins/PythonEmbeddedInterpreter.cc`
 
 **Approach**: Apply Toy 4 pyo3 patterns
 
 **Steps**:
-26. Add `pyo3` dependency behind `python` feature flag
-27. Port `PythonEmbeddedInterpreter` → `src/plugins/python.rs` using Toy 4 patterns
-28. Implement `EmbeddedInterpreter` trait for Python
-29. Conditional compilation: `#[cfg(feature = "python")]`
-30. Test Python script execution (compare with C++ MCL)
+26. Add `pyo3` dependency behind `python` feature flag — DONE
+27. Port `PythonEmbeddedInterpreter` → `src/plugins/python.rs` using Toy 4 patterns — DONE
+28. Implement `EmbeddedInterpreter` trait for Python — DONE (as `Interpreter` trait)
+29. Conditional compilation: `#[cfg(feature = "python")]` — DONE
+30. Test Python script execution (compare with C++ MCL) — Basic tests present
 
 **Milestone**: Python scripting functional with `--features python`
 
+**Current Status**:
+- `src/plugins/python.rs` — DONE (308 lines, pyo3 0.22, implements Interpreter trait).
+- Provides: eval, load_file, run (function calls), set/get variables (int/string).
+- Feature-gated, builds cleanly with `--features python`.
+
 ---
 
-### Tier 5b: Perl Plugin (Optional Feature)
+### Tier 5b: Perl Plugin (Optional Feature) — STATUS: COMPLETE ✅
 **Files**: `plugins/PerlEmbeddedInterpreter.cc`
 
 **Approach**: Apply Toy 5 Perl FFI patterns
 
 **Steps**:
-31. Create Perl C API bindings behind `perl` feature flag
-32. Port `PerlEmbeddedInterpreter` → `src/plugins/perl.rs` using Toy 5 patterns
-33. Implement `EmbeddedInterpreter` trait for Perl
-34. Conditional compilation: `#[cfg(feature = "perl")]`
-35. Test Perl script execution (compare with C++ MCL)
+31. Create Perl C API bindings behind `perl` feature flag — DONE
+32. Port `PerlEmbeddedInterpreter` → `src/plugins/perl.rs` using Toy 5 patterns — DONE
+33. Implement `EmbeddedInterpreter` trait for Perl — DONE (as `Interpreter` trait)
+34. Conditional compilation: `#[cfg(feature = "perl")]` — DONE
+35. Test Perl script execution (compare with C++ MCL) — Basic tests present
 
 **Milestone**: Perl scripting functional with `--features perl`
+
+**Current Status**:
+- `src/plugins/perl.rs` — DONE (400 lines, raw FFI with PERL_SYS_INIT3, implements Interpreter trait).
+- `build.rs` — DONE (conditional Perl linking via `perl -MConfig`).
+- Provides: eval, load_file, run (function calls), set/get variables (int/string).
+- Feature-gated, builds cleanly with `--features perl`.
 
 ---
 
