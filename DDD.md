@@ -157,10 +157,15 @@ Operational Modes
         - Test for behavioral equivalence (golden tests against reference)
 
     Key Artifacts:
-      - IMPLEMENTATION_PLAN.md: Living status document, tier-by-tier checklist
-        * Updated continuously with reality (not just initial plan)
+      - PORTING_HISTORY.md: Historical record of tier-by-tier completion
+        * Documents completed porting work (Discovery + Execution phases)
         * Tracks: what's ported, what's deferred, what's skipped
-        * Central coordination point for multi-tier porting effort
+        * Central historical reference for the porting effort
+
+      - FUTURE_WORK.md: Remaining tasks and enhancements
+        * Validation tasks (Tier 7)
+        * Post-MVP features (connect menu, extended commands, etc.)
+        * Future exploration ideas (LLM integration, cross-platform, etc.)
 
       - CODE_MAP.md: Tracks translation origins
         * Documents which source file each target file was ported from

@@ -30,7 +30,7 @@ cargo test --all-features      # All tests
 
 ## Core Methodology (DDD Porting Mode)
 **Key Documents**:
-- ORIENTATION.md (start here), IMPLEMENTATION_PLAN.md (living status)
+- ORIENTATION.md (start here), PORTING_HISTORY.md (porting history), FUTURE_WORK.md (remaining tasks)
 - SPEC.md (toys), LEARNINGS.md (toys), CODE_MAP.md (tracking)
 
 **Principles**:
@@ -66,7 +66,8 @@ Example: "Next step: Port String.cc to src/string.rs following Step 6 of PLAN.md
 
 ## Key Files
 - **ORIENTATION.md**: Executive summary (START HERE)
-- **IMPLEMENTATION_PLAN.md**: Living status (tier-by-tier, updated continuously)
+- **PORTING_HISTORY.md**: Historical record of C++ → Rust porting (tier-by-tier completion)
+- **FUTURE_WORK.md**: Remaining tasks, post-MVP enhancements, deferred features
 - **README.md**: User-facing overview
 - **TOY_PLAN.md / TOY_PLAN_2.md**: Discovery phase (12 toys complete, including internal MUD)
 - **DDD.md**: Methodology (includes Porting Mode)

@@ -1,10 +1,14 @@
-# MCL Rust Port - Execution Phase (Implementation Plan)
+# MCL Rust Port - Porting History
 
-## Objective
+**Historical record of the C++ → Rust porting process**
+
+## Objective (Achieved)
 
 Port MCL C++ codebase to Rust, applying patterns from Discovery phase. **Use Rust idioms when they simplify the port** - only force C++ fidelity where it actually reduces complexity.
 
 **Principle**: Least complexity to working port. Not fidelity for fidelity's sake.
+
+**Status**: ~95% complete (implementation done, validation pending). See `FUTURE_WORK.md` for remaining tasks.
 
 ## Prerequisites
 
@@ -315,7 +319,7 @@ features = ["auto-initialize"]
 **Documentation**:
 - [x] CODE_MAP.md updated for src/ and src/plugins/
 - [x] README.md created (okros project overview)
-- [ ] IMPLEMENTATION_PLAN.md synced with reality - **IN PROGRESS**
+- [x] PORTING_HISTORY.md synced with reality - **COMPLETE**
 
 ---
 
@@ -366,79 +370,36 @@ features = ["auto-initialize"]
 
 ---
 
-## Next Steps
+## Final Status
 
-### Immediate Priorities (MVP - Validation Phase)
+**Implementation**: ~95% complete (all tiers 1-6 done)
+**Validation**: In progress (Tier 7)
+**Future work**: See `FUTURE_WORK.md` for remaining tasks and enhancements
 
-**All implementation is COMPLETE. Focus is now on validation and polish.**
+### What Was Completed
 
-1. **Internal MUD Integration** - **NEXT IMMEDIATE STEP** (Option 1: MVP approach)
-   - Port `toys/toy12_internal_mud/` to `src/offline_mud/` module
-   - Add `--offline` CLI flag to main.rs
-   - Wire internal MUD World + Session direct feed (no socket)
-   - Validate with existing toy12 integration tests
-   - **Use case**: Deterministic e2e testing without external MUD dependency
-   - **Estimated effort**: 2-3 hours
-   - **Defers**: Connect menu / MUDSelection widget (post-MVP, see section 6)
+✅ **All core functionality**:
+- Foundation types (Tier 1)
+- Core abstractions (Tier 2)
+- UI layer (Tier 3)
+- Logic & interpreter interface (Tier 4)
+- Python plugin (Tier 5a)
+- Perl plugin (Tier 5b)
+- Main event loop (Tier 6)
+- Headless mode (Tier 6b)
+- Internal MUD for testing (bonus)
 
-2. **Tier 7 (Integration & Validation)** - **CRITICAL PATH TO MVP**
-   - Manual smoke test: connect to real MUD server
-     - Test: `cargo run` → `#open <mud-ip> <port>` → verify send/receive
-     - Test: headless mode → Unix socket control → verify buffering
-     - Test: `--attach` to running headless instance
-   - **Internal MUD smoke test**: `cargo run --offline` → verify game works
-   - Feature combination testing:
-     - `cargo run` (base - no plugins)
-     - `cargo run --features python` (Python enabled)
-     - `cargo run --features perl` (Perl enabled)
-     - `cargo run --features python,perl` (both enabled)
-   - **Perl bot integration**: Run real-world Perl bot against headless mode
-     - This is the ultimate validation of the transport layer design
-     - Verify scripts can automate MUD play via control socket
+✅ **Tests**: 71 unit tests + 8 integration tests passing
+✅ **Build**: All feature combinations compile without errors
 
-3. **Polish & Bug Fixes** (as discovered during testing)
-   - Fix any panics/crashes found during MUD connection
-   - Address edge cases in telnet/ANSI parsing
-   - Improve error messages for better UX
+### What Remains
 
-4. **Documentation Sync** (in progress)
-   - [x] Update IMPLEMENTATION_PLAN.md to reflect completion
-   - [ ] Update ORIENTATION.md to reflect MVP status
-   - [ ] Update README.md if needed
+⏸️ **Validation** (Tier 7):
+- Manual testing against real MUD servers
+- Perl bot integration testing
+- Feature combination validation
 
-### Optional Enhancements (Post-MVP)
-
-5. **DNS Hostname Resolution** (nice-to-have)
-   - Currently only IPv4 addresses work (e.g., `#open 127.0.0.1 4000`)
-   - Add hostname lookup (e.g., `#open example.com 4000`)
-   - Low priority - can be handled by wrapper scripts
-
-6. **Extended # Commands** (if needed)
-   - Current set: `#quit`, `#open`
-   - C++ MCL has many more (see Interpreter.cc)
-   - Defer to Perl/Python scripts for most commands
-
-### Deferred to Post-1.0 (Not Needed for MVP)
-
-7. **Connect Menu & Config File Parsing** - **Post-MVP enhancement**
-   - Selection.cc (UI list widget) - base class for menus
-   - MUDSelection widget - connect menu triggered by Alt-O
-   - Config file parsing (~/.mcl/config) - load MUD definitions
-   - MUD list storage (MUDList class) - manage saved MUDs
-   - **MVP approach**: Use `--offline` flag to launch internal MUD directly
-   - **Future approach**: Port Selection/MUDSelection, add internal MUD as default entry #0
-
-8. **Client-Side Command Processing** - **Perl/Python handles this**
-   - Alias.cc (command expansion) - scripts handle
-   - Hotkey.cc (keyboard macros) - scripts handle
-   - Advanced interpreter (# commands) - minimal set sufficient
-
-9. **Advanced MCL Features** - **Out of scope**
-   - Chat.cc (peer-to-peer chat) - niche feature
-   - Borg.cc (phone-home stats) - privacy concern
-   - Group.cc (grouped sessions) - post-MVP
-
-10. **Cross-Platform & Performance** - **Future work**
-   - macOS/Windows support (currently Linux-only)
-   - Performance profiling and optimization
-   - Idiomatic Rust refactoring pass
+See `FUTURE_WORK.md` for:
+- Post-MVP enhancements
+- Deferred features
+- Future exploration ideas

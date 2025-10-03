@@ -1,7 +1,7 @@
 # okros - Rust MUD Client
 
 > **📚 Doc-Driven Development (DDD) in Action**
-> This project exemplifies [DDD Porting Mode](DDD.md): a reference-driven translation workflow combining Discovery (validate risky patterns via toy models) + Execution (systematic translation). Evidence: [12 toys validating FFI/unsafe patterns](toys/) (including [internal MUD](toys/toy12_internal_mud/) for e2e testing), [living status tracking](IMPLEMENTATION_PLAN.md), [architectural documentation](CODE_MAP.md), and [95% completion with comprehensive docs](ORIENTATION.md). See [DDD.md](DDD.md) for the full methodology.
+> This project exemplifies [DDD Porting Mode](DDD.md): a reference-driven translation workflow combining Discovery (validate risky patterns via toy models) + Execution (systematic translation). Evidence: [12 toys validating FFI/unsafe patterns](toys/) (including [internal MUD](toys/toy12_internal_mud/) for e2e testing), [historical porting record](PORTING_HISTORY.md), [architectural documentation](CODE_MAP.md), and [95% completion with comprehensive docs](ORIENTATION.md). See [DDD.md](DDD.md) for the full methodology.
 
 **okros** (from _ochre_, rusty mud) is a modern MUD client written in Rust, reviving the design principles of MCL (MUD Client for Linux). MCL was a powerful, feature-rich Linux MUD client that went unmaintained circa 2000 and offline by 2010. okros resurrects its core concepts while bringing them into the modern era with headless/detachable operation, perfect for automation, LLM agents, and cloud deployments.
 
@@ -211,7 +211,7 @@ okros is under active development. Current status:
 - ✅ Tier 6 (Main & Engine) - Complete (event loop, CLI args, headless & control server)
 - ⏸️  Tier 7 (Integration) - Validation pending (implementation complete, needs real MUD testing)
 
-See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for detailed progress.
+See [PORTING_HISTORY.md](PORTING_HISTORY.md) for detailed porting history and [FUTURE_WORK.md](FUTURE_WORK.md) for remaining tasks.
 
 ## Comparison with Original MCL
 
@@ -287,7 +287,8 @@ make install-hooks     # Installs pre-push hook
 - **[DEVELOPMENT.md](DEVELOPMENT.md)** - Complete development guide (workflows, tools, CI/CD)
 - **[TESTING.md](TESTING.md)** - Testing guide (running tests, coverage, CI)
 - **[CLAUDE.md](CLAUDE.md)** - Project methodology and porting guidelines
-- **[IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)** - Detailed status and roadmap
+- **[PORTING_HISTORY.md](PORTING_HISTORY.md)** - Historical record of C++ → Rust porting
+- **[FUTURE_WORK.md](FUTURE_WORK.md)** - Remaining tasks and post-MVP enhancements
 
 ## Contributing
 

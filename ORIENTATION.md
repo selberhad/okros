@@ -75,7 +75,7 @@
 **Goal**: Ensure docs match reality
 
 **Tasks**:
-- [x] Update IMPLEMENTATION_PLAN.md to reflect completion
+- [x] Restructure IMPLEMENTATION_PLAN.md → PORTING_HISTORY.md + FUTURE_WORK.md
 - [x] Update ORIENTATION.md (this file) to reflect MVP status
 - [ ] Update README.md if needed
 - [ ] Write user guide for Perl bot integration (control socket protocol)
@@ -116,7 +116,8 @@ type and press Enter   # Send to MUD
 **Documentation** (Read These First):
 - `ORIENTATION.md` ← You are here
 - `README.md` - User-facing overview
-- `IMPLEMENTATION_PLAN.md` - Comprehensive status (living document)
+- `PORTING_HISTORY.md` - Historical record of C++ → Rust porting
+- `FUTURE_WORK.md` - Remaining tasks and future enhancements
 - `CLAUDE.md` - Project-specific dev guidelines
 - `DDD.md` - Doc-Driven Development methodology
 
@@ -135,7 +136,7 @@ type and press Enter   # Send to MUD
 ## Development Workflow
 
 **Making Changes**:
-1. Update `IMPLEMENTATION_PLAN.md` status BEFORE committing structural changes
+1. Update `PORTING_HISTORY.md` / `FUTURE_WORK.md` if needed BEFORE committing structural changes
 2. Update `CODE_MAP.md` if adding/removing/renaming files
 3. Keep C++ reference (`mcl-cpp-reference/`) open for comparison
 4. Commit with conventional format: `type(scope): description`

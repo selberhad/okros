@@ -8,7 +8,8 @@ This file tracks the structure and status of the codebase.
 - `CLAUDE.md` - Project instructions for Claude Code (methodology, workflow)
 - `TOY_PLAN.md` - Discovery phase strategy and progress (toys 1-5)
 - `TOY_PLAN_2.md` - Discovery phase 2 plan (risk-focused toys 6-11)
-- `IMPLEMENTATION_PLAN.md` - Execution phase strategy (tier-by-tier port)
+- `PORTING_HISTORY.md` - Historical record of C++ → Rust porting (tier-by-tier completion)
+- `FUTURE_WORK.md` - Remaining tasks, post-MVP enhancements, deferred features
 - `DDD.md` - Doc-Driven Development methodology
 - `PLAYBOOK.md` - Condensed porting workflow guide
 - `AGENTS.md` - Quick reference summary
@@ -169,13 +170,14 @@ See `src/CODE_MAP.md` for detailed module-by-module mapping to C++ reference.
 - ✅ Python: Use `pyo3` (simpler than C API)
 - ✅ Perl: Raw FFI with `PERL_SYS_INIT3` for modern Perl
 
-**Porting Progress** (per IMPLEMENTATION_PLAN.md tiers):
+**Porting Progress** (per PORTING_HISTORY.md tiers):
 - ✅ Tier 1 (Foundation): Using Rust stdlib throughout, color.rs + ansi.rs done
 - ✅ Tier 2 (Core): All network/telnet/MCCP/TTY modules ported
 - ✅ Tier 3 (UI): All rendering modules ported (ncurses, screen, widgets)
 - ✅ Tier 4 (Logic): Session/engine done (aliases/hotkeys deferred to Perl/Python)
 - ✅ Tier 5 (Plugins): Python + Perl plugins ported with Interpreter trait
-- ⏸️  Tier 6 (Main): Minimal demo exists; **needs full event loop wiring**
+- ✅ Tier 6 (Main + Engine): Event loop, CLI args, headless mode, control server - ALL COMPLETE
+- ⏸️  Tier 7 (Integration): Validation pending (see FUTURE_WORK.md)
 - ⏸️  Tier 7 (Integration): Not started (manual testing pending)
 
 **Critical Path to MVP**:

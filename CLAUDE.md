@@ -69,7 +69,8 @@ This project follows **Doc-Driven Development (DDD)** in **Porting Mode** - a re
 
 ### Document Types & Usage (Porting Context)
 - **ORIENTATION.md**: Executive summary (START HERE - what is this, where are we, what's next)
-- **IMPLEMENTATION_PLAN.md**: Living status document (tier-by-tier, updated continuously with reality)
+- **PORTING_HISTORY.md**: Historical record of tier-by-tier porting completion
+- **FUTURE_WORK.md**: Remaining tasks and post-MVP enhancements
 - **TOY_PLAN.md / TOY_PLAN_2.md**: Discovery phase strategy (12 toys completed, including testing infrastructure)
 - **SPEC.md**: C++ behavior to replicate (for Discovery mode toys)
 - **LEARNINGS.md**: FFI/unsafe patterns discovered (for Discovery mode toys)
@@ -143,15 +144,15 @@ This project follows **Doc-Driven Development (DDD)** in **Porting Mode** - a re
 
 **Current status**: Root CODE_MAP.md exists, tracks toys and overall structure
 
-### Porting Workflow (Execution Mode - Primary)
-1. **Choose next module**: Follow IMPLEMENTATION_PLAN.md tier order (Foundation → Core → UI → Logic → App)
+### Porting Workflow (Execution Mode - Complete ✅)
+1. **Choose next module**: Follow PORTING_HISTORY.md tier order (Foundation → Core → UI → Logic → App)
 2. **Study C++ source**: Read C++ .cc/.h files thoroughly, understand behavior
 3. **Port to Rust**: Create .rs file, use unsafe/FFI freely, preserve structure
 4. **Test**: Compare Rust output with C++ MCL (golden tests)
 5. **Update CODE_MAP.md**: Document ported module before committing
-6. **Commit**: One commit per IMPLEMENTATION_PLAN.md step (e.g., `feat(foundation): port String - Step 6`)
+6. **Commit**: Logical commits matching porting steps (e.g., `feat(foundation): port String - Step 6`)
 
-**Policy**: Port one module at a time following tier order. Update CODE_MAP.md before structural commits. Preserve C++ behavior exactly.
+**Status**: All porting complete (~95%). Remaining work in FUTURE_WORK.md (validation, post-MVP features).
 
 ### Toy Development Workflow (Discovery Mode - As Needed)
 1. **Identify complex subsystem**: C++ code needs understanding before porting
@@ -182,10 +183,10 @@ This project follows **Doc-Driven Development (DDD)** in **Porting Mode** - a re
 
 ### Next Step Protocol
 **Never just say "ready for next step" - always propose the specific next action:**
-- Identify the next module to port from IMPLEMENTATION_PLAN.md
-- Propose which C++ file to port next
+- Identify the next task from FUTURE_WORK.md
+- Propose specific action to take
 - Wait for explicit approval before proceeding
-- Example: "Next step: Port String.cc to src/string.rs following Tier 1 (Foundation) of IMPLEMENTATION_PLAN.md"
+- Example: "Next step: Manual testing of --offline mode with real TTY (see FUTURE_WORK.md section 2)"
 
 ## Key Files Reference
 
@@ -203,7 +204,8 @@ This project follows **Doc-Driven Development (DDD)** in **Porting Mode** - a re
 
 **Core Documentation**:
 - `ORIENTATION.md` - Executive summary (START HERE for quick overview)
-- `IMPLEMENTATION_PLAN.md` - Living status document (tier-by-tier, updated continuously)
+- `PORTING_HISTORY.md` - Historical record of C++ → Rust porting (tier-by-tier completion)
+- `FUTURE_WORK.md` - Remaining tasks, post-MVP enhancements, deferred features
 - `README.md` - User-facing overview (okros MUD client)
 - `DDD.md` - Doc-Driven Development methodology (includes Porting Mode)
 - `CODE_MAP.md` - Project structure and porting status

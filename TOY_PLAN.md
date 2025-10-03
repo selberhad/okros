@@ -196,7 +196,7 @@ toys/
   - [x] Python: `pyo3` (simpler than C API) ✅
   - [x] Perl: Raw FFI with `PERL_SYS_INIT3` for modern Perl ✅
 - [x] Built toys remain as reference artifacts ✅
-- [x] **Ready to begin Execution phase (IMPLEMENTATION_PLAN.md)** ✅
+- [x] **Ready to begin Execution phase (PORTING_HISTORY.md)** ✅
 
 **Key principle applied**: Only built toys where Rust approach was unclear or C++ was genuinely complex
 
