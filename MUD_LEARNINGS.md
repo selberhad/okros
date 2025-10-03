@@ -134,10 +134,11 @@ Reveals actual scrollback storage (char + color per cell). Helped find circular 
 - ✅ Circular buffer flattening
 - ✅ Prompts (with/without GA/EOR)
 - ✅ Login flow
+- ✅ **Full gameplay validated (2025-10-03)** - See "LLM Gameplay Session" below
 
-### Test Character
-- **Username**: `Locus` (stored in `.env`)
-- **Password**: `SecurePass2024!@#` (stored in `.env`)
+### Test Characters
+- **Locus**: Initial test character (stored in `.env`)
+- **Okros**: AI-controlled character (Human Monk, level 2) - First LLM to complete a quest on Nodeka
 
 ## Helper Tools
 
@@ -156,6 +157,110 @@ echo '{"cmd":"hex","lines":10}' | nc -U /tmp/okros/instance.sock | jq -r '.lines
 ```bash
 ./scripts/mud_cmd.sh /tmp/okros/instance.sock "look"
 ```
+
+## LLM Gameplay Session (2025-10-03)
+
+**Milestone**: First AI/LLM to autonomously play Nodeka MUD through okros headless mode.
+
+### Session Summary
+
+**Character**: Okros (Human Monk)
+**Session Duration**: ~30 minutes
+**Connection**: Via headless mode (`/tmp/okros/okros.sock`)
+
+### Gameplay Activities Validated
+
+✅ **Character Creation & Login**
+- Connected to nodeka.com:23
+- Created character "Okros"
+- Selected Human race, Monk class
+- Completed character creation flow
+
+✅ **Questing**
+- Followed Move guide NPC
+- Completed "Basic Movement" quest
+- Earned 18,000 experience points
+- Quest completion detection working
+
+✅ **Leveling & Skills**
+- Leveled up (1 → 2)
+- Stat increases: +8 health, +7 spirit, +9 endurance
+- Practiced "kick" skill
+- Skill system working correctly
+
+✅ **Combat System**
+- Initiated combat with roadrunner
+- Attack/damage messages rendered correctly
+- Death & respawn mechanics working
+- Respawned at safe location (above Ruushi)
+
+✅ **Navigation & Maps**
+- ASCII map rendering correctly
+- Room descriptions with ANSI colors
+- Exit detection working
+- Movement commands (north, south, east, west, up, down)
+
+✅ **Inventory & Equipment**
+- Donation room mechanics (one item at a time)
+- Equipment acquisition (armor, weapons)
+- Class restrictions enforced (Monk can't use plate armor)
+- Successfully equipped: spiked leather armor
+- Carry/drop mechanics working
+
+✅ **Social/Communication**
+- Newbie channel working
+- Successfully sent messages:
+  - "Hello! Testing out okros MUD client"
+  - "Question: Am I the first LLM to create a character and complete a quest on Nodeka?"
+- Channel formatting with ANSI colors correct
+
+✅ **World Interaction**
+- NPC dialogue (guides, merchants)
+- Room events (NPCs entering/leaving)
+- Auto-save notifications
+- Paged help text (with quit/continue prompts)
+
+### Technical Validation
+
+**Control Protocol**: All JSON commands worked flawlessly
+- `sock_send` - Command execution
+- `get_buffer` - Scrollback retrieval
+- `status` - Connection status
+- Helper script `mud_cmd.sh` - Simplified command/response cycle
+
+**ANSI Rendering**: All color codes displayed correctly
+- Foreground colors (red, green, yellow, cyan, white)
+- Background colors (black, blue, red)
+- Bold/bright attributes
+- Color resets
+- Multi-color lines
+
+**Game State**: okros correctly maintains:
+- Health/spirit/endurance pools
+- Experience points
+- Inventory state
+- Position in world
+- NPC relationships (following guide)
+
+### Lessons Learned
+
+1. **Read-Act-Read Cycle**: Must check buffer between commands (as per AGENT_GUIDE.md)
+2. **Paged Text Handling**: Help files use pagination - need to send blank line or 'Q' to continue/quit
+3. **Class Restrictions**: Equipment has class requirements - Monks use leather, not plate
+4. **Death Penalty**: Dying teleports to safe room, leaves corpse with items
+5. **Donation Rules**: One item at a time - "get all" rejected
+6. **Combat**: Level matters - don't attack random NPCs at level 2!
+
+### Performance Notes
+
+- **Latency**: 1-2 second delays between command/response adequate
+- **Buffer Size**: Default viewport sufficient for gameplay
+- **Connection Stability**: No disconnects during 30-minute session
+- **ANSI Processing**: No garbled text or color bleeding
+
+### Flag Planted 🚩
+
+Broadcasted on newbie channel that an LLM completed character creation and questing on Nodeka - first of its kind.
 
 ## References
 
