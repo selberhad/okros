@@ -1,8 +1,8 @@
-use crate::socket::{Socket, ConnState};
-use crate::config::Config;
-use crate::alias::Alias;
 use crate::action::Action;
+use crate::alias::Alias;
+use crate::config::Config;
 use crate::macro_def::Macro;
+use crate::socket::{ConnState, Socket};
 use std::io;
 use std::net::Ipv4Addr;
 
@@ -42,7 +42,9 @@ impl Mud {
             self.state = s.state;
             self.sock = Some(s);
             Ok(())
-        } else { Err(io::Error::new(io::ErrorKind::InvalidInput, "no server")) }
+        } else {
+            Err(io::Error::new(io::ErrorKind::InvalidInput, "no server"))
+        }
     }
 }
 
@@ -54,10 +56,13 @@ mod tests {
     fn connect_loopback_from_config() {
         let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).unwrap();
         let port = listener.local_addr().unwrap().port();
-        let mut cfg = Config::new(); cfg.server = Some((Ipv4Addr::LOCALHOST, port));
+        let mut cfg = Config::new();
+        cfg.server = Some((Ipv4Addr::LOCALHOST, port));
         let mut m = Mud::new();
         m.connect_from_config(&cfg).unwrap();
-        assert!(matches!(m.state, ConnState::Connecting | ConnState::Connected));
+        assert!(matches!(
+            m.state,
+            ConnState::Connecting | ConnState::Connected
+        ));
     }
 }
-

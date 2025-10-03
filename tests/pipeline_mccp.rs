@@ -1,11 +1,11 @@
 #![cfg(feature = "mccp")]
 
-use okros::mccp::{Decompressor, MccpInflate};
-use okros::mccp::telopt::*;
-use okros::telnet::TelnetParser;
+use flate2::{write::ZlibEncoder, Compression};
 use okros::ansi::{AnsiConverter, AnsiEvent};
+use okros::mccp::telopt::*;
+use okros::mccp::{Decompressor, MccpInflate};
 use okros::scrollback::Scrollback;
-use flate2::{Compression, write::ZlibEncoder};
+use okros::telnet::TelnetParser;
 use std::io::Write;
 
 fn compress_bytes(data: &[u8]) -> Vec<u8> {
@@ -28,7 +28,9 @@ fn pipeline_real_mccp_v2_telnet_ansi_scrollback() {
 
     let payload = compress_bytes(b"Hello\nWorld\n");
     // Feed in two fragments to simulate streaming
-    let mid = payload.len()/2; decomp.receive(&payload[..mid]); decomp.receive(&payload[mid..]);
+    let mid = payload.len() / 2;
+    decomp.receive(&payload[..mid]);
+    decomp.receive(&payload[mid..]);
 
     let mut cur_color: u8 = 0x07;
     let mut line_bytes: Vec<u8> = Vec::new();
@@ -39,7 +41,10 @@ fn pipeline_real_mccp_v2_telnet_ansi_scrollback() {
         for ev in ansi.feed(&app) {
             match ev {
                 AnsiEvent::SetColor(c) => cur_color = c,
-                AnsiEvent::Text(b'\n') => { sb.print_line(&line_bytes, cur_color); line_bytes.clear(); }
+                AnsiEvent::Text(b'\n') => {
+                    sb.print_line(&line_bytes, cur_color);
+                    line_bytes.clear();
+                }
                 AnsiEvent::Text(b) => line_bytes.push(b),
             }
         }
@@ -50,4 +55,3 @@ fn pipeline_real_mccp_v2_telnet_ansi_scrollback() {
     assert_eq!(&text[0..5], b"Hello");
     assert_eq!(&text[5..10], b"World");
 }
-

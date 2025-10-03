@@ -3,9 +3,9 @@
 //! Ported from: plugins/PythonEmbeddedInterpreter.cc
 //! Uses pyo3 for Python C API abstraction (simpler than raw C API)
 
+use crate::plugins::stack::Interpreter;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyModule};
-use crate::plugins::stack::Interpreter;
 
 /// Python interpreter wrapper matching C++ PythonEmbeddedInterpreter patterns
 pub struct PythonInterpreter {
@@ -52,10 +52,9 @@ impl PythonInterpreter {
             let globals = self.globals.bind(py);
 
             // Read file contents
-            let code = std::fs::read_to_string(path)
-                .map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(
-                    format!("Failed to read file: {}", e)
-                ))?;
+            let code = std::fs::read_to_string(path).map_err(|e| {
+                PyErr::new::<pyo3::exceptions::PyIOError, _>(format!("Failed to read file: {}", e))
+            })?;
 
             // Run file contents with globals
             py.run_bound(&code, Some(&globals), Some(&globals))?;
@@ -77,10 +76,12 @@ impl PythonInterpreter {
             let globals = self.globals.bind(py);
 
             // Get function from globals
-            let func = globals.get_item(function_name)?
-                .ok_or_else(|| PyErr::new::<pyo3::exceptions::PyKeyError, _>(
-                    format!("Function '{}' not found", function_name)
-                ))?;
+            let func = globals.get_item(function_name)?.ok_or_else(|| {
+                PyErr::new::<pyo3::exceptions::PyKeyError, _>(format!(
+                    "Function '{}' not found",
+                    function_name
+                ))
+            })?;
 
             // Call function with arg
             let result = func.call1((arg,))?;
@@ -104,7 +105,13 @@ impl Interpreter for PythonInterpreter {
     }
 
     /// Run quietly - suppress Python errors if requested
-    fn run_quietly(&mut self, function: &str, arg: &str, out: &mut String, suppress_error: bool) -> bool {
+    fn run_quietly(
+        &mut self,
+        function: &str,
+        arg: &str,
+        out: &mut String,
+        suppress_error: bool,
+    ) -> bool {
         match self.call_function_internal(function, arg) {
             Ok(result) => {
                 *out = result;
@@ -184,7 +191,8 @@ impl Interpreter for PythonInterpreter {
     fn get_int(&mut self, name: &str) -> i64 {
         Python::with_gil(|py| {
             let globals = self.globals.bind(py);
-            globals.get_item(name)
+            globals
+                .get_item(name)
                 .ok()
                 .and_then(|v| v)
                 .and_then(|v| v.extract::<i64>().ok())
@@ -202,7 +210,8 @@ impl Interpreter for PythonInterpreter {
     fn get_str(&mut self, name: &str) -> String {
         Python::with_gil(|py| {
             let globals = self.globals.bind(py);
-            globals.get_item(name)
+            globals
+                .get_item(name)
                 .ok()
                 .and_then(|v| v)
                 .and_then(|v| v.extract::<String>().ok())
@@ -225,7 +234,11 @@ impl Interpreter for PythonInterpreter {
     }
 
     /// Prepare regex substitution (Python version)
-    fn substitute_prepare(&mut self, pattern: &str, replacement: &str) -> Option<Box<dyn std::any::Any>> {
+    fn substitute_prepare(
+        &mut self,
+        pattern: &str,
+        replacement: &str,
+    ) -> Option<Box<dyn std::any::Any>> {
         Python::with_gil(|py| {
             // Import re module and compile pattern
             let re_module = py.import_bound("re").ok()?;

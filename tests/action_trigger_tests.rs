@@ -95,16 +95,23 @@ fn test_alias_expansion_with_mud() {
 fn test_action_list_iteration() {
     // C++ FOREACH pattern over action_list
     let mut mud = Mud::new();
-    mud.action_list.push(Action::new("pattern1", "cmd1", ActionType::Trigger));
-    mud.action_list.push(Action::new("pattern2", "cmd2", ActionType::Trigger));
-    mud.action_list.push(Action::new("pattern3", "replace3", ActionType::Replacement));
+    mud.action_list
+        .push(Action::new("pattern1", "cmd1", ActionType::Trigger));
+    mud.action_list
+        .push(Action::new("pattern2", "cmd2", ActionType::Trigger));
+    mud.action_list
+        .push(Action::new("pattern3", "replace3", ActionType::Replacement));
 
-    let triggers: Vec<_> = mud.action_list.iter()
+    let triggers: Vec<_> = mud
+        .action_list
+        .iter()
         .filter(|a| a.action_type == ActionType::Trigger)
         .collect();
     assert_eq!(triggers.len(), 2);
 
-    let replacements: Vec<_> = mud.action_list.iter()
+    let replacements: Vec<_> = mud
+        .action_list
+        .iter()
         .filter(|a| a.action_type == ActionType::Replacement)
         .collect();
     assert_eq!(replacements.len(), 1);

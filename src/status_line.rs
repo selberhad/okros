@@ -7,11 +7,21 @@ pub struct StatusLine {
 }
 
 impl StatusLine {
-    pub fn new(width: usize, color: u8) -> Self { Self{ width, text: String::new(), color } }
-    pub fn set_text<S: Into<String>>(&mut self, s: S) { self.text = s.into(); }
+    pub fn new(width: usize, color: u8) -> Self {
+        Self {
+            width,
+            text: String::new(),
+            color,
+        }
+    }
+    pub fn set_text<S: Into<String>>(&mut self, s: S) {
+        self.text = s.into();
+    }
     pub fn render(&self) -> Vec<Attrib> {
         let mut v = vec![((self.color as u16) << 8) | (b' ' as u16); self.width];
-        for (i, b) in self.text.as_bytes().iter().enumerate().take(self.width) { v[i] = ((self.color as u16) << 8) | (*b as u16); }
+        for (i, b) in self.text.as_bytes().iter().enumerate().take(self.width) {
+            v[i] = ((self.color as u16) << 8) | (*b as u16);
+        }
         v
     }
 }
@@ -28,4 +38,3 @@ mod tests {
         assert_eq!(&text[0..5], b"READY");
     }
 }
-

@@ -23,4 +23,3 @@ impl Color {
     pub const CYAN: Self = Self(6);
     pub const WHITE: Self = Self(7);
 }
-

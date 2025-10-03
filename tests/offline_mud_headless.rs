@@ -1,14 +1,14 @@
 // Test: Full offline MUD (src/offline_mud) driven via headless control server
 // Demonstrates: LLM-friendly architecture - no TTY needed, just JSON Lines protocol
 
-use okros::offline_mud::{World, parse};
-use okros::session::Session;
 use okros::mccp::PassthroughDecomp;
-use std::os::unix::net::{UnixListener, UnixStream};
+use okros::offline_mud::{parse, World};
+use okros::session::Session;
+use serde_json::json;
 use std::io::{BufRead, BufReader, Write};
+use std::os::unix::net::{UnixListener, UnixStream};
 use std::thread;
 use std::time::Duration;
-use serde_json::json;
 
 /// Control server for offline MUD - headless mode
 struct OfflineMudServer {
@@ -62,10 +62,7 @@ impl OfflineMudServer {
             "get_buffer" => {
                 // Extract scrollback as lines
                 let viewport = self.session.scrollback.viewport_slice();
-                let text: String = viewport
-                    .iter()
-                    .map(|&a| (a & 0xFF) as u8 as char)
-                    .collect();
+                let text: String = viewport.iter().map(|&a| (a & 0xFF) as u8 as char).collect();
 
                 let lines: Vec<String> = text
                     .lines()
@@ -82,7 +79,8 @@ impl OfflineMudServer {
                     "event":"Status",
                     "location":location,
                     "inventory_count":inv_count
-                }).to_string()
+                })
+                .to_string()
             }
             _ => json!({"event":"Error","message":"Unknown command"}).to_string(),
         }
@@ -122,7 +120,10 @@ fn test_offline_mud_via_headless_control_socket() {
     let mut reader = BufReader::new(client.try_clone().unwrap());
 
     // Helper to send command and read response
-    let send_cmd = |client: &mut UnixStream, reader: &mut BufReader<UnixStream>, cmd: &str| -> serde_json::Value {
+    let send_cmd = |client: &mut UnixStream,
+                    reader: &mut BufReader<UnixStream>,
+                    cmd: &str|
+     -> serde_json::Value {
         let json_cmd = json!({"cmd":"send","data":cmd}).to_string();
         writeln!(client, "{}", json_cmd).unwrap();
         let mut response = String::new();
@@ -146,20 +147,29 @@ fn test_offline_mud_via_headless_control_socket() {
     // Test 1: Initial state shows Forest Clearing
     let lines = get_buffer(&mut client, &mut reader);
     let text = lines.join(" ");
-    assert!(text.contains("Forest Clearing"), "Should show starting room");
+    assert!(
+        text.contains("Forest Clearing"),
+        "Should show starting room"
+    );
     assert!(text.contains("rusty sword"), "Should show sword item");
 
     // Test 2: Take the sword
     send_cmd(&mut client, &mut reader, "take rusty sword\n");
     let lines = get_buffer(&mut client, &mut reader);
     let text = lines.join(" ");
-    assert!(text.contains("You take the rusty sword"), "Should confirm taking sword");
+    assert!(
+        text.contains("You take the rusty sword"),
+        "Should confirm taking sword"
+    );
 
     // Test 3: Check inventory
     send_cmd(&mut client, &mut reader, "inventory\n");
     let lines = get_buffer(&mut client, &mut reader);
     let text = lines.join(" ");
-    assert!(text.contains("rusty sword"), "Should show sword in inventory");
+    assert!(
+        text.contains("rusty sword"),
+        "Should show sword in inventory"
+    );
 
     // Test 4: Navigate north to forest
     send_cmd(&mut client, &mut reader, "north\n");
@@ -171,7 +181,10 @@ fn test_offline_mud_via_headless_control_socket() {
     send_cmd(&mut client, &mut reader, "s\n");
     let lines = get_buffer(&mut client, &mut reader);
     let text = lines.join(" ");
-    assert!(text.contains("Forest Clearing"), "Should be back in clearing");
+    assert!(
+        text.contains("Forest Clearing"),
+        "Should be back in clearing"
+    );
 
     // Test 6: Go to cave (east)
     send_cmd(&mut client, &mut reader, "e\n");
@@ -189,7 +202,10 @@ fn test_offline_mud_via_headless_control_socket() {
     send_cmd(&mut client, &mut reader, "dance\n");
     let lines = get_buffer(&mut client, &mut reader);
     let text = lines.join(" ");
-    assert!(text.contains("don't understand"), "Should show error for bad command");
+    assert!(
+        text.contains("don't understand"),
+        "Should show error for bad command"
+    );
 
     // Clean up
     drop(reader);
@@ -231,16 +247,45 @@ fn test_llm_agent_playthrough_pattern() {
 
     // LLM Agent Loop: Read → Decide → Act
     let llm_actions: Vec<(&str, Box<dyn Fn(&str) -> bool>)> = vec![
-        ("look", Box::new(|text: &str| text.contains("Forest Clearing"))),
-        ("take rusty sword", Box::new(|text: &str| text.contains("You take"))),
-        ("inventory", Box::new(|text: &str| text.contains("rusty sword"))),
+        (
+            "look",
+            Box::new(|text: &str| text.contains("Forest Clearing")),
+        ),
+        (
+            "take rusty sword",
+            Box::new(|text: &str| text.contains("You take")),
+        ),
+        (
+            "inventory",
+            Box::new(|text: &str| text.contains("rusty sword")),
+        ),
         ("go east", Box::new(|text: &str| text.contains("Dark Cave"))),
-        ("take torch", Box::new(|text: &str| text.contains("You take the torch"))),
-        ("go west", Box::new(|text: &str| text.contains("Forest Clearing"))),
-        ("go south", Box::new(|text: &str| text.contains("Mountain Stream"))),
-        ("go south", Box::new(|text: &str| text.contains("Abandoned Village"))),
-        ("take iron key", Box::new(|text: &str| text.contains("You take the iron key"))),
-        ("inventory", Box::new(|text: &str| text.contains("rusty sword") && text.contains("torch") && text.contains("iron key"))),
+        (
+            "take torch",
+            Box::new(|text: &str| text.contains("You take the torch")),
+        ),
+        (
+            "go west",
+            Box::new(|text: &str| text.contains("Forest Clearing")),
+        ),
+        (
+            "go south",
+            Box::new(|text: &str| text.contains("Mountain Stream")),
+        ),
+        (
+            "go south",
+            Box::new(|text: &str| text.contains("Abandoned Village")),
+        ),
+        (
+            "take iron key",
+            Box::new(|text: &str| text.contains("You take the iron key")),
+        ),
+        (
+            "inventory",
+            Box::new(|text: &str| {
+                text.contains("rusty sword") && text.contains("torch") && text.contains("iron key")
+            }),
+        ),
     ];
 
     for (action, validator) in &llm_actions {
@@ -266,7 +311,12 @@ fn test_llm_agent_playthrough_pattern() {
         let text = lines.join(" ");
 
         // Validate (LLM would parse this text to decide next action)
-        assert!(validator(&text), "Action '{}' failed validation. Buffer: {}", action, text);
+        assert!(
+            validator(&text),
+            "Action '{}' failed validation. Buffer: {}",
+            action,
+            text
+        );
     }
 
     // Final check: Collected all 3 items

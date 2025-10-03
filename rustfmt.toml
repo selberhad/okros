@@ -1,0 +1,20 @@
+# Rust Formatting Configuration (Stable Features Only)
+# See: https://rust-lang.github.io/rustfmt/
+
+# Edition
+edition = "2021"
+
+# Line width
+max_width = 100
+tab_spaces = 4
+hard_tabs = false
+
+# Formatting style (stable options only)
+use_small_heuristics = "Default"
+use_field_init_shorthand = true
+use_try_shorthand = true
+remove_nested_parens = true
+newline_style = "Unix"
+
+# Chains
+chain_width = 60

@@ -1,7 +1,7 @@
 // Integration test: Full playthrough of offline MUD
 // Tests complete game sequence: visit all rooms, collect all items
 
-use okros::offline_mud::{World, parse};
+use okros::offline_mud::{parse, World};
 
 #[test]
 fn test_complete_playthrough() {

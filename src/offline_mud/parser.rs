@@ -103,7 +103,10 @@ mod tests {
     #[test]
     fn test_parse_take() {
         assert_eq!(parse("take sword"), Ok(Command::Take("sword".to_string())));
-        assert_eq!(parse("take rusty sword"), Ok(Command::Take("rusty sword".to_string())));
+        assert_eq!(
+            parse("take rusty sword"),
+            Ok(Command::Take("rusty sword".to_string()))
+        );
         assert_eq!(parse("get torch"), Ok(Command::Take("torch".to_string())));
         assert!(parse("take").is_err());
     }

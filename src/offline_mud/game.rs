@@ -112,7 +112,8 @@ impl World {
             Room {
                 id: "clearing",
                 name: "Forest Clearing",
-                description: "You are in a forest clearing. Sunlight streams through the canopy above.",
+                description:
+                    "You are in a forest clearing. Sunlight streams through the canopy above.",
                 exits: clearing_exits,
                 items: vec!["sword"], // sword starts here
             },
@@ -175,7 +176,9 @@ impl World {
     }
 
     pub fn current_room(&self) -> &Room {
-        self.rooms.get(self.player.location).expect("Player in invalid room")
+        self.rooms
+            .get(self.player.location)
+            .expect("Player in invalid room")
     }
 
     pub fn get_item(&self, item_id: ItemId) -> Option<&Item> {
@@ -314,10 +317,7 @@ impl World {
                 .keys()
                 .map(|d| format!("{:?}", d).to_lowercase())
                 .collect();
-            output.push_str(&format!(
-                "\x1b[36mExits: {}\x1b[0m\n",
-                exit_list.join(", ")
-            ));
+            output.push_str(&format!("\x1b[36mExits: {}\x1b[0m\n", exit_list.join(", ")));
         } else {
             output.push_str("\x1b[36mNo obvious exits.\x1b[0m\n");
         }
@@ -329,10 +329,7 @@ impl World {
                 .iter()
                 .filter_map(|&id| self.items.get(id).map(|item| item.name.to_string()))
                 .collect();
-            output.push_str(&format!(
-                "\x1b[33mItems: {}\x1b[0m\n",
-                item_list.join(", ")
-            ));
+            output.push_str(&format!("\x1b[33mItems: {}\x1b[0m\n", item_list.join(", ")));
         }
 
         output

@@ -2,8 +2,8 @@
 // Validates that MUD output flows through full okros pipeline:
 // MUD → ANSI → Telnet → MCCP → Scrollback
 
-use okros::session::Session;
 use okros::mccp::PassthroughDecomp;
+use okros::session::Session;
 use std::collections::HashMap;
 
 // Minimal MUD for testing (copied from toy12)
@@ -108,7 +108,10 @@ impl MiniWorld {
 
         // Items (yellow)
         if !room.items.is_empty() {
-            out.push_str(&format!("\x1b[33mItems: {}\x1b[0m\n", room.items.join(", ")));
+            out.push_str(&format!(
+                "\x1b[33mItems: {}\x1b[0m\n",
+                room.items.join(", ")
+            ));
         }
 
         out
@@ -147,10 +150,7 @@ fn test_mud_output_through_session() {
 
     // Check scrollback contains room description
     let viewport = session.scrollback.viewport_slice();
-    let text: String = viewport
-        .iter()
-        .map(|&a| (a & 0xFF) as u8 as char)
-        .collect();
+    let text: String = viewport.iter().map(|&a| (a & 0xFF) as u8 as char).collect();
 
     assert!(text.contains("Forest Clearing"), "Should show room name");
     assert!(text.contains("clearing"), "Should show description");
@@ -167,10 +167,7 @@ fn test_mud_navigation_through_session() {
     session.feed(output.as_bytes());
 
     let viewport = session.scrollback.viewport_slice();
-    let text: String = viewport
-        .iter()
-        .map(|&a| (a & 0xFF) as u8 as char)
-        .collect();
+    let text: String = viewport.iter().map(|&a| (a & 0xFF) as u8 as char).collect();
 
     assert!(text.contains("Dense Forest"), "Should be in forest");
 }
@@ -185,12 +182,12 @@ fn test_mud_item_management_through_session() {
     session.feed(output.as_bytes());
 
     let viewport = session.scrollback.viewport_slice();
-    let text: String = viewport
-        .iter()
-        .map(|&a| (a & 0xFF) as u8 as char)
-        .collect();
+    let text: String = viewport.iter().map(|&a| (a & 0xFF) as u8 as char).collect();
 
-    assert!(text.contains("You take the sword"), "Should confirm taking sword");
+    assert!(
+        text.contains("You take the sword"),
+        "Should confirm taking sword"
+    );
 }
 
 #[test]
@@ -206,10 +203,7 @@ fn test_deterministic_command_sequence() {
     session.feed(world.go(Direction::East).as_bytes());
 
     let viewport = session.scrollback.viewport_slice();
-    let text: String = viewport
-        .iter()
-        .map(|&a| (a & 0xFF) as u8 as char)
-        .collect();
+    let text: String = viewport.iter().map(|&a| (a & 0xFF) as u8 as char).collect();
 
     // Should end in cave
     assert!(text.contains("Dark Cave"), "Should end in cave");

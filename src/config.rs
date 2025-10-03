@@ -6,9 +6,13 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
     pub fn set_server_str(&mut self, s: &str) -> Result<(), String> {
-        let (ip_s, port_s) = s.split_once(':').ok_or_else(|| "expected ip:port".to_string())?;
+        let (ip_s, port_s) = s
+            .split_once(':')
+            .ok_or_else(|| "expected ip:port".to_string())?;
         let ip = ip_s.parse::<Ipv4Addr>().map_err(|e| e.to_string())?;
         let port = port_s.parse::<u16>().map_err(|e| e.to_string())?;
         self.server = Some((ip, port));
@@ -31,4 +35,3 @@ mod tests {
         assert!(c.set_server_str("bad").is_err());
     }
 }
-

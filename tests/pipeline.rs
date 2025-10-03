@@ -1,7 +1,7 @@
-use okros::mccp::{Decompressor, PassthroughDecomp};
-use okros::telnet::TelnetParser;
 use okros::ansi::{AnsiConverter, AnsiEvent};
+use okros::mccp::{Decompressor, PassthroughDecomp};
 use okros::scrollback::Scrollback;
+use okros::telnet::TelnetParser;
 
 #[test]
 fn pipeline_passthrough_telnet_ansi_scrollback() {
@@ -11,13 +11,7 @@ fn pipeline_passthrough_telnet_ansi_scrollback() {
     let mut ansi = AnsiConverter::new();
     let mut sb = Scrollback::new(5, 2, 20);
 
-    let chunks: Vec<&[u8]> = vec![
-        b"He",
-        b"\x1b",
-        b"[31m",
-        b"llo\n",
-        b"World\n",
-    ];
+    let chunks: Vec<&[u8]> = vec![b"He", b"\x1b", b"[31m", b"llo\n", b"World\n"];
 
     let mut cur_color: u8 = 0x07; // white-on-black
     let mut line_bytes: Vec<u8> = Vec::new();
@@ -45,7 +39,9 @@ fn pipeline_passthrough_telnet_ansi_scrollback() {
             }
         }
     }
-    if !line_bytes.is_empty() { sb.print_line(&line_bytes, cur_color); }
+    if !line_bytes.is_empty() {
+        sb.print_line(&line_bytes, cur_color);
+    }
 
     // Assert scrollback viewport shows the two lines, with the first "Hello" and second "World"
     let v = sb.viewport_slice();

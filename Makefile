@@ -34,8 +34,9 @@ help:
 	@echo "Code Quality:"
 	@echo "  make check          - Fast syntax check (no codegen)"
 	@echo "  make lint           - Run clippy lints"
-	@echo "  make fmt            - Format code"
+	@echo "  make fmt            - Format code with rustfmt"
 	@echo "  make fmt-check      - Check formatting without changes"
+	@echo "  make fmt-diff       - Show formatting changes before applying"
 	@echo "  make audit          - Security audit (requires cargo-audit)"
 	@echo ""
 	@echo "Documentation:"
@@ -140,10 +141,19 @@ lint:
 	cargo clippy --all-features -- -D warnings
 
 fmt:
-	cargo fmt
+	@echo "Formatting Rust code..."
+	cargo fmt --all
+	@echo "✅ Code formatted"
 
 fmt-check:
-	cargo fmt -- --check
+	@echo "Checking code formatting..."
+	cargo fmt --all -- --check
+	@echo "✅ Format check passed"
+
+# Format and show diff
+fmt-diff:
+	@echo "Showing formatting changes..."
+	cargo fmt --all -- --check --verbose || (cargo fmt --all && git diff)
 
 # Security audit (requires: cargo install cargo-audit)
 audit:
@@ -186,9 +196,13 @@ ci: ci-lint ci-test ci-build
 
 # === Development Workflow ===
 
-# Pre-commit checks
-pre-commit: fmt lint test
+# Pre-commit checks (run before committing)
+pre-commit: fmt-check lint test
 	@echo "✅ Pre-commit checks passed"
+
+# Fix and prepare for commit
+pre-commit-fix: fmt lint test
+	@echo "✅ Code formatted and all checks passed"
 
 # Watch mode (requires: cargo install cargo-watch)
 watch:

@@ -7,9 +7,9 @@ use std::any::Any;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ActionType {
-    Trigger,      // Pattern match → execute commands
-    Replacement,  // Pattern match → substitute text
-    Gag,          // Pattern match → suppress line
+    Trigger,     // Pattern match → execute commands
+    Replacement, // Pattern match → substitute text
+    Gag,         // Pattern match → suppress line
 }
 
 pub struct Action {
@@ -31,7 +31,11 @@ impl std::fmt::Debug for Action {
 }
 
 impl Action {
-    pub fn new(pattern: impl Into<String>, commands: impl Into<String>, action_type: ActionType) -> Self {
+    pub fn new(
+        pattern: impl Into<String>,
+        commands: impl Into<String>,
+        action_type: ActionType,
+    ) -> Self {
         Self {
             pattern: pattern.into(),
             commands: commands.into(),
@@ -108,10 +112,7 @@ impl Action {
 
         // For Replacement/Gag, commands can be empty
         if rest.is_empty() && action_type == ActionType::Trigger {
-            return Err(format!(
-                "Missing action string for trigger: {}",
-                input
-            ));
+            return Err(format!("Missing action string for trigger: {}", input));
         }
 
         Ok(Self::new(pattern, rest, action_type))

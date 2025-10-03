@@ -5,4 +5,4 @@ pub mod game;
 pub mod parser;
 
 pub use game::World;
-pub use parser::{Command, parse};
+pub use parser::{parse, Command};

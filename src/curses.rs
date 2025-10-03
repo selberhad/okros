@@ -147,14 +147,14 @@ pub unsafe fn get_acs_codes() -> [u8; 8] {
 
     // Extract low byte (actual character code) from ncurses ACS values
     [
-        (ncurses::ACS_VLINE() & 0xFF) as u8,      // vertical line
-        (ncurses::ACS_HLINE() & 0xFF) as u8,      // horizontal line
-        (ncurses::ACS_ULCORNER() & 0xFF) as u8,   // upper left corner
-        (ncurses::ACS_URCORNER() & 0xFF) as u8,   // upper right corner
-        (ncurses::ACS_LLCORNER() & 0xFF) as u8,   // lower left corner
-        (ncurses::ACS_LRCORNER() & 0xFF) as u8,   // lower right corner
-        (ncurses::ACS_CKBOARD() & 0xFF) as u8,    // checkerboard
-        (ncurses::ACS_BULLET() & 0xFF) as u8,     // bullet
+        (ncurses::ACS_VLINE() & 0xFF) as u8,    // vertical line
+        (ncurses::ACS_HLINE() & 0xFF) as u8,    // horizontal line
+        (ncurses::ACS_ULCORNER() & 0xFF) as u8, // upper left corner
+        (ncurses::ACS_URCORNER() & 0xFF) as u8, // upper right corner
+        (ncurses::ACS_LLCORNER() & 0xFF) as u8, // lower left corner
+        (ncurses::ACS_LRCORNER() & 0xFF) as u8, // lower right corner
+        (ncurses::ACS_CKBOARD() & 0xFF) as u8,  // checkerboard
+        (ncurses::ACS_BULLET() & 0xFF) as u8,   // bullet
     ]
 }
 

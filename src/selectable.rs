@@ -22,4 +22,3 @@ mod tests {
         assert!(both.contains(Interest::WRITE));
     }
 }
-

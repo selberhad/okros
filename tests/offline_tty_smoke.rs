@@ -3,8 +3,8 @@
 // Coverage: exercises main.rs event loop initialization, tty.rs, curses.rs setup
 
 use std::process::{Command, Stdio};
-use std::time::Duration;
 use std::thread;
+use std::time::Duration;
 
 #[test]
 fn test_offline_mode_starts_with_tty() {
@@ -24,12 +24,23 @@ fn test_offline_mode_starts_with_tty() {
 
     let mut cmd = if is_macos {
         let mut c = Command::new("script");
-        c.args(&["-q", "/dev/null", "timeout", "2", "target/debug/okros", "--offline"]);
+        c.args(&[
+            "-q",
+            "/dev/null",
+            "timeout",
+            "2",
+            "target/debug/okros",
+            "--offline",
+        ]);
         c
     } else {
         // Linux
         let mut c = Command::new("script");
-        c.args(&["-qec", "timeout 2 target/debug/okros --offline", "/dev/null"]);
+        c.args(&[
+            "-qec",
+            "timeout 2 target/debug/okros --offline",
+            "/dev/null",
+        ]);
         c
     };
 
@@ -93,15 +104,15 @@ exit 1
         let script_path = "/tmp/okros_expect_test.exp";
         std::fs::write(script_path, expect_script).ok();
 
-        let status = Command::new("expect")
-            .arg(script_path)
-            .status();
+        let status = Command::new("expect").arg(script_path).status();
 
         std::fs::remove_file(script_path).ok();
 
         if let Ok(st) = status {
-            assert!(st.success() || st.code() == Some(1),
-                "Expect test should either succeed or timeout gracefully");
+            assert!(
+                st.success() || st.code() == Some(1),
+                "Expect test should either succeed or timeout gracefully"
+            );
             return;
         }
     }

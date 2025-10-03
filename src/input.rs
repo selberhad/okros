@@ -34,8 +34,18 @@ pub struct KeyDecoder {
     state: EscState,
 }
 
-impl Default for KeyDecoder { fn default() -> Self { Self{ state: EscState::None } } }
-impl KeyDecoder { pub fn new() -> Self { Self::default() } }
+impl Default for KeyDecoder {
+    fn default() -> Self {
+        Self {
+            state: EscState::None,
+        }
+    }
+}
+impl KeyDecoder {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 
 impl KeyDecoder {
     pub fn feed(&mut self, bytes: &[u8]) -> Vec<KeyEvent> {
@@ -43,17 +53,26 @@ impl KeyDecoder {
         for &b in bytes {
             match &mut self.state {
                 EscState::None => {
-                    if b == 0x1B { self.state = EscState::Esc; }
-                    else { out.push(KeyEvent::Byte(b)); }
+                    if b == 0x1B {
+                        self.state = EscState::Esc;
+                    } else {
+                        out.push(KeyEvent::Byte(b));
+                    }
                 }
                 EscState::Esc => {
-                    if b == b'[' { self.state = EscState::Csi(Vec::new()); }
-                    else if b == b'O' { self.state = EscState::EfO; }
+                    if b == b'[' {
+                        self.state = EscState::Csi(Vec::new());
+                    } else if b == b'O' {
+                        self.state = EscState::EfO;
+                    }
                     // Alt-<letter>
                     else if (b as char).is_ascii_alphabetic() {
                         out.push(KeyEvent::Key(KeyCode::Alt(b.to_ascii_lowercase())));
                         self.state = EscState::None;
-                    } else { out.push(KeyEvent::Key(KeyCode::Escape)); self.state = EscState::None; }
+                    } else {
+                        out.push(KeyEvent::Key(KeyCode::Escape));
+                        self.state = EscState::None;
+                    }
                 }
                 EscState::Csi(buf) => {
                     // Collect until a final byte in @A-Z~ range
@@ -123,7 +142,9 @@ mod tests {
     fn alt_letter_and_fkeys() {
         let mut d = KeyDecoder::new();
         let ev = d.feed(b"\x1ba\x1bOP\x1bOQ\x1bOR\x1bOS");
-        assert!(ev.iter().any(|e| matches!(e, KeyEvent::Key(KeyCode::Alt(b'a')))));
+        assert!(ev
+            .iter()
+            .any(|e| matches!(e, KeyEvent::Key(KeyCode::Alt(b'a')))));
         assert!(ev.iter().any(|e| matches!(e, KeyEvent::Key(KeyCode::F(1)))));
         assert!(ev.iter().any(|e| matches!(e, KeyEvent::Key(KeyCode::F(2)))));
         assert!(ev.iter().any(|e| matches!(e, KeyEvent::Key(KeyCode::F(3)))));

@@ -1,4 +1,4 @@
-use crate::scrollback::{Scrollback, Attrib};
+use crate::scrollback::{Attrib, Scrollback};
 use crate::window::Window;
 
 pub struct OutputWindow {
@@ -11,7 +11,11 @@ impl OutputWindow {
     pub fn new(width: usize, height: usize, lines: usize, color: u8) -> Self {
         let mut win = Window::new(width, height);
         win.clear(color);
-        Self { win, sb: Scrollback::new(width, height, lines), color }
+        Self {
+            win,
+            sb: Scrollback::new(width, height, lines),
+            color,
+        }
     }
 
     pub fn print_line(&mut self, bytes: &[u8], color: u8) {
@@ -41,7 +45,19 @@ mod tests {
         assert_eq!(&text[5..10], b"world");
         // Render diff from blank to current
         let prev = vec![0u16; v.len()];
-        let s = diff_to_ansi(&prev, v, &DiffOptions{ width:5, height:2, cursor_x:0, cursor_y:0, smacs:None, rmacs:None, set_bg_always:true });
+        let s = diff_to_ansi(
+            &prev,
+            v,
+            &DiffOptions {
+                width: 5,
+                height: 2,
+                cursor_x: 0,
+                cursor_y: 0,
+                smacs: None,
+                rmacs: None,
+                set_bg_always: true,
+            },
+        );
         assert!(s.contains("hello"));
         // bottom-right cell is skipped by renderer, so only 'worl' present
         assert!(s.contains("worl"));

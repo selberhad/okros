@@ -3,9 +3,9 @@
 //! Ported from: plugins/PerlEmbeddedInterpreter.cc
 //! Uses raw Perl C API FFI (validated in toy5)
 
+use crate::plugins::stack::Interpreter;
 use std::ffi::{CStr, CString};
 use std::ptr;
-use crate::plugins::stack::Interpreter;
 
 // =============================================================================
 // Opaque types (Perl internal structures)
@@ -198,7 +198,11 @@ impl PerlPlugin {
     }
 
     /// Call Perl function with string arg, return result as string
-    unsafe fn call_function_internal(&mut self, function: &str, arg: &str) -> Result<String, String> {
+    unsafe fn call_function_internal(
+        &mut self,
+        function: &str,
+        arg: &str,
+    ) -> Result<String, String> {
         // Build Perl code: $result = function(arg);
         let code = format!("$_ = {}(q{{{}}})", function, arg);
         let c_code = CString::new(code).map_err(|e| e.to_string())?;
@@ -356,7 +360,11 @@ impl Interpreter for PerlPlugin {
 
     /// Prepare regex substitution (C++ substitute_prepare)
     /// Returns compiled Perl sub that does s/pattern/replacement/g
-    fn substitute_prepare(&mut self, pattern: &str, replacement: &str) -> Option<Box<dyn std::any::Any>> {
+    fn substitute_prepare(
+        &mut self,
+        pattern: &str,
+        replacement: &str,
+    ) -> Option<Box<dyn std::any::Any>> {
         unsafe {
             // Create Perl sub: sub { unless (s/$pattern/$replacement/g) { $_ = ""; } }
             let code = format!(

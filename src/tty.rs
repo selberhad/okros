@@ -16,7 +16,10 @@ mod unix {
                 if libc::tcgetattr(libc::STDIN_FILENO, &mut old) != 0 {
                     return Err(io::Error::last_os_error());
                 }
-                Ok(Self { old, enabled: false })
+                Ok(Self {
+                    old,
+                    enabled: false,
+                })
             }
         }
 
@@ -37,7 +40,9 @@ mod unix {
         }
 
         pub fn disable_raw(&mut self) -> io::Result<()> {
-            if !self.enabled { return Ok(()); }
+            if !self.enabled {
+                return Ok(());
+            }
             unsafe {
                 if libc::tcsetattr(libc::STDIN_FILENO, libc::TCSANOW, &self.old) != 0 {
                     return Err(io::Error::last_os_error());
@@ -70,7 +75,20 @@ mod unix {
 mod nonunix {
     use std::io;
     pub struct Tty;
-    impl Tty { pub fn new() -> io::Result<Self> { Ok(Tty) } pub fn enable_raw(&mut self)->io::Result<()> { Ok(()) } pub fn disable_raw(&mut self)->io::Result<()> { Ok(()) } pub fn keypad_application_mode(&self,_:bool)->io::Result<()> { Ok(()) } }
+    impl Tty {
+        pub fn new() -> io::Result<Self> {
+            Ok(Tty)
+        }
+        pub fn enable_raw(&mut self) -> io::Result<()> {
+            Ok(())
+        }
+        pub fn disable_raw(&mut self) -> io::Result<()> {
+            Ok(())
+        }
+        pub fn keypad_application_mode(&self, _: bool) -> io::Result<()> {
+            Ok(())
+        }
+    }
     pub use Tty as PlatformTty;
 }
 
@@ -113,7 +131,10 @@ mod tests {
                         }
                     }
                     Err(e) => {
-                        println!("⚠️ Cannot enable raw mode: {} (expected if not a real TTY)", e);
+                        println!(
+                            "⚠️ Cannot enable raw mode: {} (expected if not a real TTY)",
+                            e
+                        );
                     }
                 }
             }
@@ -149,4 +170,3 @@ mod tests {
         }
     }
 }
-

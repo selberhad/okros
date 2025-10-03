@@ -1,32 +1,32 @@
-pub mod color;
 pub mod ansi;
-pub mod telnet;
-pub mod mccp;
-pub mod scrollback;
-pub mod screen;
-pub mod window;
-pub mod output_window;
+pub mod color;
+pub mod config;
+pub mod control;
+pub mod engine;
 pub mod input_line;
-pub mod status_line;
-pub mod socket;
+pub mod mccp;
+pub mod mud;
+pub mod output_window;
+pub mod screen;
+pub mod scrollback;
 pub mod select;
 pub mod selectable;
-pub mod config;
-pub mod mud;
-pub mod engine;
-pub mod control;
+pub mod socket;
+pub mod status_line;
+pub mod telnet;
+pub mod window;
 pub mod plugins {
-    pub mod stack;
-    #[cfg(feature = "python")]
-    pub mod python;
     #[cfg(feature = "perl")]
     pub mod perl;
+    #[cfg(feature = "python")]
+    pub mod python;
+    pub mod stack;
 }
-pub mod session;
-pub mod tty;
+pub mod action;
+pub mod alias;
 pub mod curses;
 pub mod input;
-pub mod offline_mud;
-pub mod alias;
-pub mod action;
 pub mod macro_def;
+pub mod offline_mud;
+pub mod session;
+pub mod tty;

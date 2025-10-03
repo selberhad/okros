@@ -1,23 +1,34 @@
 use crate::mccp::Decompressor;
-use crate::session::Session;
 use crate::scrollback::Attrib;
+use crate::session::Session;
 use std::cell::RefCell;
 
 pub struct SessionEngine<D: Decompressor> {
     pub session: Session<D>,
     attached: bool,
     ansi_cache: RefCell<Option<Vec<String>>>,
-    read_cursor: RefCell<usize>,  // Track which lines have been read in headless mode
+    read_cursor: RefCell<usize>, // Track which lines have been read in headless mode
 }
 
 impl<D: Decompressor> SessionEngine<D> {
     pub fn new(decomp: D, width: usize, height: usize, lines: usize) -> Self {
-        Self { session: Session::new(decomp, width, height, lines), attached: true, ansi_cache: RefCell::new(None), read_cursor: RefCell::new(0) }
+        Self {
+            session: Session::new(decomp, width, height, lines),
+            attached: true,
+            ansi_cache: RefCell::new(None),
+            read_cursor: RefCell::new(0),
+        }
     }
 
-    pub fn detach(&mut self) { self.attached = false; }
-    pub fn attach(&mut self) { self.attached = true; }
-    pub fn is_attached(&self) -> bool { self.attached }
+    pub fn detach(&mut self) {
+        self.attached = false;
+    }
+    pub fn attach(&mut self) {
+        self.attached = true;
+    }
+    pub fn is_attached(&self) -> bool {
+        self.attached
+    }
 
     pub fn feed_inbound(&mut self, chunk: &[u8]) {
         // Even if detached, we continue processing and buffering into scrollback
@@ -43,7 +54,7 @@ impl<D: Decompressor> SessionEngine<D> {
 
         for row in 0..height {
             let off = row * width;
-            let row_slice = &slice[off .. off + width];
+            let row_slice = &slice[off..off + width];
             let line = crate::screen::attrib_row_to_ansi(row_slice);
             out.push(line);
         }
@@ -75,7 +86,7 @@ impl<D: Decompressor> SessionEngine<D> {
         let mut out = Vec::with_capacity(row_count);
         for row in 0..row_count {
             let off = row * width;
-            let row_slice = &lines[off .. off + width];
+            let row_slice = &lines[off..off + width];
             let line = crate::screen::attrib_row_to_ansi(row_slice);
             out.push(line);
         }
@@ -101,7 +112,7 @@ impl<D: Decompressor> SessionEngine<D> {
 
         for row in 0..row_count {
             let off = row * width;
-            let row_slice = &slice[off .. off + width];
+            let row_slice = &slice[off..off + width];
             let line = crate::screen::attrib_row_to_ansi(row_slice);
             out.push(line);
         }
@@ -124,7 +135,7 @@ impl<D: Decompressor> SessionEngine<D> {
 
         for row in 0..row_count {
             let off = row * width;
-            let row_slice = &vec[off .. off + width];
+            let row_slice = &vec[off..off + width];
 
             let mut hex_parts = Vec::new();
             let mut text_chars = Vec::new();
@@ -135,7 +146,11 @@ impl<D: Decompressor> SessionEngine<D> {
                 let color = (attr >> 8) as u8;
 
                 hex_parts.push(format!("{:02x}:{:02x}", ch, color));
-                text_chars.push(if ch >= 32 && ch < 127 { ch as char } else { '.' });
+                text_chars.push(if ch >= 32 && ch < 127 {
+                    ch as char
+                } else {
+                    '.'
+                });
                 color_parts.push(format!("{:02x}", color));
             }
 
@@ -192,4 +207,3 @@ mod tests {
         assert!(rows3.iter().any(|r| r.contains("Line2")));
     }
 }
-

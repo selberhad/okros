@@ -245,7 +245,10 @@ mod tests {
     fn test_alias_complex_pattern() {
         // Real-world example: say <message> to <person>
         let alias = Alias::new("say", "tell %+2 %1");
-        assert_eq!(alias.expand("bob hello there friend"), "tell hello there friend bob");
+        assert_eq!(
+            alias.expand("bob hello there friend"),
+            "tell hello there friend bob"
+        );
     }
 
     #[test]

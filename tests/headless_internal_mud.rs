@@ -1,14 +1,14 @@
 // Test: Internal MUD driven via headless mode control server
 // Goal: Validate full automation loop - JSON commands → MUD → scrollback → JSON response
 
-use okros::session::Session;
 use okros::mccp::PassthroughDecomp;
+use okros::session::Session;
+use serde_json::json;
 use std::collections::HashMap;
-use std::os::unix::net::{UnixListener, UnixStream};
 use std::io::{BufRead, BufReader, Write};
+use std::os::unix::net::{UnixListener, UnixStream};
 use std::thread;
 use std::time::Duration;
-use serde_json::json;
 
 // Minimal MUD (copied from internal_mud_integration.rs)
 type RoomId = &'static str;
@@ -149,10 +149,7 @@ impl MudControlServer {
             "get_buffer" => {
                 // Extract scrollback as lines
                 let viewport = self.session.scrollback.viewport_slice();
-                let text: String = viewport
-                    .iter()
-                    .map(|&a| (a & 0xFF) as u8 as char)
-                    .collect();
+                let text: String = viewport.iter().map(|&a| (a & 0xFF) as u8 as char).collect();
 
                 // Split into lines and clean up
                 let lines: Vec<String> = text
@@ -163,9 +160,7 @@ impl MudControlServer {
 
                 json!({"event":"Buffer","lines":lines}).to_string()
             }
-            "status" => {
-                json!({"event":"Status","attached":false}).to_string()
-            }
+            "status" => json!({"event":"Status","attached":false}).to_string(),
             _ => json!({"event":"Error","message":"Unknown command"}).to_string(),
         }
     }
@@ -226,12 +221,16 @@ fn test_headless_mud_via_control_server() {
     assert_eq!(resp["event"], "Buffer");
 
     let lines = resp["lines"].as_array().unwrap();
-    let all_text = lines.iter()
+    let all_text = lines
+        .iter()
         .filter_map(|v| v.as_str())
         .collect::<Vec<_>>()
         .join(" ");
 
-    assert!(all_text.contains("Forest Clearing"), "Should show room name");
+    assert!(
+        all_text.contains("Forest Clearing"),
+        "Should show room name"
+    );
     assert!(all_text.contains("clearing"), "Should show description");
 
     // Test 3: Navigate north
@@ -246,7 +245,8 @@ fn test_headless_mud_via_control_server() {
     let resp: serde_json::Value = serde_json::from_str(&response).unwrap();
 
     let lines = resp["lines"].as_array().unwrap();
-    let all_text = lines.iter()
+    let all_text = lines
+        .iter()
         .filter_map(|v| v.as_str())
         .collect::<Vec<_>>()
         .join(" ");
@@ -313,13 +313,17 @@ fn test_deterministic_command_sequence_via_json() {
     let resp: serde_json::Value = serde_json::from_str(&response).unwrap();
 
     let lines = resp["lines"].as_array().unwrap();
-    let all_text = lines.iter()
+    let all_text = lines
+        .iter()
         .filter_map(|v| v.as_str())
         .collect::<Vec<_>>()
         .join(" ");
 
     // Should be back in clearing after north then south
-    assert!(all_text.contains("Forest Clearing"), "Should be back in clearing");
+    assert!(
+        all_text.contains("Forest Clearing"),
+        "Should be back in clearing"
+    );
 
     // Clean up - close connection to unblock server
     drop(reader);

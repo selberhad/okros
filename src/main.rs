@@ -1,14 +1,14 @@
-use std::io::{self, Read, Write, BufRead};
-use okros::input::{KeyDecoder, KeyEvent, KeyCode};
-use okros::screen::{self, DiffOptions};
-use okros::curses::get_acs_caps;
-use okros::session::Session;
-use okros::mccp::PassthroughDecomp;
-use okros::engine::SessionEngine;
-use okros::control::{ControlServer, default_socket_path};
-use okros::select::{poll_fds, READ, WRITE};
-use okros::socket::{Socket, ConnState};
 use libc::{fcntl, F_SETFL, O_NONBLOCK};
+use okros::control::{default_socket_path, ControlServer};
+use okros::curses::get_acs_caps;
+use okros::engine::SessionEngine;
+use okros::input::{KeyCode, KeyDecoder, KeyEvent};
+use okros::mccp::PassthroughDecomp;
+use okros::screen::{self, DiffOptions};
+use okros::select::{poll_fds, READ, WRITE};
+use okros::session::Session;
+use okros::socket::{ConnState, Socket};
+use std::io::{self, BufRead, Read, Write};
 use std::net::Ipv4Addr;
 
 fn main() {
@@ -24,7 +24,10 @@ fn main() {
             return;
         } else {
             // Regular headless mode: control socket + network
-            let inst = args.get(3).cloned().unwrap_or_else(|| "default".to_string());
+            let inst = args
+                .get(3)
+                .cloned()
+                .unwrap_or_else(|| "default".to_string());
             let path = default_socket_path(&inst);
             let eng = SessionEngine::new(PassthroughDecomp::new(), 80, 20, 2000);
             let srv = ControlServer::new(path.clone(), eng);
@@ -33,7 +36,10 @@ fn main() {
             return;
         }
     } else if args.len() > 2 && args[1] == "--attach" {
-        let inst = args.get(2).cloned().unwrap_or_else(|| "default".to_string());
+        let inst = args
+            .get(2)
+            .cloned()
+            .unwrap_or_else(|| "default".to_string());
         let path = default_socket_path(&inst);
         match std::os::unix::net::UnixStream::connect(&path) {
             Ok(mut s) => {
@@ -44,7 +50,9 @@ fn main() {
                 let _ = br.read_line(&mut buf);
                 println!("{}", buf.trim_end());
             }
-            Err(e) => { eprintln!("attach failed: {}", e); }
+            Err(e) => {
+                eprintln!("attach failed: {}", e);
+            }
         }
         return;
     } else if args.len() > 1 && args[1] == "--offline" {
@@ -120,18 +128,30 @@ fn main() {
     }
 
     // Minimal demo: set raw mode, optional keypad app mode, then run a tiny event loop
-    let mut tty = match okros::tty::Tty::new() { Ok(t) => t, Err(e) => { eprintln!("tty init failed: {}", e); return; } };
+    let mut tty = match okros::tty::Tty::new() {
+        Ok(t) => t,
+        Err(e) => {
+            eprintln!("tty init failed: {}", e);
+            return;
+        }
+    };
     let _ = tty.enable_raw();
     let _ = tty.keypad_application_mode(true);
 
     // Compose a small UI: status (top), output (middle), input (bottom)
-    let width = 40usize; let height = 8usize; // small demo surface
+    let width = 40usize;
+    let height = 8usize; // small demo surface
     let caps = get_acs_caps();
-    let mut prev = vec![0u16; width*height];
+    let mut prev = vec![0u16; width * height];
     let mut cur = prev.clone();
 
     // Session for processing incoming bytes (MCCP->Telnet->ANSI->Scrollback)
-    let mut session = Session::new(PassthroughDecomp::new(), width, height.saturating_sub(2), 200);
+    let mut session = Session::new(
+        PassthroughDecomp::new(),
+        width,
+        height.saturating_sub(2),
+        200,
+    );
     // Input line buffer
     let mut input = okros::input_line::InputLine::new(width, 0x07);
     // Status line
@@ -139,7 +159,9 @@ fn main() {
     status.set_text("MCL-Rust demo: type, Enter to echo; q quits");
 
     // Simple demo loop: read stdin nonblocking, normalize keys, print them; quit on 'q'
-    unsafe { let _ = fcntl(libc::STDIN_FILENO, F_SETFL, O_NONBLOCK); }
+    unsafe {
+        let _ = fcntl(libc::STDIN_FILENO, F_SETFL, O_NONBLOCK);
+    }
     // MUD instance (contains socket + aliases/actions/macros)
     let mut mud = okros::mud::Mud::new();
     // Optional: try to connect if MCL_CONNECT=127.0.0.1:PORT is set
@@ -163,13 +185,17 @@ fn main() {
     // Main event loop (matching main.cc:141-170)
     while !quit {
         // 1. Render UI (main.cc:142)
-        render_surface(width, height, &mut prev, &mut cur, &session, &input, &status, &caps);
+        render_surface(
+            width, height, &mut prev, &mut cur, &session, &input, &status, &caps,
+        );
 
         // 2. Poll file descriptors (main.cc:147) - stdin + socket with 250ms timeout
         let mut fds = vec![(libc::STDIN_FILENO, READ)];
         if let Some(s) = &sock {
             let mut ev = READ;
-            if s.state == ConnState::Connecting { ev |= WRITE; }
+            if s.state == ConnState::Connecting {
+                ev |= WRITE;
+            }
             fds.push((s.as_raw_fd(), ev));
         }
         let ready = poll_fds(&fds, 250).unwrap_or_default();
@@ -178,169 +204,234 @@ fn main() {
         for (fd, r) in ready {
             if fd == libc::STDIN_FILENO && (r.revents & READ) != 0 {
                 // TTY input (keyboard)
-                if let Ok(n) = io::stdin().read(&mut buf) { if n>0 {
-                    for ev in dec.feed(&buf[..n]) {
-                        match ev {
-                            KeyEvent::Byte(b'\n') => {
-                                let line = input.take_line();
-                                if !line.is_empty() {
-                                    // Check for # commands (basic interpreter)
-                                    if line.starts_with(b"#quit") {
-                                        quit = true;
-                                        status.set_text("Quit.");
-                                    } else if line.starts_with(b"#open ") {
-                                        // #open <host> <port>
-                                        let args = String::from_utf8_lossy(&line[6..]);
-                                        if let Some((host_str, port_str)) = args.trim().split_once(' ') {
-                                            if let Ok(port) = port_str.parse::<u16>() {
-                                                // Parse hostname (support IPv4 for now)
-                                                if let Ok(ip) = host_str.parse::<Ipv4Addr>() {
-                                                    let mut s = Socket::new().unwrap();
-                                                    let _ = s.connect_ipv4(ip, port);
-                                                    sock = Some(s);
-                                                    status.set_text(format!("Connecting to {}:{}...", host_str, port));
+                if let Ok(n) = io::stdin().read(&mut buf) {
+                    if n > 0 {
+                        for ev in dec.feed(&buf[..n]) {
+                            match ev {
+                                KeyEvent::Byte(b'\n') => {
+                                    let line = input.take_line();
+                                    if !line.is_empty() {
+                                        // Check for # commands (basic interpreter)
+                                        if line.starts_with(b"#quit") {
+                                            quit = true;
+                                            status.set_text("Quit.");
+                                        } else if line.starts_with(b"#open ") {
+                                            // #open <host> <port>
+                                            let args = String::from_utf8_lossy(&line[6..]);
+                                            if let Some((host_str, port_str)) =
+                                                args.trim().split_once(' ')
+                                            {
+                                                if let Ok(port) = port_str.parse::<u16>() {
+                                                    // Parse hostname (support IPv4 for now)
+                                                    if let Ok(ip) = host_str.parse::<Ipv4Addr>() {
+                                                        let mut s = Socket::new().unwrap();
+                                                        let _ = s.connect_ipv4(ip, port);
+                                                        sock = Some(s);
+                                                        status.set_text(format!(
+                                                            "Connecting to {}:{}...",
+                                                            host_str, port
+                                                        ));
+                                                    } else {
+                                                        status.set_text(format!(
+                                                            "Invalid IP: {}",
+                                                            host_str
+                                                        ));
+                                                    }
                                                 } else {
-                                                    status.set_text(format!("Invalid IP: {}", host_str));
+                                                    status.set_text("Usage: #open <ip> <port>");
                                                 }
                                             } else {
                                                 status.set_text("Usage: #open <ip> <port>");
                                             }
-                                        } else {
-                                            status.set_text("Usage: #open <ip> <port>");
-                                        }
-                                    } else if line.starts_with(b"#alias ") {
-                                        // #alias <name> <expansion>
-                                        let args = String::from_utf8_lossy(&line[7..]).trim().to_string();
-                                        if let Some((name, text)) = args.split_once(' ') {
-                                            use okros::alias::Alias;
-                                            if let Some(pos) = mud.alias_list.iter().position(|a| a.name == name) {
-                                                mud.alias_list[pos] = Alias::new(name, text);
-                                                status.set_text(format!("Updated alias '{}' = {}", name, text));
+                                        } else if line.starts_with(b"#alias ") {
+                                            // #alias <name> <expansion>
+                                            let args = String::from_utf8_lossy(&line[7..])
+                                                .trim()
+                                                .to_string();
+                                            if let Some((name, text)) = args.split_once(' ') {
+                                                use okros::alias::Alias;
+                                                if let Some(pos) = mud
+                                                    .alias_list
+                                                    .iter()
+                                                    .position(|a| a.name == name)
+                                                {
+                                                    mud.alias_list[pos] = Alias::new(name, text);
+                                                    status.set_text(format!(
+                                                        "Updated alias '{}' = {}",
+                                                        name, text
+                                                    ));
+                                                } else {
+                                                    mud.alias_list.push(Alias::new(name, text));
+                                                    status.set_text(format!(
+                                                        "Added alias '{}' = {}",
+                                                        name, text
+                                                    ));
+                                                }
+                                            } else if !args.is_empty() {
+                                                // Remove alias
+                                                mud.alias_list.retain(|a| a.name != args);
+                                                status
+                                                    .set_text(format!("Removed alias '{}'", args));
                                             } else {
-                                                mud.alias_list.push(Alias::new(name, text));
-                                                status.set_text(format!("Added alias '{}' = {}", name, text));
+                                                status.set_text("Usage: #alias <name> <expansion>");
                                             }
-                                        } else if !args.is_empty() {
-                                            // Remove alias
-                                            mud.alias_list.retain(|a| a.name != args);
-                                            status.set_text(format!("Removed alias '{}'", args));
-                                        } else {
-                                            status.set_text("Usage: #alias <name> <expansion>");
-                                        }
-                                    } else if line.starts_with(b"#action ") {
-                                        // #action <pattern> <commands>
-                                        let args = String::from_utf8_lossy(&line[8..]).trim().to_string();
-                                        use okros::action::{Action, ActionType};
-                                        match Action::parse(&args, ActionType::Trigger) {
-                                            Ok(mut action) => {
-                                                // Compile action with available interpreter
-                                                #[cfg(feature = "perl")]
-                                                if let Some(ref mut interp) = perl_interp {
-                                                    use okros::plugins::stack::Interpreter;
-                                                    action.compile(interp);
-                                                }
-                                                #[cfg(all(feature = "python", not(feature = "perl")))]
-                                                if let Some(ref mut interp) = python_interp {
-                                                    use okros::plugins::stack::Interpreter;
-                                                    action.compile(interp);
-                                                }
+                                        } else if line.starts_with(b"#action ") {
+                                            // #action <pattern> <commands>
+                                            let args = String::from_utf8_lossy(&line[8..])
+                                                .trim()
+                                                .to_string();
+                                            use okros::action::{Action, ActionType};
+                                            match Action::parse(&args, ActionType::Trigger) {
+                                                Ok(mut action) => {
+                                                    // Compile action with available interpreter
+                                                    #[cfg(feature = "perl")]
+                                                    if let Some(ref mut interp) = perl_interp {
+                                                        use okros::plugins::stack::Interpreter;
+                                                        action.compile(interp);
+                                                    }
+                                                    #[cfg(all(
+                                                        feature = "python",
+                                                        not(feature = "perl")
+                                                    ))]
+                                                    if let Some(ref mut interp) = python_interp {
+                                                        use okros::plugins::stack::Interpreter;
+                                                        action.compile(interp);
+                                                    }
 
-                                                mud.action_list.retain(|a| a.pattern != action.pattern);
-                                                status.set_text(format!("Added trigger: {} => {}", action.pattern, action.commands));
-                                                mud.action_list.push(action);
+                                                    mud.action_list
+                                                        .retain(|a| a.pattern != action.pattern);
+                                                    status.set_text(format!(
+                                                        "Added trigger: {} => {}",
+                                                        action.pattern, action.commands
+                                                    ));
+                                                    mud.action_list.push(action);
+                                                }
+                                                Err(e) => status.set_text(e),
                                             }
-                                            Err(e) => status.set_text(e),
-                                        }
-                                    } else if line.starts_with(b"#subst ") {
-                                        // #subst <pattern> <replacement>
-                                        let args = String::from_utf8_lossy(&line[7..]).trim().to_string();
-                                        use okros::action::{Action, ActionType};
-                                        match Action::parse(&args, ActionType::Replacement) {
-                                            Ok(mut action) => {
-                                                // Compile substitution with available interpreter
-                                                #[cfg(feature = "perl")]
-                                                if let Some(ref mut interp) = perl_interp {
-                                                    use okros::plugins::stack::Interpreter;
-                                                    action.compile(interp);
-                                                }
-                                                #[cfg(all(feature = "python", not(feature = "perl")))]
-                                                if let Some(ref mut interp) = python_interp {
-                                                    use okros::plugins::stack::Interpreter;
-                                                    action.compile(interp);
-                                                }
+                                        } else if line.starts_with(b"#subst ") {
+                                            // #subst <pattern> <replacement>
+                                            let args = String::from_utf8_lossy(&line[7..])
+                                                .trim()
+                                                .to_string();
+                                            use okros::action::{Action, ActionType};
+                                            match Action::parse(&args, ActionType::Replacement) {
+                                                Ok(mut action) => {
+                                                    // Compile substitution with available interpreter
+                                                    #[cfg(feature = "perl")]
+                                                    if let Some(ref mut interp) = perl_interp {
+                                                        use okros::plugins::stack::Interpreter;
+                                                        action.compile(interp);
+                                                    }
+                                                    #[cfg(all(
+                                                        feature = "python",
+                                                        not(feature = "perl")
+                                                    ))]
+                                                    if let Some(ref mut interp) = python_interp {
+                                                        use okros::plugins::stack::Interpreter;
+                                                        action.compile(interp);
+                                                    }
 
-                                                mud.action_list.retain(|a| a.pattern != action.pattern);
-                                                status.set_text(format!("Added substitute: {} => {}", action.pattern, action.commands));
-                                                mud.action_list.push(action);
+                                                    mud.action_list
+                                                        .retain(|a| a.pattern != action.pattern);
+                                                    status.set_text(format!(
+                                                        "Added substitute: {} => {}",
+                                                        action.pattern, action.commands
+                                                    ));
+                                                    mud.action_list.push(action);
+                                                }
+                                                Err(e) => status.set_text(e),
                                             }
-                                            Err(e) => status.set_text(e),
-                                        }
-                                    } else if line.starts_with(b"#macro ") {
-                                        // #macro <keyname> <text>
-                                        let args = String::from_utf8_lossy(&line[7..]).trim().to_string();
-                                        if let Some((key_name, text)) = args.split_once(' ') {
-                                            // For now, just use ASCII value as key code
-                                            // TODO: implement key_lookup() like C++ for named keys (F1, etc.)
-                                            if let Some(ch) = key_name.chars().next() {
-                                                use okros::macro_def::Macro;
-                                                let key = ch as i32;
-                                                mud.macro_list.retain(|m| m.key != key);
-                                                mud.macro_list.push(Macro::new(key, text));
-                                                status.set_text(format!("Added macro: {} => {}", key_name, text));
+                                        } else if line.starts_with(b"#macro ") {
+                                            // #macro <keyname> <text>
+                                            let args = String::from_utf8_lossy(&line[7..])
+                                                .trim()
+                                                .to_string();
+                                            if let Some((key_name, text)) = args.split_once(' ') {
+                                                // For now, just use ASCII value as key code
+                                                // TODO: implement key_lookup() like C++ for named keys (F1, etc.)
+                                                if let Some(ch) = key_name.chars().next() {
+                                                    use okros::macro_def::Macro;
+                                                    let key = ch as i32;
+                                                    mud.macro_list.retain(|m| m.key != key);
+                                                    mud.macro_list.push(Macro::new(key, text));
+                                                    status.set_text(format!(
+                                                        "Added macro: {} => {}",
+                                                        key_name, text
+                                                    ));
+                                                } else {
+                                                    status.set_text("Invalid key name");
+                                                }
                                             } else {
-                                                status.set_text("Invalid key name");
+                                                status.set_text("Usage: #macro <key> <text>");
                                             }
+                                        } else if line.starts_with(b"#") {
+                                            // Other # commands - just echo for now
+                                            session.scrollback.print_line(&line, 0x07);
                                         } else {
-                                            status.set_text("Usage: #macro <key> <text>");
-                                        }
-                                    } else if line.starts_with(b"#") {
-                                        // Other # commands - just echo for now
-                                        session.scrollback.print_line(&line, 0x07);
-                                    } else {
-                                        // Check for alias expansion
-                                        let line_str = String::from_utf8_lossy(&line);
-                                        let mut send_text = line_str.to_string();
+                                            // Check for alias expansion
+                                            let line_str = String::from_utf8_lossy(&line);
+                                            let mut send_text = line_str.to_string();
 
-                                        // Extract first word (command name)
-                                        if let Some(first_word_end) = line_str.find(char::is_whitespace) {
-                                            let cmd = &line_str[..first_word_end];
-                                            let args = &line_str[first_word_end..].trim_start();
+                                            // Extract first word (command name)
+                                            if let Some(first_word_end) =
+                                                line_str.find(char::is_whitespace)
+                                            {
+                                                let cmd = &line_str[..first_word_end];
+                                                let args = &line_str[first_word_end..].trim_start();
 
-                                            // Check if command is an alias
-                                            if let Some(alias) = mud.find_alias(cmd) {
-                                                send_text = alias.expand(args);
-                                                status.set_text(format!("{} -> {}", cmd, send_text));
+                                                // Check if command is an alias
+                                                if let Some(alias) = mud.find_alias(cmd) {
+                                                    send_text = alias.expand(args);
+                                                    status.set_text(format!(
+                                                        "{} -> {}",
+                                                        cmd, send_text
+                                                    ));
+                                                }
+                                            } else {
+                                                // No arguments, check if entire line is an alias
+                                                if let Some(alias) = mud.find_alias(&line_str) {
+                                                    send_text = alias.expand("");
+                                                    status.set_text(format!(
+                                                        "{} -> {}",
+                                                        line_str.trim(),
+                                                        send_text
+                                                    ));
+                                                }
                                             }
-                                        } else {
-                                            // No arguments, check if entire line is an alias
-                                            if let Some(alias) = mud.find_alias(&line_str) {
-                                                send_text = alias.expand("");
-                                                status.set_text(format!("{} -> {}", line_str.trim(), send_text));
-                                            }
-                                        }
 
-                                        // Send to MUD (or echo if no socket)
-                                        if let Some(ref mut s) = sock {
-                                            let mut send_buf = send_text.into_bytes();
-                                            send_buf.push(b'\n');
-                                            unsafe { libc::write(s.as_raw_fd(), send_buf.as_ptr() as *const libc::c_void, send_buf.len()); }
-                                        } else {
-                                            session.scrollback.print_line(&send_text.as_bytes(), 0x07);
+                                            // Send to MUD (or echo if no socket)
+                                            if let Some(ref mut s) = sock {
+                                                let mut send_buf = send_text.into_bytes();
+                                                send_buf.push(b'\n');
+                                                unsafe {
+                                                    libc::write(
+                                                        s.as_raw_fd(),
+                                                        send_buf.as_ptr() as *const libc::c_void,
+                                                        send_buf.len(),
+                                                    );
+                                                }
+                                            } else {
+                                                session
+                                                    .scrollback
+                                                    .print_line(&send_text.as_bytes(), 0x07);
+                                            }
                                         }
                                     }
                                 }
+                                KeyEvent::Byte(b) if b.is_ascii_graphic() || b == b' ' => {
+                                    input.insert(b)
+                                }
+                                KeyEvent::Key(KeyCode::ArrowLeft) => input.move_left(),
+                                KeyEvent::Key(KeyCode::ArrowRight) => input.move_right(),
+                                KeyEvent::Key(KeyCode::Home) => input.home(),
+                                KeyEvent::Key(KeyCode::End) => input.end(),
+                                KeyEvent::Key(KeyCode::Delete) => input.backspace(),
+                                KeyEvent::Byte(0x7f) | KeyEvent::Byte(0x08) => input.backspace(), // Backspace key
+                                _ => {}
                             }
-                            KeyEvent::Byte(b) if b.is_ascii_graphic() || b==b' ' => input.insert(b),
-                            KeyEvent::Key(KeyCode::ArrowLeft) => input.move_left(),
-                            KeyEvent::Key(KeyCode::ArrowRight) => input.move_right(),
-                            KeyEvent::Key(KeyCode::Home) => input.home(),
-                            KeyEvent::Key(KeyCode::End) => input.end(),
-                            KeyEvent::Key(KeyCode::Delete) => input.backspace(),
-                            KeyEvent::Byte(0x7f) | KeyEvent::Byte(0x08) => input.backspace(), // Backspace key
-                            _ => {}
                         }
                     }
-                }}
+                }
             } else if let Some(s) = &mut sock {
                 if fd == s.as_raw_fd() {
                     // Socket writable (connection completing)
@@ -352,7 +443,13 @@ fn main() {
                     }
                     // Socket readable (MUD data)
                     if (r.revents & READ) != 0 {
-                        let n = unsafe { libc::read(s.as_raw_fd(), buf.as_mut_ptr() as *mut libc::c_void, buf.len()) };
+                        let n = unsafe {
+                            libc::read(
+                                s.as_raw_fd(),
+                                buf.as_mut_ptr() as *mut libc::c_void,
+                                buf.len(),
+                            )
+                        };
                         if n > 0 {
                             session.feed(&buf[..n as usize]);
 
@@ -366,19 +463,30 @@ fn main() {
                                 // Check triggers with available interpreter
                                 #[cfg(feature = "perl")]
                                 if let Some(ref mut interp) = perl_interp {
-                                    use okros::plugins::stack::Interpreter;
                                     use okros::action::ActionType;
+                                    use okros::plugins::stack::Interpreter;
 
                                     for action in &mud.action_list {
                                         if action.action_type == ActionType::Trigger {
-                                            if let Some(commands) = action.check_match(&line_str, interp) {
+                                            if let Some(commands) =
+                                                action.check_match(&line_str, interp)
+                                            {
                                                 // Trigger matched - execute commands
                                                 // For now, just send the commands to MUD
                                                 if let Some(ref mut s) = sock {
                                                     let mut cmd_buf = commands.into_bytes();
                                                     cmd_buf.push(b'\n');
-                                                    unsafe { libc::write(s.as_raw_fd(), cmd_buf.as_ptr() as *const libc::c_void, cmd_buf.len()); }
-                                                    status.set_text(format!("Trigger fired: {}", action.pattern));
+                                                    unsafe {
+                                                        libc::write(
+                                                            s.as_raw_fd(),
+                                                            cmd_buf.as_ptr() as *const libc::c_void,
+                                                            cmd_buf.len(),
+                                                        );
+                                                    }
+                                                    status.set_text(format!(
+                                                        "Trigger fired: {}",
+                                                        action.pattern
+                                                    ));
                                                 }
                                             }
                                         }
@@ -387,18 +495,29 @@ fn main() {
 
                                 #[cfg(all(feature = "python", not(feature = "perl")))]
                                 if let Some(ref mut interp) = python_interp {
-                                    use okros::plugins::stack::Interpreter;
                                     use okros::action::ActionType;
+                                    use okros::plugins::stack::Interpreter;
 
                                     for action in &mud.action_list {
                                         if action.action_type == ActionType::Trigger {
-                                            if let Some(commands) = action.check_match(&line_str, interp) {
+                                            if let Some(commands) =
+                                                action.check_match(&line_str, interp)
+                                            {
                                                 // Trigger matched - execute commands
                                                 if let Some(ref mut s) = sock {
                                                     let mut cmd_buf = commands.into_bytes();
                                                     cmd_buf.push(b'\n');
-                                                    unsafe { libc::write(s.as_raw_fd(), cmd_buf.as_ptr() as *const libc::c_void, cmd_buf.len()); }
-                                                    status.set_text(format!("Trigger fired: {}", action.pattern));
+                                                    unsafe {
+                                                        libc::write(
+                                                            s.as_raw_fd(),
+                                                            cmd_buf.as_ptr() as *const libc::c_void,
+                                                            cmd_buf.len(),
+                                                        );
+                                                    }
+                                                    status.set_text(format!(
+                                                        "Trigger fired: {}",
+                                                        action.pattern
+                                                    ));
                                                 }
                                             }
                                         }
@@ -468,7 +587,7 @@ fn main() {
 }
 
 fn run_offline_mode() {
-    use okros::offline_mud::{World, parse};
+    use okros::offline_mud::{parse, World};
 
     // Initialize internal MUD
     let mut world = World::new();
@@ -488,11 +607,16 @@ fn run_offline_mode() {
     let width = 80usize;
     let height = 24usize;
     let caps = get_acs_caps();
-    let mut prev = vec![0u16; width*height];
+    let mut prev = vec![0u16; width * height];
     let mut cur = prev.clone();
 
     // Session for processing output
-    let mut session = Session::new(PassthroughDecomp::new(), width, height.saturating_sub(2), 200);
+    let mut session = Session::new(
+        PassthroughDecomp::new(),
+        width,
+        height.saturating_sub(2),
+        200,
+    );
     // Input line
     let mut input = okros::input_line::InputLine::new(width, 0x07);
     // Status line
@@ -504,7 +628,9 @@ fn run_offline_mode() {
     session.feed(look_output.as_bytes());
 
     // Set stdin nonblocking
-    unsafe { let _ = fcntl(libc::STDIN_FILENO, F_SETFL, O_NONBLOCK); }
+    unsafe {
+        let _ = fcntl(libc::STDIN_FILENO, F_SETFL, O_NONBLOCK);
+    }
 
     let mut dec = KeyDecoder::new();
     let mut buf = [0u8; 1024];
@@ -513,7 +639,9 @@ fn run_offline_mode() {
     // Main event loop for offline mode
     while !quit {
         // Render UI
-        render_surface(width, height, &mut prev, &mut cur, &session, &input, &status, &caps);
+        render_surface(
+            width, height, &mut prev, &mut cur, &session, &input, &status, &caps,
+        );
 
         // Poll stdin with 250ms timeout
         let fds = vec![(libc::STDIN_FILENO, READ)];
@@ -522,43 +650,50 @@ fn run_offline_mode() {
         // Process input
         for (fd, r) in ready {
             if fd == libc::STDIN_FILENO && (r.revents & READ) != 0 {
-                if let Ok(n) = io::stdin().read(&mut buf) { if n > 0 {
-                    for ev in dec.feed(&buf[..n]) {
-                        match ev {
-                            KeyEvent::Byte(b'\n') => {
-                                let line = input.take_line();
-                                if !line.is_empty() {
-                                    let cmd_str = String::from_utf8_lossy(&line).to_string();
+                if let Ok(n) = io::stdin().read(&mut buf) {
+                    if n > 0 {
+                        for ev in dec.feed(&buf[..n]) {
+                            match ev {
+                                KeyEvent::Byte(b'\n') => {
+                                    let line = input.take_line();
+                                    if !line.is_empty() {
+                                        let cmd_str = String::from_utf8_lossy(&line).to_string();
 
-                                    // Parse and execute MUD command
-                                    match parse(&cmd_str) {
-                                        Ok(cmd) => {
-                                            // Check for quit command
-                                            if matches!(cmd, okros::offline_mud::parser::Command::Quit) {
-                                                quit = true;
+                                        // Parse and execute MUD command
+                                        match parse(&cmd_str) {
+                                            Ok(cmd) => {
+                                                // Check for quit command
+                                                if matches!(
+                                                    cmd,
+                                                    okros::offline_mud::parser::Command::Quit
+                                                ) {
+                                                    quit = true;
+                                                }
+                                                let output = world.execute(cmd);
+                                                session.feed(output.as_bytes());
                                             }
-                                            let output = world.execute(cmd);
-                                            session.feed(output.as_bytes());
-                                        }
-                                        Err(e) => {
-                                            // Parse error - show in red
-                                            let err_msg = format!("\x1b[31m{}\x1b[0m\n", e);
-                                            session.feed(err_msg.as_bytes());
+                                            Err(e) => {
+                                                // Parse error - show in red
+                                                let err_msg = format!("\x1b[31m{}\x1b[0m\n", e);
+                                                session.feed(err_msg.as_bytes());
+                                            }
                                         }
                                     }
                                 }
+                                KeyEvent::Byte(b) if b.is_ascii_graphic() || b == b' ' => {
+                                    input.insert(b)
+                                }
+                                KeyEvent::Key(KeyCode::ArrowLeft) => input.move_left(),
+                                KeyEvent::Key(KeyCode::ArrowRight) => input.move_right(),
+                                KeyEvent::Key(KeyCode::Home) => input.home(),
+                                KeyEvent::Key(KeyCode::End) => input.end(),
+                                KeyEvent::Key(KeyCode::Delete) => input.backspace(),
+                                KeyEvent::Byte(0x7f) | KeyEvent::Byte(0x08) => input.backspace(),
+                                _ => {}
                             }
-                            KeyEvent::Byte(b) if b.is_ascii_graphic() || b==b' ' => input.insert(b),
-                            KeyEvent::Key(KeyCode::ArrowLeft) => input.move_left(),
-                            KeyEvent::Key(KeyCode::ArrowRight) => input.move_right(),
-                            KeyEvent::Key(KeyCode::Home) => input.home(),
-                            KeyEvent::Key(KeyCode::End) => input.end(),
-                            KeyEvent::Key(KeyCode::Delete) => input.backspace(),
-                            KeyEvent::Byte(0x7f) | KeyEvent::Byte(0x08) => input.backspace(),
-                            _ => {}
                         }
                     }
-                }}
+                }
             }
         }
     }
@@ -568,14 +703,15 @@ fn run_offline_mode() {
 }
 
 fn run_headless_offline_mode(args: &[String]) {
-    use okros::offline_mud::{World, parse};
+    use okros::offline_mud::{parse, World};
     use serde_json::json;
-    use std::os::unix::net::UnixListener;
     use std::io::{BufRead, BufReader, Write};
+    use std::os::unix::net::UnixListener;
     use std::thread;
 
     // Parse instance name from args
-    let inst = args.iter()
+    let inst = args
+        .iter()
         .position(|a| a == "--instance")
         .and_then(|i| args.get(i + 1))
         .cloned()
@@ -649,10 +785,7 @@ fn run_headless_offline_mode(args: &[String]) {
                 "get_buffer" => {
                     // Extract scrollback as lines
                     let viewport = self.session.scrollback.viewport_slice();
-                    let text: String = viewport
-                        .iter()
-                        .map(|&a| (a & 0xFF) as u8 as char)
-                        .collect();
+                    let text: String = viewport.iter().map(|&a| (a & 0xFF) as u8 as char).collect();
 
                     let lines: Vec<String> = text
                         .lines()
@@ -669,7 +802,8 @@ fn run_headless_offline_mode(args: &[String]) {
                         "event":"Status",
                         "location":location,
                         "inventory_count":inv_count
-                    }).to_string()
+                    })
+                    .to_string()
                 }
                 _ => json!({"event":"Error","message":"Unknown command"}).to_string(),
             }
@@ -710,25 +844,48 @@ fn run_headless_offline_mode(args: &[String]) {
     }
 }
 
-fn render_surface(width: usize, height: usize, prev: &mut Vec<u16>, cur: &mut Vec<u16>, session: &Session<PassthroughDecomp>, input: &okros::input_line::InputLine, status: &okros::status_line::StatusLine, caps: &okros::curses::AcsCaps) {
+fn render_surface(
+    width: usize,
+    height: usize,
+    prev: &mut Vec<u16>,
+    cur: &mut Vec<u16>,
+    session: &Session<PassthroughDecomp>,
+    input: &okros::input_line::InputLine,
+    status: &okros::status_line::StatusLine,
+    caps: &okros::curses::AcsCaps,
+) {
     // Compose status + session viewport + input into `cur`
-    let mut surface = vec![0u16; width*height];
+    let mut surface = vec![0u16; width * height];
     // Status at row 0
     surface[0..width].copy_from_slice(&status.render());
     // Output rows (1..height-1)
     let view = session.scrollback.viewport_slice();
     let out_h = height.saturating_sub(2);
     for row in 0..out_h {
-        let dst = (1+row) * width;
+        let dst = (1 + row) * width;
         let src = row * width;
-        surface[dst .. dst+width].copy_from_slice(&view[src .. src+width]);
+        surface[dst..dst + width].copy_from_slice(&view[src..src + width]);
     }
     // Input at bottom row
-    let input_row = height-1;
-    surface[input_row*width .. input_row*width + width].copy_from_slice(&input.render());
+    let input_row = height - 1;
+    surface[input_row * width..input_row * width + width].copy_from_slice(&input.render());
 
     cur.copy_from_slice(&surface);
-    let ansi = screen::diff_to_ansi(prev, cur, &DiffOptions{ width, height, cursor_x: 0, cursor_y: input_row, smacs: caps.smacs.as_deref(), rmacs: caps.rmacs.as_deref(), set_bg_always: true });
-    let mut out = io::stdout(); let _ = out.write_all(ansi.as_bytes()); let _ = out.flush();
+    let ansi = screen::diff_to_ansi(
+        prev,
+        cur,
+        &DiffOptions {
+            width,
+            height,
+            cursor_x: 0,
+            cursor_y: input_row,
+            smacs: caps.smacs.as_deref(),
+            rmacs: caps.rmacs.as_deref(),
+            set_bg_always: true,
+        },
+    );
+    let mut out = io::stdout();
+    let _ = out.write_all(ansi.as_bytes());
+    let _ = out.flush();
     prev.copy_from_slice(cur);
 }

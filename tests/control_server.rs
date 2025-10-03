@@ -1,11 +1,11 @@
 // Integration tests for control server (network headless mode)
 // Tests the JSON Lines control protocol
 
-use std::os::unix::net::UnixStream;
-use std::io::{BufRead, BufReader, Write};
-use std::time::Duration;
-use std::thread;
 use serde_json::json;
+use std::io::{BufRead, BufReader, Write};
+use std::os::unix::net::UnixStream;
+use std::thread;
+use std::time::Duration;
 
 #[test]
 fn test_control_server_status_command() {
@@ -15,7 +15,13 @@ fn test_control_server_status_command() {
 
     // Spawn headless server
     let mut child = std::process::Command::new("cargo")
-        .args(&["run", "--", "--headless", "--instance", &format!("test_status_{}", std::process::id())])
+        .args(&[
+            "run",
+            "--",
+            "--headless",
+            "--instance",
+            &format!("test_status_{}", std::process::id()),
+        ])
         .spawn()
         .expect("Failed to start headless server");
 
@@ -52,7 +58,13 @@ fn test_control_server_attach_detach() {
     let _ = std::fs::remove_file(&socket_path);
 
     let mut child = std::process::Command::new("cargo")
-        .args(&["run", "--", "--headless", "--instance", &format!("test_attach_{}", std::process::id())])
+        .args(&[
+            "run",
+            "--",
+            "--headless",
+            "--instance",
+            &format!("test_attach_{}", std::process::id()),
+        ])
         .spawn()
         .expect("Failed to start headless server");
 
@@ -89,7 +101,13 @@ fn test_control_server_bad_json() {
     let _ = std::fs::remove_file(&socket_path);
 
     let mut child = std::process::Command::new("cargo")
-        .args(&["run", "--", "--headless", "--instance", &format!("test_badjson_{}", std::process::id())])
+        .args(&[
+            "run",
+            "--",
+            "--headless",
+            "--instance",
+            &format!("test_badjson_{}", std::process::id()),
+        ])
         .spawn()
         .expect("Failed to start headless server");
 
@@ -123,7 +141,13 @@ fn test_control_server_send_and_get_buffer() {
     let _ = std::fs::remove_file(&socket_path);
 
     let mut child = std::process::Command::new("cargo")
-        .args(&["run", "--", "--headless", "--instance", &format!("test_buffer_{}", std::process::id())])
+        .args(&[
+            "run",
+            "--",
+            "--headless",
+            "--instance",
+            &format!("test_buffer_{}", std::process::id()),
+        ])
         .spawn()
         .expect("Failed to start headless server");
 

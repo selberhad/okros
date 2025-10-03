@@ -6,7 +6,12 @@ use std::os::fd::{AsRawFd, RawFd};
 use libc::{self, c_int};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ConnState { Idle, Connecting, Connected, Error }
+pub enum ConnState {
+    Idle,
+    Connecting,
+    Connected,
+    Error,
+}
 
 #[derive(Debug)]
 pub struct Socket {
@@ -20,24 +25,40 @@ pub struct Socket {
 impl Socket {
     pub fn new() -> io::Result<Self> {
         let fd = unsafe { libc::socket(libc::AF_INET, libc::SOCK_STREAM, 0) };
-        if fd < 0 { return Err(io::Error::last_os_error()); }
+        if fd < 0 {
+            return Err(io::Error::last_os_error());
+        }
         // set nonblocking
         unsafe {
             let flags = libc::fcntl(fd, libc::F_GETFL);
             libc::fcntl(fd, libc::F_SETFL, flags | libc::O_NONBLOCK);
         }
-        Ok(Self{ fd, state: ConnState::Idle, last_error: None, local: None, remote: None })
+        Ok(Self {
+            fd,
+            state: ConnState::Idle,
+            last_error: None,
+            local: None,
+            remote: None,
+        })
     }
 
-    pub fn as_raw_fd(&self) -> RawFd { self.fd }
+    pub fn as_raw_fd(&self) -> RawFd {
+        self.fd
+    }
 
     pub fn connect_ipv4(&mut self, ip: Ipv4Addr, port: u16) -> io::Result<()> {
         let mut addr: libc::sockaddr_in = unsafe { mem::zeroed() };
         addr.sin_family = libc::AF_INET as libc::sa_family_t;
         addr.sin_port = u16::to_be(port);
-        addr.sin_addr = libc::in_addr { s_addr: u32::from(ip).to_be() };
+        addr.sin_addr = libc::in_addr {
+            s_addr: u32::from(ip).to_be(),
+        };
         let ret = unsafe {
-            libc::connect(self.fd, &addr as *const _ as *const libc::sockaddr, mem::size_of::<libc::sockaddr_in>() as u32)
+            libc::connect(
+                self.fd,
+                &addr as *const _ as *const libc::sockaddr,
+                mem::size_of::<libc::sockaddr_in>() as u32,
+            )
         };
         if ret == 0 {
             self.state = ConnState::Connected;
@@ -57,14 +78,24 @@ impl Socket {
     }
 
     pub fn on_writable(&mut self) -> io::Result<()> {
-        if self.state != ConnState::Connecting { return Ok(()); }
+        if self.state != ConnState::Connecting {
+            return Ok(());
+        }
         // Check SO_ERROR
         let mut err: c_int = 0;
         let mut len = mem::size_of::<c_int>() as libc::socklen_t;
         let rc = unsafe {
-            libc::getsockopt(self.fd, libc::SOL_SOCKET, libc::SO_ERROR, &mut err as *mut _ as *mut _, &mut len)
+            libc::getsockopt(
+                self.fd,
+                libc::SOL_SOCKET,
+                libc::SO_ERROR,
+                &mut err as *mut _ as *mut _,
+                &mut len,
+            )
         };
-        if rc < 0 { return Err(io::Error::last_os_error()); }
+        if rc < 0 {
+            return Err(io::Error::last_os_error());
+        }
         if err == 0 {
             self.state = ConnState::Connected;
             self.fill_endpoints();
@@ -80,7 +111,9 @@ impl Socket {
         // local
         let mut ss: libc::sockaddr_in = unsafe { mem::zeroed() };
         let mut len = mem::size_of::<libc::sockaddr_in>() as libc::socklen_t;
-        let rc = unsafe { libc::getsockname(self.fd, &mut ss as *mut _ as *mut libc::sockaddr, &mut len) };
+        let rc = unsafe {
+            libc::getsockname(self.fd, &mut ss as *mut _ as *mut libc::sockaddr, &mut len)
+        };
         if rc == 0 {
             let port = u16::from_be(ss.sin_port);
             let ip = Ipv4Addr::from(u32::from_be(ss.sin_addr.s_addr));
@@ -88,7 +121,9 @@ impl Socket {
         }
         let mut ps: libc::sockaddr_in = unsafe { mem::zeroed() };
         let mut len2 = mem::size_of::<libc::sockaddr_in>() as libc::socklen_t;
-        let rc2 = unsafe { libc::getpeername(self.fd, &mut ps as *mut _ as *mut libc::sockaddr, &mut len2) };
+        let rc2 = unsafe {
+            libc::getpeername(self.fd, &mut ps as *mut _ as *mut libc::sockaddr, &mut len2)
+        };
         if rc2 == 0 {
             let port = u16::from_be(ps.sin_port);
             let ip = Ipv4Addr::from(u32::from_be(ps.sin_addr.s_addr));
@@ -99,7 +134,9 @@ impl Socket {
 
 impl Drop for Socket {
     fn drop(&mut self) {
-        unsafe { libc::close(self.fd); }
+        unsafe {
+            libc::close(self.fd);
+        }
     }
 }
 
@@ -110,9 +147,15 @@ mod tests {
     use std::time::Duration;
 
     fn wait_writable(fd: RawFd, timeout_ms: i32) -> io::Result<bool> {
-        let mut pfd = libc::pollfd { fd, events: libc::POLLOUT, revents: 0 };
+        let mut pfd = libc::pollfd {
+            fd,
+            events: libc::POLLOUT,
+            revents: 0,
+        };
         let rc = unsafe { libc::poll(&mut pfd as *mut libc::pollfd, 1, timeout_ms) };
-        if rc < 0 { return Err(io::Error::last_os_error()); }
+        if rc < 0 {
+            return Err(io::Error::last_os_error());
+        }
         Ok(rc > 0 && (pfd.revents & libc::POLLOUT) != 0)
     }
 
