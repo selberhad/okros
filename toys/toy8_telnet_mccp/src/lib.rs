@@ -722,6 +722,27 @@ mod tests {
 
     #[test]
     #[cfg(feature = "real_mccp")]
+    fn real_mccp_v1_stats_and_version_transition() {
+        let mut pl = Pipeline::new(MccpInflate::new());
+        // v1 negotiation
+        pl.feed(&[IAC, WILL, TELOPT_COMPRESS]);
+        let _ = pl.drain_decomp_responses();
+        pl.feed(&[IAC, SB, TELOPT_COMPRESS, WILL, SE]);
+        assert_eq!(pl.decomp.version(), 1);
+        // compress a short payload
+        let payload = compress_bytes(b"end");
+        pl.feed(&payload);
+        assert_eq!(pl.telnet.take_app_out(), b"end");
+        let (comp, uncomp) = pl.decomp.stats();
+        assert!(comp > 0);
+        assert_eq!(uncomp, 3);
+        // After finishing the stream, version may transition to 0
+        assert!(matches!(pl.decomp.version(), 0|1));
+        assert!(!pl.error());
+    }
+
+    #[test]
+    #[cfg(feature = "real_mccp")]
     fn real_mccp_error_on_invalid_stream() {
         let mut pl = Pipeline::new(MccpInflate::new());
         pl.feed(&[IAC, WILL, TELOPT_COMPRESS2]);
@@ -811,6 +832,33 @@ mod tests {
         let mut ev = ac.feed(&[0x1B]);
         ev.extend(ac.feed(b"]A"));
         assert!(matches!(ev.last().unwrap(), AnsiEvent::Text(b'A')));
+    }
+
+    #[test]
+    fn ansi_sgr_redundant_reset_emits_white_on_black() {
+        let mut ac = AnsiConverter::new();
+        let ev = ac.feed(b"\x1b[0m\x1b[0m");
+        // Should emit two SetColor events to white-on-black with no bold
+        let (mut c1, mut c2) = (0u8, 0u8);
+        if let AnsiEvent::SetColor(col) = ev[0] { c1 = col; } else { panic!("expected SetColor"); }
+        if let AnsiEvent::SetColor(col) = ev[1] { c2 = col; } else { panic!("expected SetColor"); }
+        for c in [c1,c2] {
+            assert_eq!(c & 0x0F, 7);
+            assert_eq!((c & 0x70)>>4, 0);
+            assert_eq!(c & 0x80, 0);
+        }
+    }
+
+    #[test]
+    fn ansi_sgr_unknown_param_leaves_color_unchanged() {
+        let mut ac = AnsiConverter::new();
+        // Start with red then unknown 999
+        let ev = ac.feed(b"\x1b[31m\x1b[999m");
+        assert!(matches!(ev[0], AnsiEvent::SetColor(_)));
+        if let (AnsiEvent::SetColor(c_red), AnsiEvent::SetColor(c_unknown)) = (ev[0], ev[1]) {
+            // Unknown should keep same color
+            assert_eq!(c_red, c_unknown);
+        } else { panic!("expected two SetColor events"); }
     }
 
     #[test]
