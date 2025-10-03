@@ -232,7 +232,19 @@ fn main() {
                                         let args = String::from_utf8_lossy(&line[8..]).trim().to_string();
                                         use okros::action::{Action, ActionType};
                                         match Action::parse(&args, ActionType::Trigger) {
-                                            Ok(action) => {
+                                            Ok(mut action) => {
+                                                // Compile action with available interpreter
+                                                #[cfg(feature = "perl")]
+                                                if let Some(ref mut interp) = perl_interp {
+                                                    use okros::plugins::stack::Interpreter;
+                                                    action.compile(interp);
+                                                }
+                                                #[cfg(all(feature = "python", not(feature = "perl")))]
+                                                if let Some(ref mut interp) = python_interp {
+                                                    use okros::plugins::stack::Interpreter;
+                                                    action.compile(interp);
+                                                }
+
                                                 mud.action_list.retain(|a| a.pattern != action.pattern);
                                                 status.set_text(format!("Added trigger: {} => {}", action.pattern, action.commands));
                                                 mud.action_list.push(action);
@@ -244,7 +256,19 @@ fn main() {
                                         let args = String::from_utf8_lossy(&line[7..]).trim().to_string();
                                         use okros::action::{Action, ActionType};
                                         match Action::parse(&args, ActionType::Replacement) {
-                                            Ok(action) => {
+                                            Ok(mut action) => {
+                                                // Compile substitution with available interpreter
+                                                #[cfg(feature = "perl")]
+                                                if let Some(ref mut interp) = perl_interp {
+                                                    use okros::plugins::stack::Interpreter;
+                                                    action.compile(interp);
+                                                }
+                                                #[cfg(all(feature = "python", not(feature = "perl")))]
+                                                if let Some(ref mut interp) = python_interp {
+                                                    use okros::plugins::stack::Interpreter;
+                                                    action.compile(interp);
+                                                }
+
                                                 mud.action_list.retain(|a| a.pattern != action.pattern);
                                                 status.set_text(format!("Added substitute: {} => {}", action.pattern, action.commands));
                                                 mud.action_list.push(action);
@@ -339,17 +363,46 @@ fn main() {
                             if !current_line.is_empty() {
                                 let line_str = String::from_utf8_lossy(&current_line);
 
-                                // Check triggers (pattern match → execute commands)
-                                // Note: Actions need Perl/Python interpreter for regex matching
-                                // For now, this is a placeholder - actual trigger checking
-                                // requires implementing match_prepare/match_exec in plugins
-                                for _action in &mud.action_list {
-                                    // TODO: Implement trigger checking
-                                    // if action.action_type == ActionType::Trigger {
-                                    //     if let Some(commands) = action.check_match(&line_str, &mut interpreter) {
-                                    //         // Execute commands
-                                    //     }
-                                    // }
+                                // Check triggers with available interpreter
+                                #[cfg(feature = "perl")]
+                                if let Some(ref mut interp) = perl_interp {
+                                    use okros::plugins::stack::Interpreter;
+                                    use okros::action::ActionType;
+
+                                    for action in &mud.action_list {
+                                        if action.action_type == ActionType::Trigger {
+                                            if let Some(commands) = action.check_match(&line_str, interp) {
+                                                // Trigger matched - execute commands
+                                                // For now, just send the commands to MUD
+                                                if let Some(ref mut s) = sock {
+                                                    let mut cmd_buf = commands.into_bytes();
+                                                    cmd_buf.push(b'\n');
+                                                    unsafe { libc::write(s.as_raw_fd(), cmd_buf.as_ptr() as *const libc::c_void, cmd_buf.len()); }
+                                                    status.set_text(format!("Trigger fired: {}", action.pattern));
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                #[cfg(all(feature = "python", not(feature = "perl")))]
+                                if let Some(ref mut interp) = python_interp {
+                                    use okros::plugins::stack::Interpreter;
+                                    use okros::action::ActionType;
+
+                                    for action in &mud.action_list {
+                                        if action.action_type == ActionType::Trigger {
+                                            if let Some(commands) = action.check_match(&line_str, interp) {
+                                                // Trigger matched - execute commands
+                                                if let Some(ref mut s) = sock {
+                                                    let mut cmd_buf = commands.into_bytes();
+                                                    cmd_buf.push(b'\n');
+                                                    unsafe { libc::write(s.as_raw_fd(), cmd_buf.as_ptr() as *const libc::c_void, cmd_buf.len()); }
+                                                    status.set_text(format!("Trigger fired: {}", action.pattern));
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         } else if n == 0 {
