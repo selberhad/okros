@@ -1,5 +1,8 @@
 # okros - Rust MUD Client
 
+> **📚 Doc-Driven Development (DDD) in Action**
+> This project exemplifies [DDD Porting Mode](DDD.md): a reference-driven translation workflow combining Discovery (validate risky patterns via toy models) + Execution (systematic translation). Evidence: [11 toys validating FFI/unsafe patterns](toys/), [living status tracking](IMPLEMENTATION_PLAN.md), [architectural documentation](CODE_MAP.md), and [95% completion with comprehensive docs](ORIENTATION.md). See [DDD.md](DDD.md) for the full methodology.
+
 **okros** (from _ochre_, rusty mud) is a modern MUD client written in Rust, reviving the design principles of MCL (MUD Client for Linux). MCL was a powerful, feature-rich Linux MUD client that went unmaintained circa 2000 and offline by 2010. okros resurrects its core concepts while bringing them into the modern era with headless/detachable operation, perfect for automation, LLM agents, and cloud deployments.
 
 ## Features
