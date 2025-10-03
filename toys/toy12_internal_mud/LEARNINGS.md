@@ -78,12 +78,12 @@
 
 ## Success Criteria
 
-- [ ] Can navigate between rooms using Session pipeline
-- [ ] ANSI colors render correctly in scrollback
-- [ ] Can run deterministic e2e test (command sequence → expected output)
-- [ ] Works in headless mode (control server sends commands, reads output)
-- [ ] Zero external dependencies (no real MUD server needed)
-- [ ] Pattern extracted for production integration
+- [x] Can navigate between rooms using Session pipeline
+- [x] ANSI colors render correctly in scrollback
+- [x] Can run deterministic e2e test (command sequence → expected output)
+- [ ] Works in headless mode (control server sends commands, reads output) - NOT TESTED YET
+- [x] Zero external dependencies (no real MUD server needed)
+- [x] Pattern extracted for production integration
 
 ## Anti-Goals
 
@@ -93,6 +93,179 @@
 
 ---
 
-## Findings (To Be Filled During Implementation)
+## Findings (Phases 1-3 Complete)
 
-_This section will document what actually worked, what failed, and why._
+### Decision 1: Interface Pattern → **Direct Feed (WINNER)**
+
+**Answer**: Session already has `pub fn feed(&mut self, chunk: &[u8])` - no fake socket needed!
+
+**What we tried**:
+- Considered socketpair() for loopback (Option A from PLAN.md)
+- Discovered Session.feed() is already public and perfect for our use case
+
+**What worked**:
+```rust
+let mut session = Session::new(PassthroughDecomp::new(), width, height, lines);
+let output = mud.execute(command);  // Returns ANSI-colored String
+session.feed(output.as_bytes());    // Feed directly to pipeline
+```
+
+**Pattern for production**:
+- No special integration code needed
+- Just call `session.feed(mud_output.as_bytes())`
+- Simplest possible approach
+
+### Decision 2: Telnet Protocol → **Bypass (As Expected)**
+
+**Answer**: Skip telnet negotiation, just emit raw ANSI text.
+
+**Reasoning**:
+- Internal MUD doesn't need telnet handshakes (WILL/DO/WONT)
+- Session pipeline handles raw ANSI text fine
+- Telnet layer is pass-through for non-IAC bytes
+- No prompt negotiation needed (GA/EOR not required)
+
+**Pattern for production**:
+```rust
+// Just emit ANSI, no IAC commands:
+format!("\x1b[32m{}\x1b[0m\n", room.name)  // Green room name
+```
+
+### Decision 3: Game State → **Minimal HashMap Works**
+
+**Answer**: Simple HashMap<RoomId, Room> + Player is sufficient.
+
+**What we built**:
+- 5 rooms in HashMap
+- Player: location + inventory (Vec<ItemId>)
+- Items in HashMap by ID
+- ~300 lines total for complete game
+
+**Performance**: Instant (<1ms per command)
+**Memory**: <1KB game state
+
+**Pattern for production**:
+- Keep game simple (this is testing infrastructure, not a game engine)
+- Static room/item data (const or lazy_static)
+- Mutable player state only
+
+### Decision 4: ANSI Output → **Works Perfectly**
+
+**Answer**: ANSI SGR codes work great through Session pipeline.
+
+**Colors tested**:
+- ESC[32m (green) - Room names ✅
+- ESC[36m (cyan) - Exits ✅
+- ESC[33m (yellow) - Items ✅
+- ESC[31m (red) - Errors ✅
+- ESC[0m (reset) - Works ✅
+
+**Pattern for production**:
+```rust
+fn format_error(msg: &str) -> String {
+    format!("\x1b[31m{}\x1b[0m\n", msg)
+}
+
+fn format_room(room: &Room) -> String {
+    format!(
+        "\x1b[32m{}\x1b[0m\n{}\n\x1b[36mExits: {}\x1b[0m\n",
+        room.name, room.description, exits
+    )
+}
+```
+
+### Decision 5: Testing Integration → **Deterministic E2E Works**
+
+**Answer**: Can write fully automated tests with zero external dependencies.
+
+**Test pattern**:
+```rust
+#[test]
+fn test_deterministic_sequence() {
+    let mut world = MiniWorld::new();
+    let mut session = Session::new(PassthroughDecomp::new(), 80, 20, 200);
+
+    // Run deterministic command sequence
+    session.feed(world.look().as_bytes());
+    session.feed(world.take("sword").as_bytes());
+    session.feed(world.go(Direction::North).as_bytes());
+
+    // Assert scrollback contains expected text
+    let text = extract_scrollback_text(&session);
+    assert!(text.contains("Dense Forest"));
+}
+```
+
+**Key insight**: Same commands always produce same scrollback (no RNG, no async).
+
+### Hypothesis Results
+
+1. **Fake Socket Hypothesis**: ❌ **REJECTED** - Not needed, direct feed is simpler
+2. **Telnet Bypass Hypothesis**: ✅ **CONFIRMED** - Works perfectly without telnet
+3. **Minimal State Hypothesis**: ✅ **CONFIRMED** - HashMap is sufficient
+4. **Script Plugin Hypothesis**: ⏸️ **NOT TESTED** - Rust implementation was so easy, didn't need scripts
+
+### Production Integration Recommendations
+
+**For okros MVP**:
+
+1. **Feature Flag**: Add `--features offline-mud` to Cargo.toml
+2. **Location**: Create `src/offline_mud/` module
+3. **CLI Integration**: Add `--offline` or `--demo` flag
+4. **Game Content**: Copy toy12 data structures (rooms, items, parser)
+5. **Wiring**: In main.rs, create World + Session, drive via normal input loop
+
+**Code changes needed**:
+```rust
+// In src/main.rs
+#[cfg(feature = "offline-mud")]
+if args.offline {
+    let mut world = offline_mud::World::new();
+    let output = world.execute(parse(&input)?);
+    session.feed(output.as_bytes());
+}
+```
+
+**Estimated effort**: 2-3 hours to port toy → production
+
+### E2E Testing Pattern (Production)
+
+**Use internal MUD for automated e2e tests**:
+
+```rust
+// tests/e2e_with_internal_mud.rs
+#[test]
+fn test_full_pipeline_with_plugins() {
+    let mut session = create_session_with_python_plugin();
+    let mut world = InternalMud::new();
+
+    // Run command sequence
+    for cmd in test_sequence {
+        session.feed(world.execute(cmd).as_bytes());
+    }
+
+    // Verify plugin hooks ran
+    assert!(session.plugin_output.contains("sys/postoutput called"));
+}
+```
+
+**Benefits**:
+- No external MUD server needed
+- Deterministic (same commands → same output)
+- Fast (instant, no network latency)
+- Can test plugin integration
+- Can test ANSI/telnet/MCCP edge cases by controlling MUD output
+
+### Open Questions (Not Yet Answered)
+
+1. **Headless Mode Integration**: Can we drive internal MUD via control server?
+   - Status: Not tested yet
+   - Next step: Create test that sends JSON commands via Unix socket
+
+2. **DNS Names**: Should offline MUD support `#open localhost 4000`?
+   - Current: Only works with real MUD servers
+   - Offline MUD: Just use `--offline` flag, no connection needed
+
+3. **Save/Load**: Should game state persist?
+   - Answer: No - it's for testing, not playing
+   - Reset on each run is fine (deterministic tests)

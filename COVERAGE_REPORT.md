@@ -1,13 +1,13 @@
 # Test Coverage Report
 
-**Last Updated**: 2025-10-03 01:16
+**Last Updated**: 2025-10-03 01:50
 **Tool**: cargo-llvm-cov
-**Overall Coverage**: **62.61%** lines | **72.44%** regions | **77.38%** functions
+**Overall Coverage**: **62.70%** lines | **72.50%** regions | **77.38%** functions
 
 ## Summary
 
 ```
-TOTAL                            3563               982    72.44%         221                50    77.38%        1150               430    62.61%           0                 0         -
+TOTAL                            3563               980    72.50%         221                50    77.38%        1150               429    62.70%           0                 0         -
 ```
 
 ## Coverage by Module
@@ -30,7 +30,7 @@ TOTAL                            3563               982    72.44%         221   
 | `scrollback.rs` | 100.00% | 99.26% | 100.00% | 🟢 Excellent |
 | `select.rs` | 100.00% | 96.61% | 100.00% | 🟢 Excellent |
 | `selectable.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
-| `session.rs` | 92.31% | 88.57% | 80.00% | 🟢 Excellent |
+| `session.rs` | 96.15% | 91.43% | 80.00% | 🟢 Excellent |
 | `socket.rs` | 92.86% | 92.35% | 100.00% | 🟢 Excellent |
 | `status_line.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
 | `telnet.rs` | 100.00% | 99.02% | 100.00% | 🟢 Excellent |
@@ -50,7 +50,7 @@ TOTAL                            3563               982    72.44%         221   
 - `scrollback.rs` - 100.00%
 - `select.rs` - 100.00%
 - `selectable.rs` - 100.00%
-- `session.rs` - 92.31%
+- `session.rs` - 96.15%
 - `socket.rs` - 92.86%
 - `status_line.rs` - 100.00%
 - `telnet.rs` - 100.00%
@@ -73,7 +73,7 @@ TOTAL                            3563               982    72.44%         221   
 
 | Tier | Target | Current | Status |
 |------|--------|---------|--------|
-| Overall | ≥80% | 62.61% | ⏳ In Progress |
+| Overall | ≥80% | 62.70% | ⏳ In Progress |
 | Critical Paths | ≥95% | Check modules above | ✅ Met |
 | New Modules | ≥80% | - | Policy |
 
