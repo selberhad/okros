@@ -1,0 +1,38 @@
+# Reference implementations (separate repos - will become submodules)
+mcl-cpp-reference/
+perlmudbot/
+
+# Rust build artifacts
+target/
+**/*.rs.bk
+*.pdb
+
+# Cargo.lock (library project - let users generate their own)
+# Note: If this becomes a binary, we should track Cargo.lock
+Cargo.lock
+
+# IDE / Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary test files
+/tmp/
+*.tmp
+test_c
+test_c_threaded
+test2
+*.o
+*.dylib
+*.so
+
+# Environment files
+.env
+.env.local
