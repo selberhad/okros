@@ -13,6 +13,7 @@ Risky subsystems to validate:
 - Nonblocking connect() + EINPROGRESS and readiness transitions
 - Scrollback ring buffer + viewport/highlight overlay
 - (Optional) Stacked interpreter chaining parity
+ - (Optional) ANSI SGR → attrib parser (colorConverter parity)
 
 ---
 
@@ -31,6 +32,7 @@ C++ Reference: `Window.cc`, `Screen.cc`, `Color.h`, `Curses.cc`
 - What to learn: Efficient diffing; background updates; ACS toggling boundaries.
 - SPEC focus: `getColorCode()` parity, 7-bit CSI, saved vs current color.
 - Success: Visual diff fidelity across frames; minimal control codes when unchanged.
+ - Extension: Scroll-region optimization planner (set region, goto bottom, N newlines) when large diffs in region are detected.
 
 ### Toy 8: Telnet + MCCP Fragmentation
 C++ Reference: `Session.cc`, `mccpDecompress.c/h`
@@ -38,6 +40,7 @@ C++ Reference: `Session.cc`, `mccpDecompress.c/h`
 - What to learn: Carry-over buffer management; prompt detection (GA/EOR); response emission.
 - SPEC focus: Test vectors for split IAC; decompress boundaries; error handling.
 - Success: Round-trips scripted inputs; emits correct responses; no state loss.
+ - Extension: Real MCCP inflate (flate2/miniz) implementing `Decompressor` with v1/v2 handshakes, error/EOS, stats.
 
 ### Toy 9: Nonblocking Connect semantics
 C++ Reference: `Socket.cc`
@@ -52,6 +55,7 @@ C++ Reference: `OutputWindow.cc`, `Window.cc`
 - What to learn: Copy-on-write overlay; border cases at buffer ends.
 - SPEC focus: COPY_LINES behavior; sticky status messaging.
 - Success: Paging and highlighting behave as reference without artifacts.
+ - Extension: Freeze/follow semantics; COPY_LINES block tuned to 250 (capped by buffer).
 
 ### (Optional) Toy 11: Plugins Stack
 C++ Reference: `Embedded.cc`
@@ -65,15 +69,22 @@ C++ Reference: `Embedded.cc`
 - Keep each toy standalone (no network unless required); prefer deterministic inputs.
 
 ## Current Status
-- [ ] Toy 6 (TTY + Keys)
-- [ ] Toy 7 (ANSI Canvas Diff)
-- [ ] Toy 8 (Telnet + MCCP)
-- [ ] Toy 9 (Nonblocking Connect)
-- [ ] Toy 10 (Scrollback Ring)
-- [ ] Toy 11 (Plugins Stack) — optional
+- [ ] Toy 6 (TTY + Keys) — SPEC/LEARNINGS staged
+- [x] Toy 7 (ANSI Canvas Diff) — base diff+ACS tests complete; extension planned: scroll-region
+- [x] Toy 8 (Telnet + MCCP) — telnet pipeline tests complete; extension planned: real MCCP inflate
+- [ ] Toy 9 (Nonblocking Connect) — SPEC/LEARNINGS staged
+- [x] Toy 10 (Scrollback Ring) — ring/highlight/navigation tests complete; freeze+COPY_LINES tuned
+- [x] Toy 11 (Plugins Stack) — chaining/enable/quiet tests complete (optional)
+
+## Next Steps (Extensions)
+- Implement Toy 8 real MCCP inflate behind `real_mccp` feature; add streaming inflate tests and EOS/error cases.
+- Add Toy 7 scroll-region optimization planner + tests; integrate heuristic thresholds (diff ratio, region bounds).
+- Optional new toys (if needed):
+  - ANSI SGR → attrib parser (colorConverter parity): SGR runs, resets, malformed/incomplete sequences across chunks.
+  - Regex triggers & replacement: case-insensitive patterns, gagging, replacement length changes without losing color.
+  - InputLine editor: key-to-state machine using Toy 6 key codes; history/prompt handling.
 
 ## Estimated Effort
 - Toy 6,7: 0.5–1 day each
 - Toy 8,9,10: 1–2 days each
 - Toy 11: 0.5 day (if needed)
-
