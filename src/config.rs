@@ -23,6 +23,18 @@ impl Config {
         }
     }
 
+    /// Create config with offline MUD as entry #0
+    pub fn with_offline_mud() -> Self {
+        let mut config = Self::new();
+
+        // Add offline/internal MUD as first entry
+        let mut offline = Mud::new("Offline", "", 0);
+        offline.comment = "Internal test MUD (no network required)".to_string();
+        config.mud_list.insert(offline);
+
+        config
+    }
+
     pub fn set_server_str(&mut self, s: &str) -> Result<(), String> {
         let (ip_s, port_s) = s
             .split_once(':')
@@ -34,6 +46,7 @@ impl Config {
     }
 
     /// Load config from file (supports both old and new formats)
+    /// Automatically adds Offline MUD as entry #0 if not present
     pub fn load_file(&mut self, path: impl AsRef<Path>) -> Result<(), String> {
         let file = File::open(path).map_err(|e| format!("Failed to open config: {}", e))?;
         let reader = BufReader::new(file);
@@ -64,7 +77,33 @@ impl Config {
             }
         }
 
+        // Ensure Offline MUD is present (add as entry #0 if not found)
+        self.ensure_offline_mud();
+
         Ok(())
+    }
+
+    /// Ensure Offline MUD exists in list (prepend if not present)
+    fn ensure_offline_mud(&mut self) {
+        // Check if Offline MUD already exists
+        if self.mud_list.find("Offline").is_some() {
+            return;
+        }
+
+        // Create and prepend Offline MUD
+        let mut offline = Mud::new("Offline", "", 0);
+        offline.comment = "Internal test MUD (no network required)".to_string();
+
+        // Create new list with Offline first
+        let mut new_list = MudList::new();
+        new_list.insert(offline);
+
+        // Add all existing MUDs
+        for mud in self.mud_list.iter() {
+            new_list.insert(mud.clone());
+        }
+
+        self.mud_list = new_list;
     }
 
     /// Read a MUD block in new format: MUD mudname { ... }
@@ -242,7 +281,8 @@ mod tests {
         let mut cfg = Config::new();
         cfg.load_file(tmpfile.path()).unwrap();
 
-        assert_eq!(cfg.mud_list.count(), 3);
+        // Offline MUD is auto-added as entry #0
+        assert_eq!(cfg.mud_list.count(), 4);
 
         let mud1 = cfg.mud_list.find("TestMUD").unwrap();
         assert_eq!(mud1.hostname, "127.0.0.1");
@@ -282,7 +322,8 @@ mod tests {
         let mut cfg = Config::new();
         cfg.load_file(tmpfile.path()).unwrap();
 
-        assert_eq!(cfg.mud_list.count(), 1);
+        // Offline MUD is auto-added
+        assert_eq!(cfg.mud_list.count(), 2);
         let mud = cfg.mud_list.find("TestMUD").unwrap();
         assert_eq!(mud.hostname, "127.0.0.1");
         assert_eq!(mud.port, 4000);
@@ -356,7 +397,9 @@ mod tests {
         let mut cfg = Config::new();
         cfg.load_file(tmpfile.path()).unwrap();
 
-        assert_eq!(cfg.mud_list.count(), 3);
+        // Offline MUD is auto-added
+        assert_eq!(cfg.mud_list.count(), 4);
+        assert!(cfg.mud_list.find("Offline").is_some());
         assert!(cfg.mud_list.find("OldMUD").is_some());
         assert!(cfg.mud_list.find("NewMUD").is_some());
         assert!(cfg.mud_list.find("OldMUD2").is_some());
@@ -391,5 +434,36 @@ mod tests {
         let result = cfg.load_file(tmpfile.path());
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("not found"));
+    }
+
+    #[test]
+    fn config_with_offline_mud() {
+        let cfg = Config::with_offline_mud();
+        assert_eq!(cfg.mud_list.count(), 1);
+        let offline = cfg.mud_list.get(0).unwrap();
+        assert_eq!(offline.name, "Offline");
+        assert!(offline.comment.contains("Internal"));
+    }
+
+    #[test]
+    fn config_ensure_offline_mud_prepended() {
+        let mut tmpfile = NamedTempFile::new().unwrap();
+        writeln!(tmpfile, "TestMUD 127.0.0.1 4000").unwrap();
+        writeln!(tmpfile, "Nodeka nodeka.com 23").unwrap();
+        tmpfile.flush().unwrap();
+
+        let mut cfg = Config::new();
+        cfg.load_file(tmpfile.path()).unwrap();
+
+        // Should have 3 MUDs: Offline + TestMUD + Nodeka
+        assert_eq!(cfg.mud_list.count(), 3);
+
+        // Offline should be first
+        let first = cfg.mud_list.get(0).unwrap();
+        assert_eq!(first.name, "Offline");
+
+        // Other MUDs should follow
+        assert!(cfg.mud_list.find("TestMUD").is_some());
+        assert!(cfg.mud_list.find("Nodeka").is_some());
     }
 }
