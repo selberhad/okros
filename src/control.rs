@@ -26,6 +26,14 @@ enum Event {
     Error { message: String },
     Status { attached: bool },
     Buffer { lines: Vec<String> },
+    Hex { lines: Vec<HexLine> },
+}
+
+#[derive(Debug, Serialize)]
+pub struct HexLine {
+    pub hex: String,      // Hex bytes with colors: "48:07 65:07 6C:07 ..."
+    pub text: String,     // Decoded text
+    pub colors: String,   // Color summary: "07 07 07 ..."
 }
 
 pub struct ControlState {
@@ -114,6 +122,12 @@ fn handle_command(cmd: Command, state: &Arc<ControlState>) -> Event {
             let count = cmd.lines.unwrap_or(20);
             let lines = eng.peek_recent(count);
             Event::Buffer { lines }
+        }
+        "hex" => {
+            let eng = state.engine.lock().unwrap();
+            let count = cmd.lines.unwrap_or(20);
+            let hex_lines = eng.peek_hex(count);
+            Event::Hex { lines: hex_lines }
         }
         "connect" => {
             if let Some(addr) = &cmd.data {

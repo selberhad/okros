@@ -172,9 +172,24 @@ echo '{"cmd":"status"}' | nc -U /tmp/okros/demo.sock
 echo '{"cmd":"stream"}' | nc -U /tmp/okros/ar.sock
 ```
 
+**Helper script** for interactive testing:
+```bash
+# Send command and view response (waits 2s, shows last 5 lines)
+./scripts/mud_cmd.sh /tmp/okros/ar.sock "look"
+```
+
+**Test credentials** are stored in `.env` (gitignored) - see `.env.example` for format.
+
 **Headless Offline Mode** is perfect for LLM agent development and testing - no network required, deterministic behavior, and full JSON control protocol.
 
 ### LLM Agent Integration
+
+**See [AGENT_GUIDE.md](AGENT_GUIDE.md) for complete LLM agent documentation** including:
+- Control protocol reference
+- Helper scripts (`scripts/mud_cmd.sh`)
+- Test credentials (`.env`)
+- Critical rules (no command spamming, never guess MUD commands)
+- Common pitfalls and troubleshooting
 
 okros headless mode is designed for simplicity - LLM agents just need to read text buffers and send commands:
 
@@ -225,9 +240,12 @@ The control server uses JSON Lines (one JSON object per line):
 {"cmd":"attach"}                               // Attach to session
 {"cmd":"detach"}                               // Detach from session
 {"cmd":"send","data":"north\n"}                // Send command to MUD
-{"cmd":"get_buffer","from":0}                  // Get buffered output
+{"cmd":"get_buffer"}                           // Get buffered output (consumes new lines)
+{"cmd":"peek","lines":20}                      // Peek at recent lines without consuming
+{"cmd":"hex","lines":10}                       // Debug view (hex + color codes)
 {"cmd":"stream","interval_ms":200}             // Stream live output
 {"cmd":"sock_send","data":"raw telnet bytes"}  // Send raw bytes (network mode)
+{"cmd":"connect","data":"host:port"}           // Connect to MUD (network mode)
 ```
 
 **Responses:**
@@ -236,6 +254,7 @@ The control server uses JSON Lines (one JSON object per line):
 {"event":"Status","attached":true}                              // Network mode
 {"event":"Status","location":"cave","inventory_count":2}        // Offline mode
 {"event":"Buffer","lines":["You are standing in a room.","Exits: north, south"]}
+{"event":"Hex","lines":[{"hex":"48:07 65:07","text":"He","colors":"07 07"}]}  // Debug mode
 {"event":"Error","message":"not connected"}
 ```
 
@@ -265,10 +284,16 @@ okros is a 1:1 Rust port of MCL using a "safety third" approach - liberal use of
 ## Development Status
 
 **Implementation**: ~95% complete (all tiers done)
-**Testing**: 83 tests passing | 65% coverage
-**Validation**: Pending real MUD server testing
+**Testing**: 82 tests passing | 65% coverage
+**Validation**: ✅ Tested with Nodeka MUD (nodeka.com:23)
 
-See [ORIENTATION.md](ORIENTATION.md) for current status, [PORTING_HISTORY.md](PORTING_HISTORY.md) for implementation history, and [FUTURE_WORK.md](FUTURE_WORK.md) for remaining tasks.
+Recent work:
+- ✅ Per-character color storage (fixed black-on-black menus)
+- ✅ Circular buffer flattening (headless mode)
+- ✅ Hex dump debug tool (`hex` command)
+- ✅ Login flow with real MUD
+
+See [ORIENTATION.md](ORIENTATION.md) for current status, [PORTING_HISTORY.md](PORTING_HISTORY.md) for implementation history, [MUD_LEARNINGS.md](MUD_LEARNINGS.md) for debugging findings, and [FUTURE_WORK.md](FUTURE_WORK.md) for remaining tasks.
 
 ## Comparison with Original MCL
 
@@ -341,6 +366,8 @@ make install-hooks     # Installs pre-push hook
 
 ### Development Resources
 
+- **[AGENT_GUIDE.md](AGENT_GUIDE.md)** - LLM agent integration guide (control protocol, helper scripts, best practices)
+- **[MUD_LEARNINGS.md](MUD_LEARNINGS.md)** - Technical findings from Nodeka integration (debugging methodology, test cases)
 - **[DEVELOPMENT.md](DEVELOPMENT.md)** - Complete development guide (workflows, tools, CI/CD)
 - **[TESTING.md](TESTING.md)** - Testing guide (running tests, coverage, CI)
 - **[CLAUDE.md](CLAUDE.md)** - Project methodology and porting guidelines

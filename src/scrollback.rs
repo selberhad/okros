@@ -27,19 +27,59 @@ impl Scrollback {
         for (i,b) in bytes.iter().take(self.width).enumerate(){ self.buf[start+i] = ((color as u16) << 8) | (*b as u16); }
         self.total_lines_written += 1;  // Increment monotonic counter
     }
+
+    /// Print line with per-character colors (like C++ SET_COLOR stream)
+    pub fn print_line_colored(&mut self, pairs: &[(u8, u8)]) {
+
+        let screen_span=self.width*self.height; let max_canvas=self.width*(self.lines-self.height);
+        if self.canvas_off>=max_canvas { const COPY:usize=250; let copy=COPY.min(self.lines-self.height); let shift=copy*self.width; self.buf.copy_within(shift..,0); self.canvas_off-=shift; if self.viewpoint>=shift{ self.viewpoint-=shift } else { self.viewpoint=0 } self.top_line+=copy; let tail=self.buf.len()-shift; for a in &mut self.buf[tail..]{ *a=0; } }
+        let start = if self.rows_filled<self.height { let s=self.viewpoint + self.rows_filled*self.width; self.rows_filled+=1; s } else { self.canvas_off+=self.width; if !self.frozen { if self.viewpoint + screen_span < self.canvas_off { self.viewpoint = self.canvas_off - screen_span; } } self.viewpoint + (self.height-1)*self.width };
+
+        // Fill with spaces first (use default color 0x07)
+        for a in &mut self.buf[start..start+self.width]{ *a = (0x07u16 << 8) | b' ' as u16; }
+
+        // Write characters with their individual colors
+        for (i, (ch, color)) in pairs.iter().take(self.width).enumerate() {
+            self.buf[start+i] = ((*color as u16) << 8) | (*ch as u16);
+        }
+
+        self.total_lines_written += 1;
+    }
     pub fn viewport_slice(&self)->&[Attrib]{ &self.buf[self.viewpoint .. self.viewpoint + self.width*self.height] }
 
     /// Get recent scrollback lines (for headless mode)
-    /// Returns last N lines from scrollback, not just viewport
-    pub fn recent_lines(&self, count: usize) -> &[Attrib] {
-        // Calculate how many actual lines are in the buffer
-        // The buffer holds 'lines' rows total, but some may be empty
+    /// Returns last N lines from scrollback, accounting for circular buffer
+    pub fn recent_lines(&self, count: usize) -> Vec<Attrib> {
+        // How many lines are actually in the buffer
         let lines_in_buffer = self.total_lines_written.min(self.lines);
         let rows_to_return = count.min(lines_in_buffer);
-        let start_row = lines_in_buffer - rows_to_return;
-        let start_offset = start_row * self.width;
-        let end_offset = start_offset + rows_to_return * self.width;
-        &self.buf[start_offset..end_offset]
+
+        // Current write position (where the next line would go)
+        let current_line = if self.rows_filled < self.height {
+            // Still filling initial viewport
+            self.rows_filled
+        } else {
+            // Canvas has scrolled; calculate from canvas_off
+            self.canvas_off / self.width
+        };
+
+        // Start position for the requested lines (working backwards from current)
+        let start_line = if current_line >= rows_to_return {
+            current_line - rows_to_return
+        } else {
+            // Wrap around in circular buffer
+            self.lines - (rows_to_return - current_line)
+        };
+
+        // Flatten the circular buffer into a linear vec
+        let mut result = Vec::with_capacity(rows_to_return * self.width);
+        for i in 0..rows_to_return {
+            let line_idx = (start_line + i) % self.lines;
+            let offset = line_idx * self.width;
+            result.extend_from_slice(&self.buf[offset..offset + self.width]);
+        }
+
+        result
     }
 
     pub fn move_viewpoint_page(&mut self, down: bool){ let d=(self.height/2).max(1)*self.width; if down { self.viewpoint = (self.viewpoint + d).min(self.canvas_off); } else { self.viewpoint = self.viewpoint.saturating_sub(d); } }

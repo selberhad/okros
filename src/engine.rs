@@ -67,8 +67,7 @@ impl<D: Decompressor> SessionEngine<D> {
         // How many new lines since cursor
         let new_line_count = total_lines_written - cursor;
 
-        // Just get the most recent N lines from scrollback using recent_lines
-        // This handles wrapping for us
+        // Get the most recent N lines from scrollback (flattened from circular buffer)
         let lines = self.session.scrollback.recent_lines(new_line_count);
         let width = self.session.scrollback.width;
         let row_count = lines.len() / width;
@@ -87,7 +86,7 @@ impl<D: Decompressor> SessionEngine<D> {
         // Include current incomplete line if it exists (for prompts without newlines/GA/EOR)
         let current = self.session.current_line();
         if !current.is_empty() {
-            out.push(String::from_utf8_lossy(current).to_string());
+            out.push(String::from_utf8_lossy(&current).to_string());
         }
 
         out
@@ -110,7 +109,41 @@ impl<D: Decompressor> SessionEngine<D> {
         // Include current incomplete line (same as get_new_lines)
         let current = self.session.current_line();
         if !current.is_empty() {
-            out.push(String::from_utf8_lossy(current).to_string());
+            out.push(String::from_utf8_lossy(&current).to_string());
+        }
+
+        out
+    }
+
+    /// Peek at recent lines in hex dump format (for debugging)
+    pub fn peek_hex(&self, lines: usize) -> Vec<crate::control::HexLine> {
+        let width = self.session.scrollback.width;
+        let vec = self.session.scrollback.recent_lines(lines);
+        let row_count = vec.len() / width;
+        let mut out = Vec::with_capacity(row_count);
+
+        for row in 0..row_count {
+            let off = row * width;
+            let row_slice = &vec[off .. off + width];
+
+            let mut hex_parts = Vec::new();
+            let mut text_chars = Vec::new();
+            let mut color_parts = Vec::new();
+
+            for &attr in row_slice {
+                let ch = (attr & 0xFF) as u8;
+                let color = (attr >> 8) as u8;
+
+                hex_parts.push(format!("{:02x}:{:02x}", ch, color));
+                text_chars.push(if ch >= 32 && ch < 127 { ch as char } else { '.' });
+                color_parts.push(format!("{:02x}", color));
+            }
+
+            out.push(crate::control::HexLine {
+                hex: hex_parts.join(" "),
+                text: text_chars.iter().collect::<String>().trim_end().to_string(),
+                colors: color_parts.join(" "),
+            });
         }
 
         out
