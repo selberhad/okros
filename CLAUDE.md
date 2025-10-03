@@ -184,7 +184,7 @@ This project follows **Doc-Driven Development (DDD)** adapted for C++ → Rust p
 
 ## Key Files Reference
 
-**Current Status**: Discovery phase (3/5 toys complete)
+**Current Status**: Discovery phase COMPLETE (5/5 toys validated) — Execution phase scaffolded (Cargo.toml, src/ initialized)
 
 **File Structure**: See `CODE_MAP.md` for complete project structure and status
 - `./CODE_MAP.md` - Root directory structure, toys status, future src/ layout

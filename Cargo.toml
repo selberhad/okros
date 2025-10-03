@@ -1,0 +1,23 @@
+[package]
+name = "mcl-rust"
+version = "0.1.0"
+edition = "2021"
+description = "1:1 Rust port of MCL (MUD Client for Linux) with safety-third approach"
+license = "UNLICENSED"
+
+[features]
+default = []
+# Enabling `python` pulls in the optional `pyo3` dependency
+python = ["pyo3"]
+perl = []
+
+[dependencies]
+libc = "0.2"
+ncurses = "5.101"
+bitflags = "2.4"
+
+[dependencies.pyo3]
+version = "0.20"
+optional = true
+features = ["auto-initialize"]
+

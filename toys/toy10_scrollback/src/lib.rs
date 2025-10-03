@@ -11,6 +11,7 @@ pub struct Scrollback {
     pub viewpoint: usize, // index (attribs) where viewport starts
     pub top_line: usize,
     rows_filled: usize,
+    frozen: bool,
 }
 
 impl Scrollback {
@@ -22,6 +23,7 @@ impl Scrollback {
             viewpoint: 0,
             top_line: 0,
             rows_filled: 0,
+            frozen: false,
         };
         s
     }
@@ -35,7 +37,8 @@ impl Scrollback {
         let max_canvas = self.width * (self.lines - self.height);
         if self.canvas_offset >= max_canvas {
             // compact by COPY_LINES = height (simple choice)
-            let copy = self.height.min(self.lines - self.height);
+            const COPY_LINES: usize = 250;
+            let copy = COPY_LINES.min(self.lines - self.height);
             let shift = copy * self.width;
             self.scrollback.copy_within(shift.., 0);
             self.canvas_offset -= shift;
@@ -55,8 +58,10 @@ impl Scrollback {
             // advance canvas by one line (scroll)
             self.canvas_offset += self.width;
             // track viewpoint with canvas (default behavior)
-            if self.viewpoint + screen_span < self.canvas_offset {
-                self.viewpoint = self.canvas_offset - screen_span;
+            if !self.frozen {
+                if self.viewpoint + screen_span < self.canvas_offset {
+                    self.viewpoint = self.canvas_offset - screen_span;
+                }
             }
             // write into last visible line of viewport
             self.viewpoint + (self.height - 1) * self.width
@@ -67,6 +72,8 @@ impl Scrollback {
             self.scrollback[start + i] = ((color as u16) << 8) | (*b as u16);
         }
     }
+
+    pub fn set_frozen(&mut self, frozen: bool) { self.frozen = frozen; }
 
     pub fn viewport_slice(&self) -> &[Attrib] {
         &self.scrollback[self.viewpoint .. self.viewpoint + self.width * self.height]
@@ -159,5 +166,143 @@ mod tests {
         let c = (hl[0] >> 8) as u8;
         assert_eq!(c & 0x0F, 0x02); // new fg = old bg
         assert_eq!((c & 0xF0) >> 4, 0x01); // new bg = old fg
+    }
+
+    #[test]
+    fn view_bounds_saturate_on_moves() {
+        let mut sb = Scrollback::new(5, 2, 20);
+        for _ in 0..8 { sb.print_line(b"aaaaa", 0); }
+        // Move up beyond top
+        for _ in 0..10 { sb.move_viewpoint_page(false); }
+        assert_eq!(sb.viewpoint, 0);
+        // Move down beyond bottom
+        for _ in 0..50 { sb.move_viewpoint_page(true); }
+        assert_eq!(sb.viewpoint, sb.canvas_ptr());
+    }
+
+    #[test]
+    fn follow_tail_on_print() {
+        let mut sb = Scrollback::new(4, 2, 16);
+        // Fill visible
+        sb.print_line(b"1111", 0);
+        sb.print_line(b"2222", 0);
+        // Now each new line should scroll and keep viewport at tail
+        sb.print_line(b"3333", 0);
+        let v = sb.viewport_slice().to_vec();
+        // Bottom line should be the latest printed line
+        assert_eq!(String::from_utf8_lossy(&v[4..8].iter().map(|a| (*a & 0xFF) as u8).collect::<Vec<_>>()), "3333");
+    }
+
+    #[test]
+    fn highlight_clips_within_bounds() {
+        let mut sb = Scrollback::new(3, 2, 6);
+        sb.print_line(b"abc", 0x21);
+        sb.print_line(b"def", 0x21);
+        let v = sb.viewport_slice().to_vec();
+        let hl = sb.highlight_view(0, 2, 10); // extends beyond row
+        assert_eq!(hl.len(), v.len());
+        // Cells before x are unchanged
+        assert_eq!(v[0], hl[0]);
+        assert_eq!(v[1], hl[1]);
+        // From index 2 to end are swapped (clipped to viewport end)
+        for idx in 2..hl.len() {
+            assert_ne!((v[idx] >> 8) as u8, (hl[idx] >> 8) as u8, "idx {} expected swapped color", idx);
+        }
+    }
+    #[test]
+    fn compaction_preserves_last_visible_lines() {
+        let mut sb = Scrollback::new(3, 2, 6); // total 6 lines buffer, 2 visible
+        // Push enough lines to compact
+        for i in 0..12u8 {
+            let ch = b'A' + (i % 26);
+            sb.print_line(&[ch, ch, ch], 0);
+        }
+        let view = sb.viewport_slice();
+        // Expect last printed line to be visible on the bottom row
+        let last = [b'L', b'L', b'L']; // 12th (index 11) -> 'L'
+        let base = 1 * 3;
+        let bottom = [ (view[base] & 0xFF) as u8,
+                       (view[base+1] & 0xFF) as u8,
+                       (view[base+2] & 0xFF) as u8 ];
+        assert_eq!(bottom, last);
+    }
+
+    #[test]
+    fn move_line_saturates() {
+        let mut sb = Scrollback::new(3, 2, 12);
+        for i in 0..6u8 { let ch = b'A' + i; sb.print_line(&[ch,ch,ch], 0); }
+        // Move up until top
+        for _ in 0..10 { sb.move_viewpoint_line(false); }
+        assert_eq!(sb.viewpoint, 0);
+        // Move down until bottom
+        for _ in 0..50 { sb.move_viewpoint_line(true); }
+        assert_eq!(sb.viewpoint, sb.canvas_ptr());
+    }
+
+    #[test]
+    fn mixed_page_and_line_navigation() {
+        let mut sb = Scrollback::new(3, 4, 30);
+        // Fill a bunch of lines to ensure scrolling
+        for i in 0..20u8 { let ch = b'A' + (i%26); sb.print_line(&[ch,ch,ch], 0); }
+        let v0 = sb.viewpoint;
+        // Page up once, then line down once
+        let page_delta = (sb.height/2).max(1) * sb.width; // = 2*3 = 6
+        sb.move_viewpoint_page(false);
+        let v1 = sb.viewpoint;
+        assert_eq!(v1, v0.saturating_sub(page_delta));
+        sb.move_viewpoint_line(true);
+        let expected = (v1 + sb.width).min(sb.canvas_ptr());
+        assert_eq!(sb.viewpoint, expected);
+    }
+
+    #[test]
+    fn cleared_tail_cells_after_short_line() {
+        let mut sb = Scrollback::new(5, 2, 10);
+        sb.print_line(b"abc", 0x10);
+        let v = sb.viewport_slice();
+        // First line: 'a','b','c',' ',' '
+        let bytes: Vec<u8> = v[0..5].iter().map(|a| (*a & 0xFF) as u8).collect();
+        assert_eq!(&bytes, b"abc  ");
+    }
+
+    #[test]
+    fn compaction_top_line_increments_by_height() {
+        let mut sb = Scrollback::new(4, 2, 8); // height=2, lines-height=6 => copy=min(250,6)=6
+        // Force compaction at least once
+        for _ in 0..20 { sb.print_line(b"xxxx", 0); }
+        assert_eq!(sb.top_line % 6, 0, "top_line should advance in multiples of copy block (6)");
+        assert!(sb.top_line >= 6);
+    }
+
+    #[test]
+    fn freeze_stops_follow_tail() {
+        let mut sb = Scrollback::new(4, 2, 20);
+        sb.print_line(b"1111", 0);
+        sb.print_line(b"2222", 0);
+        let vp_before = sb.viewpoint;
+        sb.set_frozen(true);
+        sb.print_line(b"3333", 0);
+        sb.print_line(b"4444", 0);
+        // Viewpoint unchanged when frozen
+        assert_eq!(sb.viewpoint, vp_before);
+    }
+
+    #[test]
+    fn viewpoint_bounds_invariant_under_mixed_moves() {
+        let mut sb = Scrollback::new(5, 3, 50);
+        for i in 0..40u8 { let ch = b'A' + (i%26); sb.print_line(&[ch,ch,ch,ch,ch], 0); }
+        // Mixed sequence of moves
+        for i in 0..200 {
+            match i % 4 {
+                0 => sb.move_viewpoint_line(false),
+                1 => sb.move_viewpoint_line(true),
+                2 => sb.move_viewpoint_page(false),
+                _ => sb.move_viewpoint_page(true),
+            }
+            // Invariants: viewpoint within [0, canvas_offset], slice in-bounds
+            assert!(sb.viewpoint <= sb.canvas_ptr());
+            let slice = sb.viewport_slice();
+            assert_eq!(slice.len(), sb.width * sb.height);
+        }
     }
 }

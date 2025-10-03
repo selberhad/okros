@@ -160,4 +160,174 @@ mod tests {
         let code = get_color_code(0x07, true);
         assert_eq!(code, "\u{1b}[0m");
     }
+
+    #[test]
+    fn same_frame_noop_only_cursor_moves() {
+        let w = 3; let h = 2;
+        let prev = vec![cell(b'X', 0x00); w*h];
+        let next = prev.clone();
+        let opt = DiffOptions{ width:w, height:h, cursor_x:2, cursor_y:1, smacs:None, rmacs:None, set_bg_always:true };
+        let s = diff_to_ansi(&prev, &next, &opt);
+        // Expect only home + final cursor goto
+        assert!(s.starts_with("\u{1b}[H"));
+        assert!(s.ends_with("\u{1b}[2;3H"));
+        // No printable chars between
+        let inner = &s["\u{1b}[H".len()..s.len()-"\u{1b}[2;3H".len()];
+        assert!(inner.is_empty());
+    }
+
+    #[test]
+    fn fg_change_without_bg_when_disabled() {
+        let w=2; let h=1;
+        let prev = vec![cell(b' ', 0x00); w*h];
+        let mut next = prev.clone();
+        next[0] = cell(b'X', 0x01); // change only fg
+        let s = diff_to_ansi(&prev, &next, &DiffOptions{ width:w, height:h, cursor_x:0, cursor_y:0, smacs:None, rmacs:None, set_bg_always:false });
+        // Should not contain explicit background code like 40;
+        assert!(!s.contains(";40;"), "unexpected background code in: {}", s);
+    }
+
+    #[test]
+    fn bold_flag_emits_csi_1() {
+        let w=1; let h=1;
+        let prev = vec![cell(b' ', 0x00); w*h];
+        let mut next = prev.clone();
+        next[0] = cell(b'X', 0x80); // bold bit
+        let s = diff_to_ansi(&prev, &next, &DiffOptions{ width:w, height:h, cursor_x:0, cursor_y:0, smacs:None, rmacs:None, set_bg_always:true });
+        assert!(s.contains("\u{1b}[1;"), "expected bold CSI in: {}", s);
+    }
+
+    #[test]
+    fn acs_nesting_two_specials_then_normal() {
+        let w=4; let h=1;
+        let prev = vec![cell(b' ', 0x00); w*h];
+        let mut next = prev.clone();
+        next[0] = cell(SC_BASE, 0);
+        next[1] = cell(SC_BASE+1, 0);
+        next[2] = cell(b'Z', 0);
+        let s = diff_to_ansi(&prev, &next, &DiffOptions{ width:w, height:h, cursor_x:0, cursor_y:0, smacs:Some("[SM]"), rmacs:Some("[RM]"), set_bg_always:true });
+        let i_sm = s.find("[SM]").expect("smacs present");
+        let i_rm = s.find("[RM]").expect("rmacs present");
+        let i_hash1 = s[i_sm..].find('#').map(|k| i_sm+k).unwrap();
+        let i_hash2 = s[i_hash1+1..].find('#').map(|k| i_hash1+1+k).unwrap();
+        let i_z = s.find('Z').expect("Z present");
+        assert!(i_sm < i_hash1 && i_hash1 < i_hash2 && i_hash2 < i_rm && i_rm < i_z, "ordering incorrect: {}", s);
+    }
+
+    #[test]
+    fn minimal_cursoring_for_adjacent_cells() {
+        let w=3; let h=1;
+        let prev = vec![cell(b' ', 0x00); w*h];
+        let mut next = prev.clone();
+        next[0] = cell(b'A', 0);
+        next[1] = cell(b'B', 0); // adjacent same color
+        let s = diff_to_ansi(&prev, &next, &DiffOptions{ width:w, height:h, cursor_x:0, cursor_y:0, smacs:None, rmacs:None, set_bg_always:true });
+        assert!(s.contains("\u{1b}[1;1H"));
+        assert!(!s.contains("\u{1b}[1;2H"), "unexpected second goto: {}", s);
+    }
+
+    #[test]
+    fn minimal_goto_across_line_wrap() {
+        // Updates at (1,1)->(2,1)->(1,2) should use only one goto
+        let w=2; let h=2;
+        let prev = vec![cell(b' ', 0x00); w*h];
+        let mut next = prev.clone();
+        next[0] = cell(b'A', 0);
+        next[1] = cell(b'B', 0);
+        next[2] = cell(b'C', 0);
+        let s = diff_to_ansi(&prev, &next, &DiffOptions{ width:w, height:h, cursor_x:0, cursor_y:0, smacs:None, rmacs:None, set_bg_always:true });
+        // Expect one goto to 1;1 and no extra gotos to 1;2 or 2;1
+        let count_11 = s.matches("\u{1b}[1;1H").count();
+        assert!(count_11 >= 1);
+        assert!(!s.contains("\u{1b}[1;2H"), "unexpected goto to 1;2: {}", s);
+        assert!(!s.contains("\u{1b}[2;1H"), "unexpected goto to 2;1: {}", s);
+    }
+
+    #[test]
+    fn bottom_right_special_does_not_toggle_acs() {
+        let w=2; let h=2;
+        let prev = vec![cell(b' ', 0x00); w*h];
+        let mut next = prev.clone();
+        // Set only bottom-right to a special ACS char
+        next[w*h - 1] = cell(SC_BASE, 0);
+        let s = diff_to_ansi(&prev, &next, &DiffOptions{ width:w, height:h, cursor_x:0, cursor_y:0, smacs:Some("[SM]"), rmacs:Some("[RM]"), set_bg_always:true });
+        assert!(!s.contains("[SM]"), "should not enable ACS for bottom-right only: {}", s);
+        assert!(!s.contains("[RM]"), "should not disable ACS for bottom-right only: {}", s);
+        assert!(!s.contains("\u{1b}[2;2H"), "should not write bottom-right cell: {}", s);
+    }
+
+    #[test]
+    fn control_chars_render_as_spaces() {
+        let w=1; let h=2;
+        let prev = vec![cell(b' ', 0x00); w*h];
+        let mut next = prev.clone();
+        next[0] = cell(0x01, 0x00); // control char -> space
+        let s = diff_to_ansi(&prev, &next, &DiffOptions{ width:w, height:h, cursor_x:0, cursor_y:0, smacs:None, rmacs:None, set_bg_always:true });
+        // There should be a literal space emitted in the output
+        assert!(s.contains(" "));
+    }
+
+    #[test]
+    fn acs_reset_emitted_if_last_change_is_special() {
+        let w=2; let h=1;
+        let prev = vec![cell(b' ', 0x00); w*h];
+        let mut next = prev.clone();
+        next[0] = cell(SC_BASE, 0);
+        let s = diff_to_ansi(&prev, &next, &DiffOptions{ width:w, height:h, cursor_x:1, cursor_y:0, smacs:Some("[SM]"), rmacs:Some("[RM]"), set_bg_always:true });
+        let idx_sm = s.rfind("[SM]").expect("smacs present");
+        let idx_rm = s.rfind("[RM]").expect("rmacs present");
+        assert!(idx_sm < idx_rm, "expected rmacs after smacs at end: {}", s);
+    }
+
+    #[test]
+    fn single_color_code_reused_across_adjacent_writes() {
+        let w=2; let h=1;
+        let prev = vec![cell(b' ', 0x00); w*h];
+        let mut next = prev.clone();
+        next[0] = cell(b'A', 0x12);
+        next[1] = cell(b'B', 0x12);
+        let s = diff_to_ansi(&prev, &next, &DiffOptions{ width:w, height:h, cursor_x:0, cursor_y:0, smacs:None, rmacs:None, set_bg_always:true });
+        let m_count = s.chars().filter(|&c| c=='m').count();
+        assert_eq!(m_count, 1, "expected single color code, got {}: {}", m_count, s);
+    }
+
+    #[test]
+    fn single_color_code_reused_across_separated_writes() {
+        let w=3; let h=1;
+        let prev = vec![cell(b' ', 0x00); w*h];
+        let mut next = prev.clone();
+        next[0] = cell(b'A', 0x22);
+        next[2] = cell(b'B', 0x22);
+        let s = diff_to_ansi(&prev, &next, &DiffOptions{ width:w, height:h, cursor_x:0, cursor_y:0, smacs:None, rmacs:None, set_bg_always:true });
+        let m_count = s.chars().filter(|&c| c=='m').count();
+        assert_eq!(m_count, 1, "expected single color code across separated writes, got {}: {}", m_count, s);
+    }
+
+    #[test]
+    fn final_cursor_goto_then_rmacs_after_bottom_row_acs() {
+        let w=3; let h=2;
+        let prev = vec![cell(b' ', 0x00); w*h];
+        let mut next = prev.clone();
+        // Set a special at (x=1,y=2), not bottom-right
+        next[w + 0] = cell(SC_BASE, 0);
+        let s = diff_to_ansi(&prev, &next, &DiffOptions{ width:w, height:h, cursor_x:2, cursor_y:0, smacs:Some("[SM]"), rmacs:Some("[RM]"), set_bg_always:true });
+        // Ensure cursor goto appears before final rmacs, and rmacs is last
+        let goto = "\u{1b}[1;3H"; // cursor_y=0 -> row 1, cursor_x=2 -> col 3
+        let idx_goto = s.rfind(goto).expect("cursor goto present");
+        let idx_rm = s.rfind("[RM]").expect("rmacs present");
+        assert!(idx_goto < idx_rm, "expected goto before rmacs: {}", s);
+        assert!(s.ends_with("[RM]"));
+    }
+
+    #[test]
+    fn color_code_reused_across_multiple_rows() {
+        let w=2; let h=2;
+        let prev = vec![cell(b' ', 0x00); w*h];
+        let mut next = prev.clone();
+        next[0] = cell(b'A', 0x33);
+        next[w+1] = cell(b'B', 0x33); // different row, same color
+        let s = diff_to_ansi(&prev, &next, &DiffOptions{ width:w, height:h, cursor_x:0, cursor_y:0, smacs:None, rmacs:None, set_bg_always:true });
+        let m_count = s.chars().filter(|&c| c=='m').count();
+        assert_eq!(m_count, 1, "expected single color code across rows, got {}: {}", m_count, s);
+    }
 }

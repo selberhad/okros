@@ -91,5 +91,56 @@ mod tests {
         assert!(!ok);
         assert_eq!(out, "");
     }
-}
 
+    #[test]
+    fn enable_after_disable_restores_chain() {
+        let mut st = StackedInterpreter::new();
+        st.add(Mock{ name: "A"});
+        st.add(Mock{ name: "B"});
+        st.disable("sys/test");
+        let mut out = String::new();
+        let ok1 = st.run("sys/test", "in", &mut out);
+        assert!(!ok1);
+        st.enable("sys/test");
+        let ok2 = st.run("sys/test", "in", &mut out);
+        assert!(ok2);
+        assert_eq!(out, "in[A][B]");
+    }
+
+    #[test]
+    fn run_quietly_chains_with_override() {
+        #[derive(Default)]
+        struct QMock;
+        impl Interpreter for QMock {
+            fn run(&mut self, _f: &str, _a: &str, _o: &mut String) -> bool { false }
+            fn run_quietly(&mut self, function: &str, arg: &str, out: &mut String, _suppress_error: bool) -> bool {
+                if function == "sys/test" { *out = format!("{}<q>", arg); true } else { false }
+            }
+        }
+
+        let mut st = StackedInterpreter::new();
+        st.add(QMock);
+        st.add(QMock);
+        let mut out = String::new();
+        let ok = st.run_quietly("sys/test", "X", &mut out, true);
+        assert!(ok);
+        assert_eq!(out, "X<q><q>");
+    }
+
+    #[test]
+    fn set_get_passthrough_semantics() {
+        #[derive(Default)]
+        struct SMock { last: String }
+        impl Interpreter for SMock {
+            fn run(&mut self, _f: &str, _a: &str, _o: &mut String) -> bool { false }
+            fn set_str(&mut self, _var: &str, val: &str) { self.last = val.to_string(); }
+            fn get_str(&mut self, _name: &str) -> String { self.last.clone() }
+        }
+        let mut st = StackedInterpreter::new();
+        st.add(SMock{ last: String::new() });
+        st.add(SMock{ last: String::new() });
+        st.set_str("v", "hello");
+        // First interpreter answers get_str
+        assert_eq!(st.get_str("v"), "hello");
+    }
+}
