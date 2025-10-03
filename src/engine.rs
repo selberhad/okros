@@ -107,6 +107,12 @@ impl<D: Decompressor> SessionEngine<D> {
             out.push(line);
         }
 
+        // Include current incomplete line (same as get_new_lines)
+        let current = self.session.current_line();
+        if !current.is_empty() {
+            out.push(String::from_utf8_lossy(current).to_string());
+        }
+
         out
     }
 }

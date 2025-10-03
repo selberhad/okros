@@ -1,13 +1,13 @@
 # Test Coverage Report
 
-**Last Updated**: 2025-10-03 04:23
+**Last Updated**: 2025-10-03 04:44
 **Tool**: cargo-llvm-cov
-**Overall Coverage**: **65.87%** lines | **71.06%** regions | **78.35%** functions
+**Overall Coverage**: **65.72%** lines | **70.94%** regions | **78.35%** functions
 
 ## Summary
 
 ```
-TOTAL                            4834              1399    71.06%         291                63    78.35%        1872               639    65.87%           0                 0         -
+TOTAL                            4842              1407    70.94%         291                63    78.35%        1876               643    65.72%           0                 0         -
 ```
 
 ## Coverage by Module
@@ -18,7 +18,7 @@ TOTAL                            4834              1399    71.06%         291   
 | `config.rs` | 90.00% | 87.50% | 71.43% | 🟢 Excellent |
 | `control.rs` | 39.74% | 34.20% | 46.67% | 🔴 Needs Work |
 | `curses.rs` | 18.56% | 13.55% | 40.00% | 🔴 Needs Work |
-| `engine.rs` | 84.21% | 84.16% | 93.33% | 🟡 Good |
+| `engine.rs` | 80.81% | 80.95% | 93.33% | 🟡 Good |
 | `input_line.rs` | 88.46% | 84.21% | 75.00% | 🟡 Good |
 | `input.rs` | 92.50% | 87.03% | 100.00% | 🟢 Excellent |
 | `main.rs` | 0.00% | 0.00% | 0.00% | 🔴 Needs Work |
@@ -59,7 +59,7 @@ TOTAL                            4834              1399    71.06%         291   
 - `telnet.rs` - 100.00%
 
 ### 🟡 Good (70-89% lines)
-- `engine.rs` - 84.21%
+- `engine.rs` - 80.81%
 - `input_line.rs` - 88.46%
 - `mccp.rs` - 83.33%
 - `plugins/stack.rs` - 80.90%
@@ -77,7 +77,7 @@ TOTAL                            4834              1399    71.06%         291   
 
 | Tier | Target | Current | Status |
 |------|--------|---------|--------|
-| Overall | ≥80% | 65.87% | ⏳ In Progress |
+| Overall | ≥80% | 65.72% | ⏳ In Progress |
 | Critical Paths | ≥95% | Check modules above | ✅ Met |
 | New Modules | ≥80% | - | Policy |
 

@@ -99,34 +99,50 @@ printf '{"cmd":"get_buffer"}\n' | nc -U /tmp/okros/mybot.sock | \
 
 ## Playing MUDs: Best Practices
 
-### 1. Read Before Acting
+### ⚠️ CRITICAL: Be Respectful - No Command Spamming
 
-MUDs are **prompt-driven** - always read output before sending commands.
+**NEVER send multiple commands without reading responses between each command.** This is:
+- Against most MUD rules and will get you banned
+- Disrespectful to the MUD community and server operators
+- Ineffective (MUDs are conversational and require reading prompts)
 
-**❌ Wrong:**
+**❌ FORBIDDEN - Will Get You Banned:**
 ```bash
-# Don't spam commands blindly
+# NEVER chain commands with sleeps - this is spamming
 echo '{"cmd":"sock_send","data":"north\n"}' | nc -U /tmp/okros/mybot.sock
+sleep 1
 echo '{"cmd":"sock_send","data":"look\n"}' | nc -U /tmp/okros/mybot.sock
+sleep 1
 echo '{"cmd":"sock_send","data":"attack goblin\n"}' | nc -U /tmp/okros/mybot.sock
+
+# NEVER script multi-step processes without reading responses
+# Even for character creation - you MUST read each prompt
 ```
 
-**✅ Right:**
+**✅ REQUIRED - Human-Like Interaction:**
 ```bash
-# 1. Read what the MUD says
-BUFFER=$(echo '{"cmd":"get_buffer"}' | nc -U /tmp/okros/mybot.sock)
-
-# 2. Parse/analyze the buffer
-# (Look for prompts, exits, NPCs, items, etc.)
-
-# 3. Decide on ONE action
+# 1. Send ONE command
 echo '{"cmd":"sock_send","data":"look\n"}' | nc -U /tmp/okros/mybot.sock
 
-# 4. Wait for response
+# 2. Wait for server response
 sleep 1
 
-# 5. Repeat
+# 3. READ what the MUD says (MANDATORY)
+BUFFER=$(echo '{"cmd":"get_buffer"}' | nc -U /tmp/okros/mybot.sock)
+echo "$BUFFER" | jq -r '.lines[]'
+
+# 4. Parse/analyze the response
+# (What is the MUD asking? What are my options?)
+
+# 5. Decide on next action based on what you read
+# Then go back to step 1
+
+# NEVER skip step 3 - always read responses
 ```
+
+### 1. Read Before Every Action
+
+MUDs are **conversational** - they ask questions and expect specific responses.
 
 ### 2. Handle Multi-Step Prompts
 
@@ -393,10 +409,10 @@ The offline MUD is deterministic and perfect for:
 ## Common Pitfalls
 
 ### ❌ Don't flood the MUD
-MUDs will disconnect you for spamming. Add 0.5-1s delays between commands.
+**This will get you BANNED.** MUDs will disconnect and ban you for spamming. ALWAYS read responses between commands. Use 1-2s delays and NEVER chain commands.
 
 ### ❌ Don't ignore prompts
-MUDs use prompts to guide you (character creation, dialogs, menus). Parse them!
+MUDs use prompts to guide you (character creation, dialogs, menus). You MUST read and respond to each one individually.
 
 ### ❌ Don't assume structure
 MUDs have NO standard format. Each MUD is different. Always parse flexibly.
@@ -405,7 +421,30 @@ MUDs have NO standard format. Each MUD is different. Always parse flexibly.
 Always append `\n` to your commands: `"look\n"`, not `"look"`
 
 ### ❌ Don't trust the buffer size
-The viewport is fixed (80×20 default). Long messages may scroll off. Consider increasing buffer size or using stream mode.
+The viewport is fixed (80×20 default). Long messages may scroll off. Consider using `peek` with higher counts.
+
+### ❌ Don't script character creation
+Character creation is multi-step and interactive. You MUST read each prompt and respond appropriately. NEVER pre-script the entire flow.
+
+## Special Characters in Passwords
+
+When sending passwords with special characters, use `jq` to properly escape JSON:
+
+```bash
+# Use jq -nc with --arg to safely handle special characters
+jq -nc --arg pass 'MyPassword!@#$%' '{"cmd":"sock_send","data":($pass + "\n")}' | nc -U /tmp/okros/instance.sock
+
+# This handles: ! @ # $ % ^ & * ( ) and other special chars safely
+```
+
+## Understanding Prompts
+
+MUDs use two types of prompts:
+
+1. **Prompts with telnet GA/EOR signals** - okros automatically captures these
+2. **Prompts without newlines or signals** - okros captures these in the current line buffer
+
+Both types are now properly captured by `get_buffer` and `peek` commands.
 
 ## Advanced: Stream Mode
 
