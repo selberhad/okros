@@ -23,6 +23,17 @@
   - Added simulated error sentinel and end-of-stream sentinel to validate error and EOS paths without zlib.
   - Verified response ordering correctness under mixed negotiations.
 
+- MCCP real inflate (feature `real_mccp`):
+  - Streaming inflate via `flate2` mirrors `mccpDecompress.c` (EOS stops compression; tail bytes pass through).
+  - Exposed `stats()` and `version()` to align with `mudcompress_stats`/`mudcompress_version`.
+  - Tests cover v1/v2 handshakes, fragmentation, invalid stream → error, and stats/version during and after compression.
+
+- ANSI SGR → attrib converter:
+  - Parses ESC[...m across fragmented chunks; emits `SetColor(color)` events and `Text(byte)` passthrough.
+  - Supports 0 (reset), 1 (bold), 30–37 (fg), 40–47 (bg), and bright 90–97 (fg as bold) and 100–107 (bg).
+  - Ignores malformed non-CSI starts (e.g., ESC]) and unknown params without altering color; redundant resets produce white-on-black.
+  - Telnet→ANSI pipeline test mirrors Session flow: telnet cleans IAC, then ANSI maps SGR to attrib changes.
+
 ## Open Questions
 
 - Real zlib integration: Replace stub with actual inflate state; ensure buffer and error semantics match `mccpDecompress.c`.

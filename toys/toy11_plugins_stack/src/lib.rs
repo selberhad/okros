@@ -143,4 +143,58 @@ mod tests {
         // First interpreter answers get_str
         assert_eq!(st.get_str("v"), "hello");
     }
+
+    #[test]
+    fn ordering_is_insertion_order_three_layers() {
+        #[derive(Default)]
+        struct M { name: &'static str }
+        impl Interpreter for M {
+            fn run(&mut self, f:&str, a:&str, o:&mut String)->bool{ if f=="sys/x" { *o=format!("{}<{}>",a,self.name); true } else { false } }
+        }
+        let mut st = StackedInterpreter::new();
+        st.add(M{ name:"A"}); st.add(M{ name:"B"}); st.add(M{ name:"C"});
+        let mut out=String::new();
+        assert!(st.run("sys/x","in",&mut out));
+        assert_eq!(out, "in<A><B><C>");
+    }
+
+    #[test]
+    fn run_quietly_propagates_suppress_error_flag() {
+        #[derive(Default)] struct Q;
+        impl Interpreter for Q {
+            fn run(&mut self,_:&str,_:&str,_:&mut String)->bool{ false }
+            fn run_quietly(&mut self,_:&str,_:&str,_:&mut String,suppress_error:bool)->bool{ suppress_error }
+        }
+        let mut st = StackedInterpreter::new(); st.add(Q);
+        let mut out=String::new();
+        assert!(!st.run_quietly("sys/x","in",&mut out,false));
+        assert!(st.run_quietly("sys/x","in",&mut out,true));
+    }
+
+    #[test]
+    fn load_file_and_eval_are_noops_by_default() {
+        #[derive(Default)] struct M;
+        impl Interpreter for M { fn run(&mut self,_:&str,_:&str,_:&mut String)->bool{ false } }
+        let mut st = StackedInterpreter::new(); st.add(M);
+        assert_eq!(st.get_str("v"), "");
+        // Ensure calling load_file/eval on the stack does not panic and has no effect
+        st.list[0].load_file("foo", false);
+        let mut out = String::new();
+        st.list[0].eval("1+1", &mut out);
+        assert_eq!(out, "");
+    }
+
+    #[test]
+    fn disable_specific_function_does_not_affect_others() {
+        #[derive(Default)] struct M;
+        impl Interpreter for M {
+            fn run(&mut self,f:&str,a:&str,o:&mut String)->bool{ if f=="sys/a" { *o=a.to_string(); true } else if f=="sys/b" { *o=format!("{}!",a); true } else { false } }
+        }
+        let mut st = StackedInterpreter::new(); st.add(M);
+        let mut out=String::new();
+        assert!(st.run("sys/a","x",&mut out)); assert_eq!(out,"x");
+        st.disable("sys/a");
+        assert!(st.run("sys/b","x",&mut out)); assert_eq!(out,"x!");
+        assert!(!st.run("sys/a","x",&mut out));
+    }
 }
