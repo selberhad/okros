@@ -297,10 +297,21 @@ okros is a 1:1 Rust port of MCL using a "safety third" approach - liberal use of
 - **Tier 5 (Plugins)** - Optional Python/Perl scripting engines
 - **Tier 6 (Engine)** - Headless mode and control server
 
+### Code Size
+
+**Rust is 56% smaller than C++** while maintaining full behavioral equivalence:
+
+| Metric | C++ MCL | Rust okros | Reduction |
+|--------|---------|------------|-----------|
+| Lines of Code | 8,815 | 3,848 | **-56%** |
+| Files | 79 | 33 | **-58%** |
+
+See [LOC_COMPARISON.md](LOC_COMPARISON.md) for detailed analysis.
+
 ## Development Status
 
 **Implementation**: ✅ MVP Complete (all core tiers done + automation features)
-**Testing**: 97 tests passing | 70% coverage
+**Testing**: 138 tests passing | 65% coverage
 **Validation**: ✅ Full gameplay validated with Nodeka MUD (nodeka.com:23)
 
 Recent work:
