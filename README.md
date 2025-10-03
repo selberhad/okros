@@ -113,6 +113,35 @@ echo '{"command":"get_buffer"}' | nc -U /tmp/okros-ar.sock
 echo '{"command":"stream"}' | nc -U /tmp/okros-ar.sock
 ```
 
+### LLM Agent Integration
+
+okros headless mode is designed for simplicity - LLM agents just need to read text buffers and send commands:
+
+```python
+import socket
+import json
+
+# Connect to headless okros instance
+sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+sock.connect("/tmp/okros-ar.sock")
+
+# Read MUD output
+sock.sendall(json.dumps({"command": "get_buffer"}).encode() + b'\n')
+response = json.loads(sock.recv(4096))
+mud_text = response.get("output", "")
+
+# LLM processes mud_text and decides next action...
+# (Your LLM logic here)
+
+# Send command back to MUD
+action = "north\n"  # LLM's decision
+sock.sendall(json.dumps({"command": "send", "data": action}).encode() + b'\n')
+
+sock.close()
+```
+
+**Philosophy**: No structured events, no complex parsing - just raw MUD text. LLMs already understand natural language; let them do what they do best.
+
 ### Control Server Protocol
 
 The control server uses JSON Lines (one JSON object per line):
