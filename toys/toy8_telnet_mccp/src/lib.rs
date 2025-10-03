@@ -311,6 +311,99 @@ impl Decompressor for MccpStub {
     }
 }
 
+#[cfg(feature = "real_mccp")]
+pub struct MccpInflate {
+    residual: Vec<u8>,
+    out: Vec<u8>,
+    responses: Vec<u8>,
+    got_v2: bool,
+    compressing: bool,
+    error: bool,
+    comp_bytes: usize,
+    uncomp_bytes: usize,
+    decompressor: Option<flate2::Decompress>,
+}
+
+#[cfg(feature = "real_mccp")]
+impl MccpInflate {
+    pub fn new() -> Self {
+        Self { residual: Vec::new(), out: Vec::new(), responses: Vec::new(), got_v2: false, compressing: false, error: false, comp_bytes: 0, uncomp_bytes: 0, decompressor: None }
+    }
+}
+
+#[cfg(feature = "real_mccp")]
+impl Decompressor for MccpInflate {
+    fn receive(&mut self, input: &[u8]) {
+        self.residual.extend_from_slice(input);
+        let mut i = 0usize;
+        while i < self.residual.len() {
+            let b = self.residual[i];
+            if !self.compressing {
+                if b != telnet::IAC { self.out.push(b); i+=1; continue; }
+                if i+1 >= self.residual.len() { break; }
+                let b1 = self.residual[i+1];
+                if b1 == telnet::IAC { self.out.push(telnet::IAC); i+=2; continue; }
+                if b1 == telnet::WILL {
+                    if i+2 >= self.residual.len() { break; }
+                    let opt = self.residual[i+2];
+                    if opt == telnet::TELOPT_COMPRESS2 { self.responses.extend_from_slice(&[telnet::IAC, telnet::DO, telnet::TELOPT_COMPRESS2]); self.got_v2=true; i+=3; continue; }
+                    if opt == telnet::TELOPT_COMPRESS { if self.got_v2 { self.responses.extend_from_slice(&[telnet::IAC, telnet::DONT, telnet::TELOPT_COMPRESS]); } else { self.responses.extend_from_slice(&[telnet::IAC, telnet::DO, telnet::TELOPT_COMPRESS]); } i+=3; continue; }
+                }
+                if b1 == telnet::SB {
+                    if i+4 >= self.residual.len() { break; }
+                    let opt = self.residual[i+2];
+                    if opt == telnet::TELOPT_COMPRESS && self.residual[i+3]==telnet::WILL && self.residual[i+4]==telnet::SE {
+                        self.compressing = true; self.decompressor = Some(flate2::Decompress::new(true)); i+=5; continue;
+                    }
+                    if opt == telnet::TELOPT_COMPRESS2 && self.residual[i+3]==telnet::IAC && self.residual[i+4]==telnet::SE {
+                        self.compressing = true; self.decompressor = Some(flate2::Decompress::new(true)); i+=5; continue;
+                    }
+                }
+                // pass IAC to telnet layer if not MCCP control
+                self.out.push(b); i+=1; continue;
+            } else {
+                // streaming inflate
+                let mut dec = match self.decompressor.as_mut() { Some(d)=>d, None=>{ self.error=true; break } };
+                // use what's left as input
+                let in_data = &self.residual[i..];
+                let out_start = self.out.len();
+                // reserve some space
+                self.out.resize(out_start + in_data.len().max(64), 0);
+                let mut total_in_before = dec.total_in();
+                let mut total_out_before = dec.total_out();
+                let res = dec.decompress(in_data, &mut self.out[out_start..], flate2::FlushDecompress::None);
+                match res {
+                    Ok(status) => {
+                        let used_in = (dec.total_in() - total_in_before) as usize;
+                        let produced = (dec.total_out() - total_out_before) as usize;
+                        self.comp_bytes += used_in; self.uncomp_bytes += produced;
+                        i += used_in;
+                        self.out.truncate(out_start + produced);
+                        if status == flate2::Status::StreamEnd {
+                            // Disable compression; copy any remaining bytes as plain
+                            self.compressing = false;
+                            self.decompressor = None;
+                        }
+                        if used_in == 0 && produced == 0 { // need more output space
+                            // grow and retry a little
+                            self.out.reserve(128);
+                            // prevent infinite loop
+                            if in_data.is_empty() { break; }
+                        }
+                    }
+                    Err(_) => { self.error = true; break; }
+                }
+                continue;
+            }
+        }
+        if i>0 { self.residual.drain(0..i); }
+    }
+    fn pending(&self) -> bool { !self.error && !self.out.is_empty() }
+    fn take_output(&mut self) -> Vec<u8> { std::mem::take(&mut self.out) }
+    fn error(&self) -> bool { self.error }
+    fn response(&mut self) -> Option<Vec<u8>> { if self.responses.is_empty(){None}else{Some(std::mem::take(&mut self.responses))} }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -496,6 +589,37 @@ mod tests {
         pl.feed(&[IAC, SB, TELOPT_COMPRESS2, IAC, SE]);
         // No app bytes yet, and telnet didn't see SB/SE
         assert!(pl.telnet.take_app_out().is_empty());
+    }
+
+    #[cfg(feature = "real_mccp")]
+    fn compress_bytes(data: &[u8]) -> Vec<u8> {
+        use flate2::{Compression, write::ZlibEncoder};
+        let mut enc = ZlibEncoder::new(Vec::new(), Compression::default());
+        use std::io::Write;
+        enc.write_all(data).unwrap();
+        enc.finish().unwrap()
+    }
+
+    #[test]
+    #[cfg(feature = "real_mccp")]
+    fn real_mccp_v2_handshake_and_decompress() {
+        let mut pl = Pipeline::new(MccpInflate::new());
+        // Will COMPRESS2
+        pl.feed(&[IAC, WILL, TELOPT_COMPRESS2]);
+        assert_eq!(pl.drain_decomp_responses(), vec![IAC, DO, TELOPT_COMPRESS2]);
+        // Start sequence
+        pl.feed(&[IAC, SB, TELOPT_COMPRESS2, IAC, SE]);
+        // Compressed payload
+        let payload = compress_bytes(b"hello world");
+        // Feed in two fragments to mimic streaming
+        let mid = payload.len()/2;
+        pl.feed(&payload[..mid]);
+        pl.feed(&payload[mid..]);
+        assert_eq!(pl.telnet.take_app_out(), b"hello world");
+        assert!(!pl.error());
+        // End-of-stream: compressor marks end internally; we just continue
+        pl.feed(b"tail");
+        assert_eq!(pl.telnet.take_app_out(), b"tail");
     }
 
     #[test]

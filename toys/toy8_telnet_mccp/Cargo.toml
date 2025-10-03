@@ -6,3 +6,12 @@ edition = "2021"
 [lib]
 path = "src/lib.rs"
 
+[features]
+default = []
+real_mccp = ["flate2"]
+
+[dependencies]
+
+[dependencies.flate2]
+version = "1.0"
+optional = true

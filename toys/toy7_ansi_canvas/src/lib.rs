@@ -99,6 +99,34 @@ pub fn diff_to_ansi(prev: &[Attrib], next: &[Attrib], opt: &DiffOptions) -> Stri
     out
 }
 
+// Experimental: detect simple upward scroll within a region by N lines
+pub fn plan_scroll_up(last: &[Attrib], next: &[Attrib], width: usize, height: usize, reg_y: usize, reg_h: usize) -> Option<usize> {
+    if reg_y + reg_h > height { return None; }
+    for n in 1..reg_h { // try scroll up by n lines
+        let mut ok = true;
+        for row in 0..(reg_h - n) {
+            let ly = reg_y + row + n;
+            let ny = reg_y + row;
+            let l_off = ly * width; let n_off = ny * width;
+            if &last[l_off..l_off+width] != &next[n_off..n_off+width] { ok = false; break; }
+        }
+        if ok { return Some(n); }
+    }
+    None
+}
+
+pub fn emit_scroll_ansi(width: usize, height: usize, reg_y: usize, reg_h: usize, lines: usize) -> String {
+    // CSI y1;y2 r, goto bottom-left, N newlines, reset region to full screen
+    let y1 = reg_y + 1;
+    let y2 = reg_y + reg_h;
+    let mut s = String::new();
+    s.push_str(&format!("\u{1b}[{};{}r", y1, y2));
+    s.push_str(&format!("\u{1b}[{};{}H", y2, 1));
+    for _ in 0..lines { s.push('\n'); }
+    s.push_str(&format!("\u{1b}[{};{}r", 1, height));
+    s
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -224,6 +252,25 @@ mod tests {
         let s = diff_to_ansi(&prev, &next, &DiffOptions{ width:w, height:h, cursor_x:0, cursor_y:0, smacs:None, rmacs:None, set_bg_always:true });
         assert!(s.contains("\u{1b}[1;1H"));
         assert!(!s.contains("\u{1b}[1;2H"), "unexpected second goto: {}", s);
+    }
+
+    #[test]
+    fn scroll_region_planner_detects_simple_up_by_one() {
+        let w=4; let h=4; let reg_y=1; let reg_h=2;
+        let mut last = vec![cell(b'.',0); w*h];
+        let mut next = last.clone();
+        // Fill last region rows with A and B
+        for x in 0..w { last[(reg_y+0)*w + x] = cell(b'A',0); }
+        for x in 0..w { last[(reg_y+1)*w + x] = cell(b'B',0); }
+        // next is last scrolled up by 1: row reg_y becomes B
+        for x in 0..w { next[(reg_y+0)*w + x] = cell(b'B',0); }
+        // bottom line after scroll would be blank; we don't need it for detection
+        let n = plan_scroll_up(&last, &next, w, h, reg_y, reg_h);
+        assert_eq!(n, Some(1));
+        let ansi = emit_scroll_ansi(w,h,reg_y,reg_h,1);
+        assert!(ansi.contains("\u{1b}[2;3r")); // region 2..3
+        assert!(ansi.contains("\u{1b}[3;1H")); // goto bottom of region
+        assert!(ansi.ends_with(&format!("\n\u{1b}[1;{}r", h)));
     }
 
     #[test]
