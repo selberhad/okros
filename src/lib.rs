@@ -6,6 +6,7 @@ pub mod engine;
 pub mod input_line;
 pub mod mccp;
 pub mod mud;
+pub mod mud_selection;
 pub mod output_window;
 pub mod screen;
 pub mod scrollback;
