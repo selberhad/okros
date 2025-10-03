@@ -2,17 +2,17 @@
 
 ## Summary
 
-**Rust is 56% smaller than C++ (0.44x the size)**
+**Rust is 37% smaller than C++ (0.63x the size)**
 
 | Metric | C++ (Reference) | Rust (okros) | Ratio |
 |--------|----------------|--------------|-------|
-| **Code Lines** | 8,815 | 3,848 | **0.44x** |
-| **Comments** | 637 | 481 | 0.76x |
-| **Blank Lines** | 2,219 | 583 | 0.26x |
-| **TOTAL** | 11,671 | 4,912 | **0.42x** |
+| **Code Lines** | 8,815 | 5,550 | **0.63x** |
+| **Comments** | 637 | 483 | 0.76x |
+| **Blank Lines** | 2,219 | 572 | 0.26x |
+| **TOTAL** | 11,671 | 6,605 | **0.57x** |
 | **Files** | 79 | 33 | 0.42x |
 
-**Difference**: -4,967 lines of code (-56.3%)
+**Difference**: -3,265 lines of code (-37.0%)
 
 ## Why Rust is More Concise
 
@@ -71,7 +71,7 @@
 
 ### Session Processing
 - **C++**: `Session.cc` (710 LOC) + `Session.h` (100 LOC) = **810 LOC**
-- **Rust**: `session.rs` = **110 LOC** (86% reduction!)
+- **Rust**: `session.rs` = **112 LOC** (86% reduction!)
 - *Ratio*: 0.14x - Modern stdlib makes huge difference
 
 ## Detailed Breakdown
@@ -89,27 +89,34 @@ Supporting Scripts:
   Other:       1,668 lines
 ```
 
-### Rust Implementation (3,848 LOC)
+### Rust Implementation (5,550 LOC)
 ```
-Pure Rust:     3,848 lines (33 files)
+Pure Rust:     5,550 lines (33 files)
 
 Optional Features:
-  - Perl plugin:   ~400 LOC
-  - Python plugin: ~300 LOC
-  - Both included in 3,848 total
+  - Perl plugin:   ~420 LOC
+  - Python plugin: ~310 LOC
+  - Both included in 5,550 total
+
+Note: +1,702 LOC from rustfmt formatting (split long lines)
 ```
 
 ## Coverage vs Size
 
-**High coverage with less code:**
-- 138 tests covering 3,848 LOC
-- 65% overall coverage
+**High coverage with readable code:**
+- 138 tests covering 5,550 LOC
+- 68% overall coverage
 - Critical paths (alias, session, telnet): 90%+ coverage
 
 **C++ had:**
 - No automated tests
 - ~8,815 LOC to maintain
 - Manual testing only
+
+**Formatting Impact:**
+- +1,702 LOC from rustfmt (split long lines)
+- Better readability and maintainability
+- Follows Rust community standards
 
 ## Script Usage
 
@@ -125,13 +132,23 @@ Optional Features:
 
 The Rust port achieved:
 
-✅ **56% code reduction** (8,815 → 3,848 lines)
+✅ **37% code reduction** (8,815 → 5,550 lines)
 ✅ **58% fewer files** (79 → 33 files)
 ✅ **Behavioral equivalence** (golden tests confirm)
 ✅ **Modern features** (RAII, pattern matching, stdlib)
 ✅ **Better testing** (138 automated tests)
+✅ **Readable formatting** (rustfmt standards)
 
 **Rust's modern design enables a more concise, maintainable codebase while preserving all functionality.**
+
+### Formatting Note
+
+The +1,702 LOC increase from `rustfmt` is expected and beneficial:
+- Long function signatures → multi-line (more readable)
+- Match arms → consistent spacing (easier to scan)
+- Method chains → split appropriately (better diffs)
+
+Even with formatting, Rust is still **37% smaller than C++** - a significant achievement!
 
 ---
 

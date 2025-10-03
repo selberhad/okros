@@ -299,12 +299,14 @@ okros is a 1:1 Rust port of MCL using a "safety third" approach - liberal use of
 
 ### Code Size
 
-**Rust is 56% smaller than C++** while maintaining full behavioral equivalence:
+**Rust is 37% smaller than C++** while maintaining full behavioral equivalence:
 
 | Metric | C++ MCL | Rust okros | Reduction |
 |--------|---------|------------|-----------|
-| Lines of Code | 8,815 | 3,848 | **-56%** |
+| Lines of Code | 8,815 | 5,550 | **-37%** |
 | Files | 79 | 33 | **-58%** |
+
+*Note: +1,702 LOC from rustfmt formatting (better readability)*
 
 See [LOC_COMPARISON.md](LOC_COMPARISON.md) for detailed analysis.
 
