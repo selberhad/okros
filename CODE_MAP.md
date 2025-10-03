@@ -7,6 +7,7 @@ This file tracks the structure and status of the codebase.
 ### Documentation
 - `CLAUDE.md` - Project instructions for Claude Code (methodology, workflow)
 - `TOY_PLAN.md` - Discovery phase strategy and progress (toys 1-5)
+- `TOY_PLAN_2.md` - Discovery phase 2 plan (risk-focused toys 6-11)
 - `IMPLEMENTATION_PLAN.md` - Execution phase strategy (tier-by-tier port)
 - `DDD.md` - Doc-Driven Development methodology
 - `PLAYBOOK.md` - Condensed porting workflow guide
@@ -15,10 +16,14 @@ This file tracks the structure and status of the codebase.
 - `CODE_MAP.md` - This file (project structure map)
 
 ### Configuration
-- `Cargo.toml` - Not yet created (will be root Rust project)
+- `Cargo.toml` - Root Rust project (features: `python`, `perl`)
 
 ### Source Code
-- `src/` - Not yet created (main Rust port will go here)
+- `src/` - Created (scaffold for Execution Phase)
+  - `main.rs` - Entry point stub
+  - `globals.rs` - Global state placeholder (Toy 3 pattern)
+  - `color.rs` - Attribute/color constants placeholder
+  - `CODE_MAP.md` - This directory map
 - `tests/` - Not yet created (integration tests)
 
 ### Reference Implementation
@@ -115,6 +120,19 @@ This file tracks the structure and status of the codebase.
 
 ---
 
+## Toys — Discovery Phase 2 (Risk-Focused)
+
+**Status**: Step 0 learning goals scaffolded
+
+- `toys/toy6_tty_keys/` — TTY raw mode + terminfo keys (LEARNINGS.md: Step 0)
+- `toys/toy7_ansi_canvas/` — Byte canvas diff + ANSI/ACS (LEARNINGS.md: Step 0)
+- `toys/toy8_telnet_mccp/` — Telnet IAC + MCCP fragmentation (LEARNINGS.md: Step 0)
+- `toys/toy9_nonblocking_connect/` — Nonblocking connect + EINPROGRESS (LEARNINGS.md: Step 0)
+- `toys/toy10_scrollback/` — Scrollback ring + highlight (LEARNINGS.md: Step 0)
+- `toys/toy11_plugins_stack/` — Stacked interpreter parity (optional) (LEARNINGS.md: Step 0)
+
+See `TOY_PLAN_2.md` for objectives and success criteria.
+
 ## Source Code (Not Yet Created)
 
 When porting begins, structure will follow IMPLEMENTATION_PLAN.md tiers:
@@ -164,7 +182,7 @@ src/
 
 ## Status Summary
 
-**Current Phase**: Discovery Phase COMPLETE ✅ → Ready for Execution Phase
+**Current Phase**: Discovery Phase COMPLETE ✅ → Execution Phase STARTED (scaffold)
 
 **Key Decisions Made**:
 - ✅ String/Buffer: Use Rust stdlib
@@ -176,6 +194,6 @@ src/
 **All Patterns Validated**: No blockers - ready to begin tier-by-tier porting (IMPLEMENTATION_PLAN.md)
 
 **Next Steps**:
-1. Initialize git repository
-2. Begin Execution Phase (Tier 1: Foundation)
-3. Port following IMPLEMENTATION_PLAN.md structure
+1. Tier 1: Foundation — add `string.rs`, `buffer.rs`, `color.rs` fleshed out
+2. Tier 2: Core — `selectable.rs`, `tty.rs`, `config.rs`, `mud.rs`, `socket.rs`
+3. Wire `ncurses` init in `main.rs` and globals per Toy 3
