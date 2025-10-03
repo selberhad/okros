@@ -1,6 +1,6 @@
 # okros - Rust MUD Client
 
-**okros** (from _ochre_, rusty mud) is a modern MUD client written in Rust, reviving the design principles of MCL (MUD Client for Linux). MCL was a beloved Linux MUD client that went unmaintained circa 2000 and offline by 2010. okros resurrects its core concepts while bringing them into the modern era with headless/detachable operation, perfect for automation, LLM agents, and cloud deployments.
+**okros** (from _ochre_, rusty mud) is a modern MUD client written in Rust, reviving the design principles of MCL (MUD Client for Linux). MCL was a powerful, feature-rich Linux MUD client that went unmaintained circa 2000 and offline by 2010. okros resurrects its core concepts while bringing them into the modern era with headless/detachable operation, perfect for automation, LLM agents, and cloud deployments.
 
 ## Features
 
@@ -205,8 +205,7 @@ See [CLAUDE.md](CLAUDE.md) for development guidelines.
 
 ## Acknowledgments
 
-- **Erwin S. Andreasen** - Original MCL author and visionary MUD client designer
-- **MCL Community** - Players and scripters who made MCL legendary in its heyday
+- **Erwin S. Andreasen** - Original MCL author whose design still inspires 25 years later
 - **Rust Community** - For excellent FFI and async tooling
 - **pyo3** - Python integration without the C API pain
 - **Discovery Phase** - Validated via 11 toy implementations in [toys/](toys/)
