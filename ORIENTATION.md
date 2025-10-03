@@ -123,7 +123,8 @@ type and press Enter   # Send to MUD
 **Code Navigation**:
 - `src/CODE_MAP.md` - Module-by-module guide to src/
 - `src/plugins/CODE_MAP.md` - Plugin system guide
-- `toys/` - Discovery phase experiments (11 toys with LEARNINGS.md)
+- `toys/` - Discovery phase experiments (12 toys with LEARNINGS.md)
+  - `toys/toy12_internal_mud/` - Built-in test MUD for e2e validation
 
 **Critical Paths**:
 - `src/main.rs` - Event loop, CLI args, plugin loading (DONE - 318 lines)

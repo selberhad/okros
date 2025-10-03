@@ -276,9 +276,10 @@ features = ["auto-initialize"]
 ## Success Criteria
 
 **Discovery Phase**: ✅ COMPLETE
-- [x] 11 toys validated (toys 1-11 covering all risky subsystems)
+- [x] 12 toys validated (toys 1-11 covering all risky subsystems + toy12 for e2e testing)
 - [x] All FFI patterns documented in LEARNINGS.md files
 - [x] Decision tree established (Rust idioms vs C++ fidelity)
+- [x] **Toy 12 bonus**: Internal MUD for automated e2e testing (headless mode validated)
 
 **Execution Phase**: ~95% COMPLETE (implementation done, validation pending)
 
@@ -295,8 +296,8 @@ features = ["auto-initialize"]
 
 **Build Status**:
 - [x] Compiles without errors (all feature combinations)
-- [x] Unit tests pass (57 tests across modules)
-- [x] Integration tests pass (control server, pipelines)
+- [x] Unit tests pass (71 tests: 57 unit + 14 toy12)
+- [x] Integration tests pass (8 tests: 4 pipeline + 2 control + 2 headless MUD)
 
 **Functional Status** (MVP - Transport Layer):
 - [x] Can connect to MUD server (socket + telnet working, IPv4 only)

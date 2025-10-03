@@ -70,7 +70,7 @@ This project follows **Doc-Driven Development (DDD)** in **Porting Mode** - a re
 ### Document Types & Usage (Porting Context)
 - **ORIENTATION.md**: Executive summary (START HERE - what is this, where are we, what's next)
 - **IMPLEMENTATION_PLAN.md**: Living status document (tier-by-tier, updated continuously with reality)
-- **TOY_PLAN.md / TOY_PLAN_2.md**: Discovery phase strategy (11 toys completed)
+- **TOY_PLAN.md / TOY_PLAN_2.md**: Discovery phase strategy (12 toys completed, including testing infrastructure)
 - **SPEC.md**: C++ behavior to replicate (for Discovery mode toys)
 - **LEARNINGS.md**: FFI/unsafe patterns discovered (for Discovery mode toys)
 - **CODE_MAP.md**: Living map of ported modules (updated before structural commits)
@@ -189,7 +189,7 @@ This project follows **Doc-Driven Development (DDD)** in **Porting Mode** - a re
 
 ## Key Files Reference
 
-**Current Status**: ~70% COMPLETE - Discovery phase done (11/11 toys), Execution phase in progress (network/UI/plugins done, event loop pending)
+**Current Status**: ~95% COMPLETE - Discovery phase done (12/12 toys including internal MUD), Execution phase done (all tiers complete), validation pending (needs real MUD testing)
 
 **File Structure**: See `CODE_MAP.md` for complete project structure and status
 - `./CODE_MAP.md` - Root directory structure, toys status, src/ layout
@@ -207,6 +207,6 @@ This project follows **Doc-Driven Development (DDD)** in **Porting Mode** - a re
 - `README.md` - User-facing overview (okros MUD client)
 - `DDD.md` - Doc-Driven Development methodology (includes Porting Mode)
 - `CODE_MAP.md` - Project structure and porting status
-- `TOY_PLAN.md` / `TOY_PLAN_2.md` - Discovery phase (11 toys completed)
+- `TOY_PLAN.md` / `TOY_PLAN_2.md` - Discovery phase (12 toys completed, including internal MUD)
 - `PLAYBOOK.md` - Condensed porting workflow guide
 - `AGENTS.md` - Quick reference summary

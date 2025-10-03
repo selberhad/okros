@@ -62,27 +62,38 @@ C++ Reference: `Embedded.cc`
 - Objective: Chain interpreters and pass transformed buffers.
 - Success: run/run_quietly order and enable/disable parity.
 
+### Toy 12: Internal MUD (Testing Infrastructure)
+C++ Reference: None (okros innovation)
+- Objective: Single-player text adventure for e2e testing without external MUD server.
+- What to learn: Can we test full pipeline (ANSI → Session → Scrollback) with zero deps?
+- SPEC focus: Deterministic command sequences; headless mode via control server; LLM automation.
+- Success: Automated tests via JSON API; perfect for CI/CD and bot validation.
+- Extension: Headless mode integration (control server drives internal MUD).
+
 ---
 
 ## Toy Development Workflow
 - LEARNINGS.md goals → iterate implementation/tests → finalize findings → template code/FFI patterns for `src/`.
 - Keep each toy standalone (no network unless required); prefer deterministic inputs.
 
-## Current Status
-- [ ] Toy 6 (TTY + Keys) — SPEC/LEARNINGS staged
-- [x] Toy 7 (ANSI Canvas Diff) — base diff+ACS tests complete; extension planned: scroll-region
-- [x] Toy 8 (Telnet + MCCP) — telnet pipeline tests complete; extension planned: real MCCP inflate
-- [ ] Toy 9 (Nonblocking Connect) — SPEC/LEARNINGS staged
-- [x] Toy 10 (Scrollback Ring) — ring/highlight/navigation tests complete; freeze+COPY_LINES tuned
-- [x] Toy 11 (Plugins Stack) — chaining/enable/quiet tests complete (optional)
+## Current Status (All Complete) ✅
+- [x] Toy 6 (TTY + Keys) — COMPLETE: Raw mode, keypad app mode, key normalization
+- [x] Toy 7 (ANSI Canvas Diff) — COMPLETE: Diff+ACS tests, scroll-region optimization
+- [x] Toy 8 (Telnet + MCCP) — COMPLETE: Telnet pipeline, real MCCP inflate, ANSI parser
+- [x] Toy 9 (Nonblocking Connect) — COMPLETE: EINPROGRESS flow, socket state machine
+- [x] Toy 10 (Scrollback Ring) — COMPLETE: Ring/highlight/navigation, freeze+COPY_LINES
+- [x] Toy 11 (Plugins Stack) — COMPLETE: Chaining/enable/disable/quiet parity
+- [x] Toy 12 (Internal MUD) — COMPLETE: E2E testing infrastructure, headless automation
 
-## Next Steps (Extensions)
-- Implement Toy 8 real MCCP inflate behind `real_mccp` feature; add streaming inflate tests and EOS/error cases. Add ANSI SGR → attrib converter (basic SGR + bright variants) with fragmentation and reset tests.
-- Add Toy 7 scroll-region optimization planner + tests; integrate heuristic thresholds (diff ratio, region bounds).
-- Optional new toys (if needed):
-  - ANSI SGR → attrib parser (colorConverter parity): SGR runs, resets, malformed/incomplete sequences across chunks.
-  - Regex triggers & replacement: case-insensitive patterns, gagging, replacement length changes without losing color.
-  - InputLine editor: key-to-state machine using Toy 6 key codes; history/prompt handling.
+**Discovery Phase 2: COMPLETE!** All 12 toys validated (11 from plan + 1 testing innovation)
+
+## Extensions Completed ✅
+- ✅ Toy 8: Real MCCP inflate with flate2, v1/v2 handshakes, streaming tests
+- ✅ Toy 8: ANSI SGR → attrib converter (SGR 0/1, 30-37/40-47, bright 90-97/100-107)
+- ✅ Toy 7: Scroll-region optimization planner with heuristic thresholds
+- ✅ Toy 12: Internal MUD for comprehensive e2e testing without external deps
+
+**All discovery work complete** - ready for production porting in src/
 
 ## Estimated Effort
 - Toy 6,7: 0.5–1 day each

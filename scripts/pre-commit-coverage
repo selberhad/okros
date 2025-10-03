@@ -1,0 +1,33 @@
+#!/bin/bash
+# Git pre-commit hook: Update and stage coverage report
+# This ensures COVERAGE_REPORT.md stays in sync with committed code
+
+echo "🔬 Running pre-commit coverage check..."
+
+# Run coverage report generation
+if ! ./scripts/generate-coverage-report.sh; then
+    echo "❌ Coverage report generation failed"
+    exit 1
+fi
+
+# Check if COVERAGE_REPORT.md was modified
+if git diff --exit-code COVERAGE_REPORT.md > /dev/null; then
+    echo "✅ Coverage report is up-to-date"
+else
+    echo ""
+    echo "📊 Coverage report has been updated!"
+    echo ""
+
+    # Auto-stage the updated coverage report
+    git add COVERAGE_REPORT.md
+
+    echo "✅ COVERAGE_REPORT.md staged automatically"
+    echo ""
+
+    # Show what changed
+    echo "Coverage changes:"
+    git diff --cached COVERAGE_REPORT.md | grep -E "^\+|^-" | grep -E "%|Coverage" | head -10
+    echo ""
+fi
+
+exit 0
