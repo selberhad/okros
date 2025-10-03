@@ -193,7 +193,9 @@ impl AnsiConverter {
                                     0 => { new_bold=false; new_fg=7; new_bg=0; }
                                     1 => { new_bold=true; }
                                     30..=37 => { new_fg = ansi_to_internal((n as u8)-30); }
+                                    90..=97 => { new_fg = ansi_to_internal((n as u8)-90); new_bold = true; }
                                     40..=47 => { new_bg = ansi_to_internal((n as u8)-40); }
+                                    100..=107 => { new_bg = ansi_to_internal((n as u8)-100); }
                                     _ => {}
                                 }
                             }
@@ -859,6 +861,27 @@ mod tests {
             // Unknown should keep same color
             assert_eq!(c_red, c_unknown);
         } else { panic!("expected two SetColor events"); }
+    }
+
+    #[test]
+    fn ansi_sgr_bright_foreground_sets_bold() {
+        let mut ac = AnsiConverter::new();
+        let ev = ac.feed(b"\x1b[91m"); // bright red
+        if let AnsiEvent::SetColor(col) = ev[0] {
+            assert_eq!(col & 0x0F, 4); // red internal
+            assert_eq!((col & 0x70)>>4, 0); // bg black
+            assert_ne!(col & 0x80, 0); // bold set
+        } else { panic!("expected SetColor"); }
+    }
+
+    #[test]
+    fn ansi_sgr_bright_background_maps_as_normal_bg() {
+        let mut ac = AnsiConverter::new();
+        let ev = ac.feed(b"\x1b[102m"); // bright green bg
+        if let AnsiEvent::SetColor(col) = ev[0] {
+            assert_eq!((col & 0x70)>>4, 2); // green internal bg
+            // bold bit unaffected by bg
+        } else { panic!("expected SetColor"); }
     }
 
     #[test]

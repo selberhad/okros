@@ -40,7 +40,7 @@ C++ Reference: `Session.cc`, `mccpDecompress.c/h`
 - What to learn: Carry-over buffer management; prompt detection (GA/EOR); response emission.
 - SPEC focus: Test vectors for split IAC; decompress boundaries; error handling.
 - Success: Round-trips scripted inputs; emits correct responses; no state loss.
- - Extension: Real MCCP inflate (flate2/miniz) implementing `Decompressor` with v1/v2 handshakes, error/EOS, stats.
+ - Extension: Real MCCP inflate (flate2/miniz) implementing `Decompressor` with v1/v2 handshakes, error/EOS, stats. ANSI SGR → attrib converter integrated for Session color parsing (supports 0/1, 30–37/40–47, and bright 90–97/100–107).
 
 ### Toy 9: Nonblocking Connect semantics
 C++ Reference: `Socket.cc`
@@ -77,7 +77,7 @@ C++ Reference: `Embedded.cc`
 - [x] Toy 11 (Plugins Stack) — chaining/enable/quiet tests complete (optional)
 
 ## Next Steps (Extensions)
-- Implement Toy 8 real MCCP inflate behind `real_mccp` feature; add streaming inflate tests and EOS/error cases.
+- Implement Toy 8 real MCCP inflate behind `real_mccp` feature; add streaming inflate tests and EOS/error cases. Add ANSI SGR → attrib converter (basic SGR + bright variants) with fragmentation and reset tests.
 - Add Toy 7 scroll-region optimization planner + tests; integrate heuristic thresholds (diff ratio, region bounds).
 - Optional new toys (if needed):
   - ANSI SGR → attrib parser (colorConverter parity): SGR runs, resets, malformed/incomplete sequences across chunks.
