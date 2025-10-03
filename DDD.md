@@ -136,11 +136,66 @@ Operational Modes
       - Continuously maintained architectural documentation
       - Quality that rises instead of decaying (via mandatory refactoring)
 
+  Porting Mode (Reference-Driven Translation):
+    When to use:
+      - Translating existing codebase to different language/framework
+      - Reference implementation exists and defines correct behavior
+      - Goal is behavioral equivalence, not innovation
+      - Foreign patterns need validation (FFI, unsafe, platform-specific APIs)
+
+    Two-Phase Structure:
+      Phase 1 - Discovery (Validate Risky Patterns):
+        - Identify subsystems with uncertainty (FFI, unsafe, complex APIs)
+        - Build toy models to validate translation approaches
+        - Capture portable patterns in LEARNINGS.md
+        - Answer: "Which target idioms vs which source patterns to preserve?"
+
+      Phase 2 - Execution (Systematic Translation):
+        - Port tier-by-tier or module-by-module
+        - Apply validated patterns from Discovery phase
+        - Keep reference implementation open side-by-side
+        - Test for behavioral equivalence (golden tests against reference)
+
+    Key Artifacts:
+      - IMPLEMENTATION_PLAN.md: Living status document, tier-by-tier checklist
+        * Updated continuously with reality (not just initial plan)
+        * Tracks: what's ported, what's deferred, what's skipped
+        * Central coordination point for multi-tier porting effort
+
+      - CODE_MAP.md: Tracks translation origins
+        * Documents which source file each target file was ported from
+        * Example: "telnet.rs → Telnet.cc (IAC parsing, SB handling)"
+        * Critical for understanding the mapping
+
+      - LEARNINGS.md (Discovery toys): Portable patterns for production
+        * Not just "what we learned" but "how to implement in production"
+        * Direct path: toy validation → production application
+        * Example: "Use pyo3 pattern X for Python FFI, avoid raw C API"
+
+      - Decision Tree: When to preserve vs when to use target idioms
+        * Document explicit principle (e.g., "simplicity first - use target idioms when simpler")
+        * Apply consistently across porting effort
+        * Examples help (e.g., "String.cc → String, not custom wrapper")
+
+    Discipline:
+      - Reference implementation is the oracle (golden tests)
+      - Side-by-side comparison (always have source open during translation)
+      - Behavioral equivalence over structural equivalence
+      - Document all deviations with comments (e.g., "// NOTE: differs from C++ because X")
+      - Scope evolution is normal (MVP philosophy may emerge, defer features to scripts)
+
+    Output:
+      - Functionally equivalent implementation in target language/framework
+      - Clear mapping documented (source → target)
+      - Validated patterns ready for future similar translations
+      - Honest status tracking (what works, what's pending, what's deferred)
+
   Mode Switching:
-    - Most work happens in Execution mode
+    - Most greenfield work happens in Execution mode
     - Switch to Discovery when uncertainty resurfaces during Execution
+    - Porting work uses both: Discovery for risky patterns, Execution for systematic translation
     - Use Discovery for focused experiments, then return to Execution with validated insights
-    - The methodology is intentionally bi-stable between these modes
+    - The methodology is intentionally multi-stable between these modes
 
 Roles
 
@@ -404,6 +459,7 @@ Glossary
   - DDD: Doc Driven Development; Docs → Tests → Implementation → Learnings.
   - Discovery Mode: Experimental workflow optimizing for learning density via toy models.
   - Execution Mode: Delivery workflow optimizing for production resilience via CODE_MAP + mandatory refactoring.
+  - Porting Mode: Reference-driven translation workflow combining Discovery (validate patterns) + Execution (systematic translation).
   - Toy Model: miniature, fully specced experiment kept as intermediate artifact.
   - Napkin Physics: upstream parsimony framing to derive minimal mechanisms.
   - CLI+JSON Debugger: UNIX-style composition where each module is a pure CLI with JSON I/O.
@@ -411,6 +467,8 @@ Glossary
   - Invariant: property that must hold across operations (e.g., schema validity, conservation of count).
   - Economic Inversion: AI's transformation of cost structure making artifacts cheap and clarity valuable.
   - Mandatory Refactoring: Non-optional quality discipline made sustainable by economic inversion.
+  - Reference Implementation: Existing codebase that defines correct behavior for porting/translation efforts.
+  - Behavioral Equivalence: Goal of producing same outputs for same inputs as reference, regardless of internal structure.
 
 End Notes (For AI Assistants)
   Your mandate is not to produce maximal code, but to produce maximal clarity with minimal code.
