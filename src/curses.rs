@@ -162,8 +162,17 @@ pub unsafe fn get_acs_codes() -> [u8; 8] {
 mod tests {
     use super::*;
 
+    /// Check if we're running in a TTY environment
+    fn has_tty() -> bool {
+        unsafe { libc::isatty(libc::STDOUT_FILENO) != 0 }
+    }
+
     #[test]
     fn test_init_curses() {
+        if !has_tty() {
+            eprintln!("SKIP: test_init_curses requires a TTY (run with ./test-with-tty.sh)");
+            return;
+        }
         unsafe {
             let result = init_curses();
             assert!(result.is_ok(), "init_curses should succeed");
@@ -172,6 +181,10 @@ mod tests {
 
     #[test]
     fn test_get_acs_caps() {
+        if !has_tty() {
+            eprintln!("SKIP: test_get_acs_caps requires a TTY (run with ./test-with-tty.sh)");
+            return;
+        }
         let caps = get_acs_caps();
         // Should have smacs/rmacs capabilities (or at least not crash)
         println!("smacs: {:?}", caps.smacs);
@@ -180,6 +193,10 @@ mod tests {
 
     #[test]
     fn test_get_acs_codes() {
+        if !has_tty() {
+            eprintln!("SKIP: test_get_acs_codes requires a TTY (run with ./test-with-tty.sh)");
+            return;
+        }
         unsafe {
             let codes = get_acs_codes();
             // ACS codes should be non-zero
