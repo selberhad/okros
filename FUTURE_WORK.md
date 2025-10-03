@@ -194,6 +194,60 @@ These are intentional trade-offs for the MVP:
 - **Plugin manager** - Install/update scripts from repository
 - **Sandboxing** - Limit plugin capabilities (file access, network, etc.)
 
+### Linux Virtual Console Support (`/dev/vcsa`)
+**Priority**: LOW - Historical feature, fun to implement
+
+Original MCL's secret weapon for blazing-fast rendering:
+- **Direct memory-mapped access** to Linux virtual console framebuffer
+- Writes screen + cursor in **single syscall** via `writev()`
+- No ANSI parsing overhead, no escape sequence generation
+- **Much faster** than terminal emulation (instant screen updates)
+
+**How it worked (C++ MCL):**
+```cpp
+// Detect Linux VT: /dev/tty1 → /dev/vcsa1
+char buf[256];
+sprintf(buf, "/dev/vcsa%d", ttyno);
+fd = open(buf, O_WRONLY);
+
+// Write entire screen in one shot
+writev(fd, {cursor_pos, canvas}, 2);  // Instant!
+```
+
+**Current status:**
+- okros uses ANSI escape sequences (portable, works everywhere)
+- Screen diffing minimizes output (only changed cells)
+- Performance is excellent (Nodeka gameplay validated)
+
+**Why it's deferred:**
+- **Narrow use case**: Only Linux virtual consoles (Ctrl+Alt+F1-F6)
+- **Not available** on: macOS, SSH, xterm, tmux, WSL, etc.
+- **okros philosophy**: Headless/detachable mode is primary use case
+- **Permissions**: Requires root or setgid tty group membership
+
+**Why it could be fun:**
+- Cool historical technology (1990s Linux optimization)
+- Simple Rust FFI implementation (~100 LOC)
+- Educational: Learn about `/dev/vcs*` character devices
+- Performance testing: Measure ANSI vs vcsa on real Linux VT
+
+**Implementation approach:**
+1. Detect Linux VT: Parse `ttyname(0)` for `/dev/tty[0-9]+`
+2. Open `/dev/vcsa{N}` for writing
+3. Fallback to ANSI if open fails (portable default)
+4. Write cursor position (2 bytes) + canvas (width×height×2 bytes)
+5. Feature gate: `--features vcsa` (Linux-only compilation)
+
+**Estimated effort**: 4-6 hours (straightforward FFI)
+**Testing requirements**: Real Linux system with VT access (not macOS/VM)
+
+**References:**
+- `mcl-cpp-reference/Screen.cc` (lines 39-100: vcsa detection & writing)
+- Linux kernel docs: `/dev/vcs` and `/dev/vcsa` character devices
+- Historical context: Before GPU acceleration, this was THE way to do fast TUIs
+
+**Fun fact**: This is why MCL was so fast in the 1990s - direct framebuffer access was revolutionary for a MUD client!
+
 ### WASM Plugin System (v2)
 **Priority**: FUTURE - Post-v1.0 architectural enhancement
 
