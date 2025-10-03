@@ -37,9 +37,11 @@ impl Config {
     pub fn load_file(&mut self, path: impl AsRef<Path>) -> Result<(), String> {
         let file = File::open(path).map_err(|e| format!("Failed to open config: {}", e))?;
         let reader = BufReader::new(file);
+        let mut lines = reader.lines().enumerate();
 
-        for (line_num, line) in reader.lines().enumerate() {
-            let line = line.map_err(|e| format!("Read error at line {}: {}", line_num + 1, e))?;
+        while let Some((line_num, line_result)) = lines.next() {
+            let line =
+                line_result.map_err(|e| format!("Read error at line {}: {}", line_num + 1, e))?;
 
             // Skip comments and empty lines
             let trimmed = line.trim();
@@ -47,47 +49,163 @@ impl Config {
                 continue;
             }
 
-            self.parse_line(&line, line_num + 1)?;
+            let parts: Vec<&str> = line.split_whitespace().collect();
+            if parts.is_empty() {
+                continue;
+            }
+
+            // Check for MUD block format
+            if parts[0].eq_ignore_ascii_case("mud") && parts.len() >= 2 {
+                let mudname = parts[1].trim_end_matches('{').trim();
+                self.read_mud_block(mudname, &mut lines)?;
+            } else {
+                // Old format or other config line
+                self.parse_line(&line, line_num + 1)?;
+            }
         }
 
         Ok(())
     }
 
-    /// Parse a single config line
+    /// Read a MUD block in new format: MUD mudname { ... }
+    fn read_mud_block(
+        &mut self,
+        mudname: &str,
+        lines: &mut impl Iterator<Item = (usize, Result<String, std::io::Error>)>,
+    ) -> Result<(), String> {
+        let mut mud = Mud::new(mudname, "", 0);
+
+        while let Some((line_num, line_result)) = lines.next() {
+            let line =
+                line_result.map_err(|e| format!("Read error at line {}: {}", line_num + 1, e))?;
+
+            let trimmed = line.trim();
+
+            // Skip comments and empty lines
+            if trimmed.is_empty() || trimmed.starts_with('#') {
+                continue;
+            }
+
+            // Check for end of block
+            if trimmed.starts_with('}') {
+                // Add completed MUD to list
+                self.mud_list.insert(mud);
+                return Ok(());
+            }
+
+            // Parse block line
+            self.parse_mud_block_line(&mut mud, trimmed, line_num + 1)?;
+        }
+
+        Err(format!(
+            "MUD block for '{}' not properly terminated with }}",
+            mudname
+        ))
+    }
+
+    /// Parse a line inside a MUD block
+    fn parse_mud_block_line(
+        &mut self,
+        mud: &mut Mud,
+        line: &str,
+        line_num: usize,
+    ) -> Result<(), String> {
+        let parts: Vec<&str> = line.split_whitespace().collect();
+        if parts.is_empty() {
+            return Ok(());
+        }
+
+        match parts[0].to_lowercase().as_str() {
+            "host" if parts.len() >= 3 => {
+                mud.hostname = parts[1].to_string();
+                mud.port = parts[2]
+                    .trim_end_matches(';')
+                    .parse()
+                    .map_err(|_| format!("Line {}: Invalid port number", line_num))?;
+                Ok(())
+            }
+            "commands" if parts.len() >= 2 => {
+                mud.commands = parts[1..].join(" ").trim_end_matches(';').to_string();
+                Ok(())
+            }
+            "inherit" if parts.len() >= 2 => {
+                let parent_name = parts[1].trim_end_matches(';');
+                if let Some(parent) = self.mud_list.find(parent_name) {
+                    mud.inherits = Some(Box::new(parent.clone()));
+                    Ok(())
+                } else {
+                    Err(format!(
+                        "Line {}: Parent MUD '{}' not found",
+                        line_num, parent_name
+                    ))
+                }
+            }
+            "alias" if parts.len() >= 3 => {
+                let name = parts[1];
+                let expansion = parts[2..].join(" ").trim_end_matches(';').to_string();
+                mud.alias_list.push(Alias::new(name, &expansion));
+                Ok(())
+            }
+            "action" if parts.len() >= 3 => {
+                // Parse action: action "pattern" commands
+                let rest = parts[1..].join(" ");
+                match Action::parse(&rest, ActionType::Trigger) {
+                    Ok(action) => {
+                        mud.action_list.push(action);
+                        Ok(())
+                    }
+                    Err(e) => Err(format!("Line {}: {}", line_num, e)),
+                }
+            }
+            "subst" if parts.len() >= 3 => {
+                // Parse substitution: subst "pattern" replacement
+                let rest = parts[1..].join(" ");
+                match Action::parse(&rest, ActionType::Replacement) {
+                    Ok(action) => {
+                        mud.action_list.push(action);
+                        Ok(())
+                    }
+                    Err(e) => Err(format!("Line {}: {}", line_num, e)),
+                }
+            }
+            "macro" if parts.len() >= 3 => {
+                // TODO: Implement macro parsing (need key name lookup)
+                // For now, skip macros
+                Ok(())
+            }
+            _ => Err(format!(
+                "Line {}: Unknown or invalid MUD block keyword: {}",
+                line_num, parts[0]
+            )),
+        }
+    }
+
+    /// Parse a single config line (old format)
     fn parse_line(&mut self, line: &str, line_num: usize) -> Result<(), String> {
         let parts: Vec<&str> = line.split_whitespace().collect();
         if parts.is_empty() {
             return Ok(());
         }
 
-        match parts[0] {
-            "mud" if parts.len() >= 2 => {
-                // New format: MUD mudname { ... }
-                // For now, return error - we'll implement block parsing next
-                Err(format!(
-                    "Line {}: MUD block format not yet implemented",
-                    line_num
-                ))
-            }
-            // Old format: mudname hostname port [commands]
-            _ if parts.len() >= 3 => {
-                let mudname = parts[0];
-                let hostname = parts[1];
-                let port: u16 = parts[2]
-                    .parse()
-                    .map_err(|_| format!("Line {}: Invalid port number", line_num))?;
+        // Old format: mudname hostname port [commands]
+        if parts.len() >= 3 {
+            let mudname = parts[0];
+            let hostname = parts[1];
+            let port: u16 = parts[2]
+                .parse()
+                .map_err(|_| format!("Line {}: Invalid port number", line_num))?;
 
-                let commands = parts
-                    .get(3..)
-                    .map(|rest| rest.join(" "))
-                    .unwrap_or_default();
+            let commands = parts
+                .get(3..)
+                .map(|rest| rest.join(" "))
+                .unwrap_or_default();
 
-                let mut mud = Mud::new(mudname, hostname, port);
-                mud.commands = commands;
-                self.mud_list.insert(mud);
-                Ok(())
-            }
-            _ => Err(format!("Line {}: Invalid config line format", line_num)),
+            let mut mud = Mud::new(mudname, hostname, port);
+            mud.commands = commands;
+            self.mud_list.insert(mud);
+            Ok(())
+        } else {
+            Err(format!("Line {}: Invalid config line format", line_num))
         }
     }
 }
@@ -150,5 +268,128 @@ mod tests {
 
         let mut cfg = Config::new();
         assert!(cfg.load_file(tmpfile.path()).is_err());
+    }
+
+    #[test]
+    fn config_new_format_basic() {
+        let mut tmpfile = NamedTempFile::new().unwrap();
+        writeln!(tmpfile, "MUD TestMUD {{").unwrap();
+        writeln!(tmpfile, "  host 127.0.0.1 4000;").unwrap();
+        writeln!(tmpfile, "  commands look;").unwrap();
+        writeln!(tmpfile, "}}").unwrap();
+        tmpfile.flush().unwrap();
+
+        let mut cfg = Config::new();
+        cfg.load_file(tmpfile.path()).unwrap();
+
+        assert_eq!(cfg.mud_list.count(), 1);
+        let mud = cfg.mud_list.find("TestMUD").unwrap();
+        assert_eq!(mud.hostname, "127.0.0.1");
+        assert_eq!(mud.port, 4000);
+        assert_eq!(mud.commands, "look");
+    }
+
+    #[test]
+    fn config_new_format_with_aliases() {
+        let mut tmpfile = NamedTempFile::new().unwrap();
+        writeln!(tmpfile, "MUD Nodeka {{").unwrap();
+        writeln!(tmpfile, "  host nodeka.com 23;").unwrap();
+        writeln!(tmpfile, "  alias n north;").unwrap();
+        writeln!(tmpfile, "  alias s south;").unwrap();
+        writeln!(tmpfile, "  alias look l;").unwrap();
+        writeln!(tmpfile, "}}").unwrap();
+        tmpfile.flush().unwrap();
+
+        let mut cfg = Config::new();
+        cfg.load_file(tmpfile.path()).unwrap();
+
+        let mud = cfg.mud_list.find("Nodeka").unwrap();
+        assert_eq!(mud.hostname, "nodeka.com");
+        assert_eq!(mud.alias_list.len(), 3);
+        assert!(mud.find_alias("n").is_some());
+        assert!(mud.find_alias("s").is_some());
+        assert!(mud.find_alias("look").is_some());
+    }
+
+    #[test]
+    fn config_new_format_with_inheritance() {
+        let mut tmpfile = NamedTempFile::new().unwrap();
+        // Define parent first
+        writeln!(tmpfile, "MUD Parent {{").unwrap();
+        writeln!(tmpfile, "  host parent.com 4000;").unwrap();
+        writeln!(tmpfile, "  alias p parent_alias;").unwrap();
+        writeln!(tmpfile, "}}").unwrap();
+        // Define child that inherits from parent
+        writeln!(tmpfile, "MUD Child {{").unwrap();
+        writeln!(tmpfile, "  host child.com 5000;").unwrap();
+        writeln!(tmpfile, "  inherit Parent;").unwrap();
+        writeln!(tmpfile, "  alias c child_alias;").unwrap();
+        writeln!(tmpfile, "}}").unwrap();
+        tmpfile.flush().unwrap();
+
+        let mut cfg = Config::new();
+        cfg.load_file(tmpfile.path()).unwrap();
+
+        let child = cfg.mud_list.find("Child").unwrap();
+        assert_eq!(child.hostname, "child.com");
+        assert!(child.inherits.is_some());
+
+        // Child should find its own alias
+        assert!(child.find_alias("c").is_some());
+        // Child should find parent's alias via inheritance
+        assert!(child.find_alias("p").is_some());
+    }
+
+    #[test]
+    fn config_mixed_old_and_new_format() {
+        let mut tmpfile = NamedTempFile::new().unwrap();
+        // Old format
+        writeln!(tmpfile, "OldMUD 192.168.1.1 6000").unwrap();
+        // New format
+        writeln!(tmpfile, "MUD NewMUD {{").unwrap();
+        writeln!(tmpfile, "  host 10.0.0.1 7000;").unwrap();
+        writeln!(tmpfile, "}}").unwrap();
+        // Another old format
+        writeln!(tmpfile, "OldMUD2 127.0.0.1 8000 connect").unwrap();
+        tmpfile.flush().unwrap();
+
+        let mut cfg = Config::new();
+        cfg.load_file(tmpfile.path()).unwrap();
+
+        assert_eq!(cfg.mud_list.count(), 3);
+        assert!(cfg.mud_list.find("OldMUD").is_some());
+        assert!(cfg.mud_list.find("NewMUD").is_some());
+        assert!(cfg.mud_list.find("OldMUD2").is_some());
+    }
+
+    #[test]
+    fn config_new_format_unterminated_block() {
+        let mut tmpfile = NamedTempFile::new().unwrap();
+        writeln!(tmpfile, "MUD BadMUD {{").unwrap();
+        writeln!(tmpfile, "  host 127.0.0.1 4000;").unwrap();
+        // Missing closing brace
+        tmpfile.flush().unwrap();
+
+        let mut cfg = Config::new();
+        let result = cfg.load_file(tmpfile.path());
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .contains("not properly terminated with }"));
+    }
+
+    #[test]
+    fn config_new_format_invalid_parent() {
+        let mut tmpfile = NamedTempFile::new().unwrap();
+        writeln!(tmpfile, "MUD Child {{").unwrap();
+        writeln!(tmpfile, "  host child.com 5000;").unwrap();
+        writeln!(tmpfile, "  inherit NonExistent;").unwrap();
+        writeln!(tmpfile, "}}").unwrap();
+        tmpfile.flush().unwrap();
+
+        let mut cfg = Config::new();
+        let result = cfg.load_file(tmpfile.path());
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("not found"));
     }
 }
