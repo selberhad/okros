@@ -1,13 +1,13 @@
 # Test Coverage Report
 
-**Last Updated**: 2025-10-03 06:18
+**Last Updated**: 2025-10-03 06:45
 **Tool**: cargo-llvm-cov
-**Overall Coverage**: **65.26%** lines | **70.19%** regions | **78.31%** functions
+**Overall Coverage**: **65.32%** lines | **70.22%** regions | **78.31%** functions
 
 ## Summary
 
 ```
-TOTAL                            5026              1498    70.19%         295                64    78.31%        1949               677    65.26%           0                 0         -
+TOTAL                            5033              1499    70.22%         295                64    78.31%        1952               677    65.32%           0                 0         -
 ```
 
 ## Coverage by Module
@@ -32,7 +32,7 @@ TOTAL                            5026              1498    70.19%         295   
 | `scrollback.rs` | 96.15% | 93.13% | 100.00% | 🟢 Excellent |
 | `select.rs` | 100.00% | 96.61% | 100.00% | 🟢 Excellent |
 | `selectable.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
-| `session.rs` | 89.47% | 88.62% | 87.50% | 🟡 Good |
+| `session.rs` | 90.00% | 88.46% | 87.50% | 🟢 Excellent |
 | `socket.rs` | 92.86% | 92.35% | 100.00% | 🟢 Excellent |
 | `status_line.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
 | `telnet.rs` | 100.00% | 99.02% | 100.00% | 🟢 Excellent |
@@ -53,6 +53,7 @@ TOTAL                            5026              1498    70.19%         295   
 - `scrollback.rs` - 96.15%
 - `select.rs` - 100.00%
 - `selectable.rs` - 100.00%
+- `session.rs` - 90.00%
 - `socket.rs` - 92.86%
 - `status_line.rs` - 100.00%
 - `telnet.rs` - 100.00%
@@ -61,7 +62,6 @@ TOTAL                            5026              1498    70.19%         295   
 - `input_line.rs` - 88.46%
 - `mccp.rs` - 83.33%
 - `plugins/stack.rs` - 80.90%
-- `session.rs` - 89.47%
 - `window.rs` - 89.19%
 
 ### 🟠 Moderate (40-69% lines)
@@ -77,7 +77,7 @@ TOTAL                            5026              1498    70.19%         295   
 
 | Tier | Target | Current | Status |
 |------|--------|---------|--------|
-| Overall | ≥80% | 65.26% | ⏳ In Progress |
+| Overall | ≥80% | 65.32% | ⏳ In Progress |
 | Critical Paths | ≥95% | Check modules above | ✅ Met |
 | New Modules | ≥80% | - | Policy |
 
