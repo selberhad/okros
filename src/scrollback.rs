@@ -10,11 +10,12 @@ pub struct Scrollback {
     pub top_line: usize,
     pub(crate) rows_filled: usize,
     frozen: bool,
+    pub(crate) total_lines_written: usize,  // Monotonic counter for headless mode
 }
 
 impl Scrollback {
     pub fn new(width: usize, height: usize, lines: usize) -> Self {
-        Self{ width, height, lines, buf: vec![0; width*lines], canvas_off:0, viewpoint:0, top_line:0, rows_filled:0, frozen:false }
+        Self{ width, height, lines, buf: vec![0; width*lines], canvas_off:0, viewpoint:0, top_line:0, rows_filled:0, frozen:false, total_lines_written:0 }
     }
     pub fn set_frozen(&mut self, f: bool){ self.frozen = f; }
     pub fn canvas_ptr(&self)->usize{ self.canvas_off }
@@ -24,6 +25,7 @@ impl Scrollback {
         let start = if self.rows_filled<self.height { let s=self.viewpoint + self.rows_filled*self.width; self.rows_filled+=1; s } else { self.canvas_off+=self.width; if !self.frozen { if self.viewpoint + screen_span < self.canvas_off { self.viewpoint = self.canvas_off - screen_span; } } self.viewpoint + (self.height-1)*self.width };
         for a in &mut self.buf[start..start+self.width]{ *a = ((color as u16) << 8) | b' ' as u16; }
         for (i,b) in bytes.iter().take(self.width).enumerate(){ self.buf[start+i] = ((color as u16) << 8) | (*b as u16); }
+        self.total_lines_written += 1;  // Increment monotonic counter
     }
     pub fn viewport_slice(&self)->&[Attrib]{ &self.buf[self.viewpoint .. self.viewpoint + self.width*self.height] }
 

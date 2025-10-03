@@ -56,31 +56,33 @@ impl<D: Decompressor> SessionEngine<D> {
     /// Returns only NEW lines since last read (for headless mode)
     /// Advances read cursor automatically - won't return same line twice
     pub fn get_new_lines(&self) -> Vec<String> {
-        let width = self.session.scrollback.width;
-        let total_rows = self.session.scrollback.rows_filled;
+        let total_lines_written = self.session.scrollback.total_lines_written;
         let cursor = *self.read_cursor.borrow();
 
         // No new lines since last read
-        if cursor >= total_rows {
+        if cursor >= total_lines_written {
             return Vec::new();
         }
 
-        // Get lines from cursor to current end
-        let new_line_count = total_rows - cursor;
-        let start_offset = cursor * width;
-        let end_offset = total_rows * width;
-        let slice = &self.session.scrollback.buf[start_offset..end_offset];
+        // How many new lines since cursor
+        let new_line_count = total_lines_written - cursor;
 
-        let mut out = Vec::with_capacity(new_line_count);
-        for row in 0..new_line_count {
+        // Just get the most recent N lines from scrollback using recent_lines
+        // This handles wrapping for us
+        let lines = self.session.scrollback.recent_lines(new_line_count);
+        let width = self.session.scrollback.width;
+        let row_count = lines.len() / width;
+
+        let mut out = Vec::with_capacity(row_count);
+        for row in 0..row_count {
             let off = row * width;
-            let row_slice = &slice[off .. off + width];
+            let row_slice = &lines[off .. off + width];
             let line = crate::screen::attrib_row_to_ansi(row_slice);
             out.push(line);
         }
 
-        // Advance cursor
-        *self.read_cursor.borrow_mut() = total_rows;
+        // Advance cursor to current position
+        *self.read_cursor.borrow_mut() = total_lines_written;
 
         out
     }

@@ -1,13 +1,13 @@
 # Test Coverage Report
 
-**Last Updated**: 2025-10-03 03:44
+**Last Updated**: 2025-10-03 04:03
 **Tool**: cargo-llvm-cov
-**Overall Coverage**: **65.45%** lines | **70.76%** regions | **77.93%** functions
+**Overall Coverage**: **65.88%** lines | **71.16%** regions | **78.28%** functions
 
 ## Summary
 
 ```
-TOTAL                            4808              1406    70.76%         290                64    77.93%        1858               642    65.45%           0                 0         -
+TOTAL                            4809              1387    71.16%         290                63    78.28%        1858               634    65.88%           0                 0         -
 ```
 
 ## Coverage by Module
@@ -18,7 +18,7 @@ TOTAL                            4808              1406    70.76%         290   
 | `config.rs` | 90.00% | 87.50% | 71.43% | 🟢 Excellent |
 | `control.rs` | 40.27% | 34.49% | 46.67% | 🟠 Moderate |
 | `curses.rs` | 18.56% | 13.55% | 40.00% | 🔴 Needs Work |
-| `engine.rs` | 84.78% | 85.05% | 93.33% | 🟡 Good |
+| `engine.rs` | 84.62% | 85.05% | 93.33% | 🟡 Good |
 | `input_line.rs` | 88.46% | 84.21% | 75.00% | 🟡 Good |
 | `input.rs` | 92.50% | 87.03% | 100.00% | 🟢 Excellent |
 | `main.rs` | 0.00% | 0.00% | 0.00% | 🔴 Needs Work |
@@ -29,7 +29,7 @@ TOTAL                            4808              1406    70.76%         290   
 | `output_window.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
 | `plugins/stack.rs` | 80.90% | 80.39% | 59.46% | 🟡 Good |
 | `screen.rs` | 98.84% | 97.63% | 96.15% | 🟢 Excellent |
-| `scrollback.rs` | 75.00% | 92.73% | 94.12% | 🟡 Good |
+| `scrollback.rs` | 100.00% | 99.31% | 100.00% | 🟢 Excellent |
 | `select.rs` | 100.00% | 96.61% | 100.00% | 🟢 Excellent |
 | `selectable.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
 | `session.rs` | 96.15% | 91.43% | 80.00% | 🟢 Excellent |
@@ -50,6 +50,7 @@ TOTAL                            4808              1406    70.76%         290   
 - `offline_mud/parser.rs` - 100.00%
 - `output_window.rs` - 100.00%
 - `screen.rs` - 98.84%
+- `scrollback.rs` - 100.00%
 - `select.rs` - 100.00%
 - `selectable.rs` - 100.00%
 - `session.rs` - 96.15%
@@ -58,11 +59,10 @@ TOTAL                            4808              1406    70.76%         290   
 - `telnet.rs` - 100.00%
 
 ### 🟡 Good (70-89% lines)
-- `engine.rs` - 84.78%
+- `engine.rs` - 84.62%
 - `input_line.rs` - 88.46%
 - `mccp.rs` - 83.33%
 - `plugins/stack.rs` - 80.90%
-- `scrollback.rs` - 75.00%
 - `window.rs` - 89.19%
 
 ### 🟠 Moderate (40-69% lines)
@@ -77,7 +77,7 @@ TOTAL                            4808              1406    70.76%         290   
 
 | Tier | Target | Current | Status |
 |------|--------|---------|--------|
-| Overall | ≥80% | 65.45% | ⏳ In Progress |
+| Overall | ≥80% | 65.88% | ⏳ In Progress |
 | Critical Paths | ≥95% | Check modules above | ✅ Met |
 | New Modules | ≥80% | - | Policy |
 
