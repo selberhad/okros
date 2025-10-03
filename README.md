@@ -61,7 +61,7 @@ cargo build --release --features perl
 cargo build --release --all-features
 ```
 
-The compiled binary will be at `target/release/okros`.
+The compiled binary will be at `target/release/mcl-rust` (or `okros` after renaming).
 
 ### Running Tests
 
@@ -110,13 +110,13 @@ okros --headless --instance ar example.com 4000
 okros --attach ar
 
 # Send commands to session
-echo '{"command":"send","data":"look\n"}' | nc -U /tmp/okros-ar.sock
+echo '{"cmd":"send","data":"look\n"}' | nc -U ~/.mcl/control/ar.sock
 
 # Get buffered output
-echo '{"command":"get_buffer"}' | nc -U /tmp/okros-ar.sock
+echo '{"cmd":"get_buffer"}' | nc -U ~/.mcl/control/ar.sock
 
 # Stream live output
-echo '{"command":"stream"}' | nc -U /tmp/okros-ar.sock
+echo '{"cmd":"stream"}' | nc -U ~/.mcl/control/ar.sock
 ```
 
 ### LLM Agent Integration
@@ -126,22 +126,24 @@ okros headless mode is designed for simplicity - LLM agents just need to read te
 ```python
 import socket
 import json
+import os
 
 # Connect to headless okros instance
 sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-sock.connect("/tmp/okros-ar.sock")
+sock.connect(os.path.expanduser("~/.mcl/control/ar.sock"))
 
 # Read MUD output
-sock.sendall(json.dumps({"command": "get_buffer"}).encode() + b'\n')
+sock.sendall(json.dumps({"cmd": "get_buffer"}).encode() + b'\n')
 response = json.loads(sock.recv(4096))
-mud_text = response.get("output", "")
+# Parse buffer response (format: {"event":"Buffer","lines":[...]})
+mud_text = "\n".join(response.get("lines", []))
 
 # LLM processes mud_text and decides next action...
 # (Your LLM logic here)
 
 # Send command back to MUD
 action = "north\n"  # LLM's decision
-sock.sendall(json.dumps({"command": "send", "data": action}).encode() + b'\n')
+sock.sendall(json.dumps({"cmd": "send", "data": action}).encode() + b'\n')
 
 sock.close()
 ```
@@ -154,19 +156,21 @@ The control server uses JSON Lines (one JSON object per line):
 
 **Commands:**
 ```json
-{"command":"status"}
-{"command":"attach"}
-{"command":"detach"}
-{"command":"send","data":"north\n"}
-{"command":"get_buffer","from":0}
-{"command":"stream"}
+{"cmd":"status"}
+{"cmd":"attach"}
+{"cmd":"detach"}
+{"cmd":"send","data":"north\n"}
+{"cmd":"get_buffer","from":0}
+{"cmd":"stream","interval_ms":200}
+{"cmd":"sock_send","data":"raw telnet bytes"}
 ```
 
 **Responses:**
 ```json
-{"status":"ok","connected":true,"mud":"example.com:4000"}
-{"output":"You are standing in a room.\n","cursor":123}
-{"error":"not connected"}
+{"event":"Ok"}
+{"event":"Status","attached":true}
+{"event":"Buffer","lines":["You are standing in a room.","Exits: north, south"]}
+{"event":"Error","message":"not connected"}
 ```
 
 ### Configuration
@@ -199,9 +203,10 @@ okros is under active development. Current status:
 - ✅ Tier 1 (Foundation) - Complete
 - ✅ Tier 2 (Core) - Complete
 - ✅ Tier 3 (UI) - Complete
-- ⚠️  Tier 4 (Logic) - Partial (session management done; aliases/actions pending)
+- ✅ Tier 4 (Logic) - Complete (session/engine; aliases/actions deferred to scripts)
 - ✅ Tier 5 (Plugins) - Complete (Python & Perl)
-- ✅ Tier 6 (Engine) - Complete (headless & control server)
+- ✅ Tier 6 (Main & Engine) - Complete (event loop, CLI args, headless & control server)
+- ⏸️  Tier 7 (Integration) - Validation pending (implementation complete, needs real MUD testing)
 
 See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for detailed progress.
 

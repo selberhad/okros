@@ -1,71 +1,84 @@
 # ORIENTATION — okros MUD Client
 
-**Quick Start**: You're looking at a Rust port of MCL (MUD Client for Linux), ~70% complete, built for headless operation and LLM agent integration.
+**Quick Start**: You're looking at a Rust port of MCL (MUD Client for Linux), ~95% complete (implementation done, validation pending), built for headless operation and LLM agent integration.
 
 ## What Is This?
 
 **okros** = Rust MUD client reviving MCL's design, optimized for automation
 - **Primary use case**: Transport layer for Perl/Python bots and LLM agents
 - **Philosophy**: Client handles I/O, scripts handle logic (aliases/triggers/automation)
-- **Status**: MVP nearly complete (network, UI, plugins done; event loop pending)
+- **Status**: Implementation complete (all tiers done); validation pending (needs real MUD testing)
 
 ## Current State (Jan 2025)
 
-### ✅ What Works
-- **Network**: Socket, telnet, MCCP compression, ANSI parsing
-- **UI Components**: ncurses wrapper, screen renderer, widgets, scrollback buffer
-- **Plugins**: Python (pyo3) and Perl (raw FFI) interpreters with feature gates
-- **Headless Engine**: SessionEngine + control server (Unix socket, JSON Lines)
-- **Discovery**: 11 toys validated all risky FFI/unsafe patterns
+### ✅ What Works (Implementation Complete)
+- **Network**: Socket, telnet, MCCP compression, ANSI parsing (full pipeline)
+- **UI**: ncurses wrapper, screen diff renderer, widgets (status/output/input), scrollback
+- **Plugins**: Python (pyo3) and Perl (raw FFI) with feature gates, interpreter hooks
+- **Headless Engine**: SessionEngine + control server (Unix socket, JSON Lines protocol)
+- **Main Event Loop**: poll-based I/O on TTY + socket with 250ms timeout
+- **CLI Args**: `--headless`, `--instance <name>`, `--attach <name>` implemented
+- **# Commands**: `#quit`, `#open <host> <port>` functional
+- **Tests**: 57 unit tests + 2 integration tests passing
 
-### ⏸️ What's Pending
-- **Main Event Loop**: Wire TTY input → MUD socket → screen output
-- **CLI Args**: `--headless`, `--instance`, `--attach` not implemented
-- **Plugin Loading**: Feature-gated initialization in main
-- **Integration Tests**: End-to-end validation (connect to real MUD, test with Perl bot)
+### ⏸️ What Needs Validation
+- **Real MUD Connection**: Code exists, needs testing against live server
+- **Perl Bot Integration**: Headless mode needs validation with real automation scripts
+- **Feature Combinations**: Build works, runtime testing needed (base/python/perl/all)
+- **Edge Cases**: Telnet/ANSI quirks from real MUDs
 
-### ❌ What's Deferred
+### ❌ What's Deferred (By Design)
 - Aliases, actions, hotkeys (Perl/Python scripts handle these)
 - Chat, borg, group features (not needed for MVP)
-- Complex # command interpreter (minimal only: #quit, #open)
+- Extended # commands (minimal set sufficient)
+- DNS hostname resolution (IPv4 addresses work; scripts can resolve)
 
 ## Next Steps (Priority Order)
 
-### 1. Wire Event Loop (Tier 6 - Main)
-**Goal**: Functional standalone binary that connects to MUDs
+**Implementation is COMPLETE. Focus is now on validation.**
+
+### 1. Integration Testing (Tier 7 - Critical Path to MVP)
+**Goal**: Validate against real MUD servers and Perl bots
 
 **Tasks**:
-- [ ] Implement select/poll on sockets + TTY in `src/main.rs`
-- [ ] Connect: TTY input → send to MUD socket
-- [ ] Connect: MUD socket → ANSI parser → screen renderer
-- [ ] Add basic # commands: `#quit`, `#open <host> <port>`
-- [ ] Wire plugin loading behind `--features python/perl`
-
-**Files to edit**: `src/main.rs` (expand current demo)
-
-**Reference**: C++ `main.cc` event loop structure
-
-### 2. Add CLI Args (Tier 6 - Main)
-**Goal**: Support headless and attach modes
-
-**Tasks**:
-- [ ] Parse args: `--headless`, `--instance <name>`, `--attach <name>`
-- [ ] Headless mode: Start SessionEngine, publish Unix socket
-- [ ] Attach mode: Connect to running engine, render via Screen
-- [ ] Interactive mode (default): Full TTY UI
-
-**Dependency**: Needs step 1 (event loop) complete
-
-### 3. Integration & Validation (Tier 7)
-**Goal**: Prove it works end-to-end
-
-**Tasks**:
-- [ ] Manual smoke test: `okros example.com 4000` → connect, send/receive
-- [ ] Headless test: Start headless, send commands via control socket
-- [ ] Perl bot integration: Run your real bot, validate transport layer
+- [ ] Manual smoke test: `cargo run` → `#open <mud-ip> <port>` → verify send/receive
+- [ ] Headless test:
+  - Start: `cargo run --headless --instance test`
+  - Connect via Unix socket: `~/.mcl/control/test.sock`
+  - Send commands: `{"cmd":"send","data":"look\n"}`
+  - Get buffer: `{"cmd":"get_buffer"}`
+- [ ] Attach test: `cargo run --attach test` → verify screen renders buffered data
+- [ ] **Perl bot integration**: Run real Perl automation script against headless mode
 - [ ] Feature combos: Test base, `--features python`, `--features perl`, all
 
-**Success**: Can play a MUD interactively AND your Perl bot can automate via headless mode
+**Success Criteria**:
+- Can play a MUD interactively via TTY
+- Perl bot can automate via headless mode
+- No crashes, panics, or data corruption
+
+**What's Already Done**:
+- ✅ Event loop implemented (src/main.rs:147-290)
+- ✅ CLI args working (src/main.rs:15-40)
+- ✅ Plugin loading wired (src/main.rs:43-106)
+- ✅ Full I/O pipeline: TTY ↔ socket ↔ telnet ↔ ANSI ↔ screen
+
+### 2. Polish & Bug Fixes (As Discovered)
+**Goal**: Fix issues found during validation
+
+**Tasks**:
+- [ ] Address any panics/crashes from real MUD connections
+- [ ] Handle telnet/ANSI edge cases (IAC escaping, SGR variants, etc.)
+- [ ] Improve error messages for better UX
+- [ ] Optional: Add DNS hostname resolution (currently IPv4 only)
+
+### 3. Documentation Finalization
+**Goal**: Ensure docs match reality
+
+**Tasks**:
+- [x] Update IMPLEMENTATION_PLAN.md to reflect completion
+- [x] Update ORIENTATION.md (this file) to reflect MVP status
+- [ ] Update README.md if needed
+- [ ] Write user guide for Perl bot integration (control socket protocol)
 
 ## Quick Reference
 
@@ -83,9 +96,19 @@ cargo test                           # Unit tests
 cargo test --all-features            # Include plugin tests
 ```
 
-**Current Demo** (minimal):
+**Run**:
 ```bash
-cargo run                            # Tiny TTY demo with key input
+cargo run                            # Interactive mode (TTY UI)
+cargo run --headless --instance test # Headless mode (control via Unix socket)
+cargo run --attach test              # Attach to headless instance
+MCL_CONNECT=127.0.0.1:4000 cargo run # Auto-connect to MUD on startup
+```
+
+**Basic Usage** (interactive mode):
+```
+#open 127.0.0.1 4000   # Connect to MUD
+type and press Enter   # Send to MUD
+#quit                  # Exit
 ```
 
 ## Key Files
@@ -103,7 +126,7 @@ cargo run                            # Tiny TTY demo with key input
 - `toys/` - Discovery phase experiments (11 toys with LEARNINGS.md)
 
 **Critical Paths**:
-- `src/main.rs` - Event loop (NEEDS WORK)
+- `src/main.rs` - Event loop, CLI args, plugin loading (DONE - 318 lines)
 - `src/engine.rs` - Headless SessionEngine (DONE)
 - `src/control.rs` - Unix socket control server (DONE)
 - `src/session.rs` - MCCP→telnet→ANSI→scrollback pipeline (DONE)
@@ -124,20 +147,27 @@ cargo run                            # Tiny TTY demo with key input
 
 ## Questions?
 
-**"Where do I start coding?"**
-→ `src/main.rs` - Wire the event loop (see Next Steps #1)
+**"Where do I start?"**
+→ Testing! All implementation is done. Run `cargo run` and try `#open <mud-ip> <port>`
 
 **"How do I test my changes?"**
-→ `cargo test` + manual `cargo run` smoke test
+→ `cargo test` (57 unit + 2 integration tests) + manual MUD connection
 
-**"What if I need to validate a risky pattern?"**
-→ Build a toy in `toys/toyN_name/` with SPEC/PLAN/LEARNINGS
+**"Is the event loop done?"**
+→ YES! See `src/main.rs:147-290` (poll-based I/O, full pipeline wired)
 
-**"How do plugins work?"**
-→ See `src/plugins/CODE_MAP.md` + `toys/toy4_python/` and `toys/toy5_perl/`
+**"Are plugins working?"**
+→ YES! Build with `--features python` or `--features perl`, hooks implemented
+
+**"How do I test headless mode?"**
+→ `cargo run --headless --instance test`, then connect to `~/.mcl/control/test.sock`
+
+**"What's left to do?"**
+→ Validation: Connect to real MUD, test with Perl bot, find/fix edge case bugs
 
 **"What's the MVP definition?"**
 → Client connects to MUD, sends/receives text, Perl bot can automate via headless mode
+→ **Status**: Implementation complete, awaiting validation ✅
 
 ---
 
