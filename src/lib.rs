@@ -27,3 +27,6 @@ pub mod tty;
 pub mod curses;
 pub mod input;
 pub mod offline_mud;
+pub mod alias;
+pub mod action;
+pub mod macro_def;

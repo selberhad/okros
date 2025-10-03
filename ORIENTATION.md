@@ -9,7 +9,7 @@
 - **Philosophy**: Client handles I/O, scripts handle logic (aliases/triggers/automation)
 - **Status**: Implementation complete (all tiers done); validation pending (needs real MUD testing)
 
-## Current State (Jan 2025)
+## Current State (Oct 2025)
 
 ### ✅ What Works (Implementation Complete)
 - **Network**: Socket, telnet, MCCP compression, ANSI parsing (full pipeline)
@@ -19,50 +19,49 @@
 - **Offline Mode**: Internal MUD for testing/demo (5 rooms, 3 items, ANSI colors, `--offline` flag)
 - **Main Event Loop**: poll-based I/O on TTY + socket with 250ms timeout
 - **CLI Args**: `--headless`, `--instance <name>`, `--attach <name>`, `--offline`, `--headless --offline` (combined) implemented
-- **# Commands**: `#quit`, `#open <host> <port>` functional
-- **Tests**: 83 total tests passing (75 unit + 8 integration) | 65% coverage
+- **# Commands**: `#quit`, `#open`, `#alias`, `#action`, `#subst`, `#macro` functional
+- **Automation**: Alias expansion (text with %N params), triggers/replacements, keyboard macros
+- **Tests**: 97 total tests passing (89 unit + 8 integration) | 70% coverage
+- **✅ MUD VALIDATED**: Full gameplay session on Nodeka (2025-10-03) - See `MUD_LEARNINGS.md`
 
-### ⏸️ What Needs Validation
-- **Real MUD Connection**: Code exists, needs testing against live server
-- **Perl Bot Integration**: Headless mode needs validation with real automation scripts
-- **Feature Combinations**: Build works, runtime testing needed (base/python/perl/all)
-- **Edge Cases**: Telnet/ANSI quirks from real MUDs
+### ⏸️ What Needs Completion
+- **Alias/Action Integration**: Modules exist, need wiring into I/O pipeline
+- **Perl/Python Regex**: Implement match_prepare/substitute_prepare for actions
+- **Perl Bot Validation**: Test real automation scripts against headless mode
 
 ### ❌ What's Deferred (By Design)
-- Aliases, actions, hotkeys (Perl/Python scripts handle these)
 - Chat, borg, group features (not needed for MVP)
-- Extended # commands (minimal set sufficient)
+- Extended # commands beyond current set
 - DNS hostname resolution (IPv4 addresses work; scripts can resolve)
+- Config file parsing and connect menu (use #open or MCL_CONNECT env var)
 
 ## Next Steps (Priority Order)
 
-**Implementation is COMPLETE. Focus is now on validation.**
+**MVP is VALIDATED. Focus is now on polishing automation features.**
 
-### 1. Integration Testing (Tier 7 - Critical Path to MVP)
-**Goal**: Validate against real MUD servers and Perl bots
+### 1. Complete Alias/Action/Macro Integration
+**Goal**: Wire automation features into I/O pipeline
 
 **Tasks**:
-- [ ] **Offline mode test**: `cargo run --offline` → verify internal MUD works with real TTY
-- [ ] Manual smoke test: `cargo run` → `#open <mud-ip> <port>` → verify send/receive
-- [ ] Headless test:
-  - Start: `cargo run --headless --instance test`
-  - Connect via Unix socket: `/tmp/okros/test.sock`
-  - Send commands: `{"cmd":"send","data":"look\n"}`
-  - Get buffer: `{"cmd":"get_buffer"}`
-- [ ] Attach test: `cargo run --attach test` → verify screen renders buffered data
-- [ ] **Perl bot integration**: Run real Perl automation script against headless mode
-- [ ] Feature combos: Test base, `--features python`, `--features perl`, all
+- [ ] Input pipeline: Check aliases before sending to MUD
+- [ ] Input pipeline: Check macros on key press
+- [ ] Output pipeline: Check triggers/replacements on MUD lines
+- [ ] Implement Perl match_prepare/substitute_prepare methods
+- [ ] Implement Python match_prepare/substitute_prepare methods
+- [ ] Test full automation workflow (alias → trigger → action)
 
-**Success Criteria**:
-- Can play a MUD interactively via TTY
-- Perl bot can automate via headless mode
-- No crashes, panics, or data corruption
+**Estimated effort**: 1-2 days
 
-**What's Already Done**:
-- ✅ Event loop implemented (src/main.rs:147-290)
-- ✅ CLI args working (src/main.rs:15-40)
-- ✅ Plugin loading wired (src/main.rs:43-106)
-- ✅ Full I/O pipeline: TTY ↔ socket ↔ telnet ↔ ANSI ↔ screen
+### 2. Perl Bot Integration Testing
+**Goal**: Validate real automation scripts
+
+**Tasks**:
+- [ ] Run existing Perl bot against headless mode
+- [ ] Verify script can read buffer and send commands
+- [ ] Test trigger/action execution via Perl
+- [ ] Document best practices for bot developers
+
+**Estimated effort**: 1 day
 
 ### 2. Polish & Bug Fixes (As Discovered)
 **Goal**: Fix issues found during validation

@@ -1,3 +1,5 @@
+use std::any::Any;
+
 pub trait Interpreter {
     fn run(&mut self, function: &str, arg: &str, out: &mut String) -> bool;
     fn run_quietly(&mut self, function: &str, arg: &str, out: &mut String, _suppress_error: bool) -> bool {
@@ -9,6 +11,11 @@ pub trait Interpreter {
     fn set_str(&mut self, _var: &str, _val: &str) {}
     fn get_int(&mut self, _name: &str) -> i64 { 0 }
     fn get_str(&mut self, _name: &str) -> String { String::new() }
+
+    // Regex support for actions/triggers (C++ EmbeddedInterpreter::match_prepare/substitute_prepare)
+    fn match_prepare(&mut self, _pattern: &str, _commands: &str) -> Option<Box<dyn Any>> { None }
+    fn substitute_prepare(&mut self, _pattern: &str, _replacement: &str) -> Option<Box<dyn Any>> { None }
+    fn match_exec(&mut self, _compiled: &dyn Any, _text: &str) -> Option<String> { None }
 }
 
 pub struct StackedInterpreter<I: Interpreter> {

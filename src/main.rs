@@ -140,6 +140,8 @@ fn main() {
 
     // Simple demo loop: read stdin nonblocking, normalize keys, print them; quit on 'q'
     unsafe { let _ = fcntl(libc::STDIN_FILENO, F_SETFL, O_NONBLOCK); }
+    // MUD instance (contains socket + aliases/actions/macros)
+    let mut mud = okros::mud::Mud::new();
     // Optional: try to connect if MCL_CONNECT=127.0.0.1:PORT is set
     let mut sock: Option<Socket> = None;
     if let Ok(addr) = std::env::var("MCL_CONNECT") {
@@ -205,6 +207,67 @@ fn main() {
                                             }
                                         } else {
                                             status.set_text("Usage: #open <ip> <port>");
+                                        }
+                                    } else if line.starts_with(b"#alias ") {
+                                        // #alias <name> <expansion>
+                                        let args = String::from_utf8_lossy(&line[7..]).trim().to_string();
+                                        if let Some((name, text)) = args.split_once(' ') {
+                                            use okros::alias::Alias;
+                                            if let Some(pos) = mud.alias_list.iter().position(|a| a.name == name) {
+                                                mud.alias_list[pos] = Alias::new(name, text);
+                                                status.set_text(format!("Updated alias '{}' = {}", name, text));
+                                            } else {
+                                                mud.alias_list.push(Alias::new(name, text));
+                                                status.set_text(format!("Added alias '{}' = {}", name, text));
+                                            }
+                                        } else if !args.is_empty() {
+                                            // Remove alias
+                                            mud.alias_list.retain(|a| a.name != args);
+                                            status.set_text(format!("Removed alias '{}'", args));
+                                        } else {
+                                            status.set_text("Usage: #alias <name> <expansion>");
+                                        }
+                                    } else if line.starts_with(b"#action ") {
+                                        // #action <pattern> <commands>
+                                        let args = String::from_utf8_lossy(&line[8..]).trim().to_string();
+                                        use okros::action::{Action, ActionType};
+                                        match Action::parse(&args, ActionType::Trigger) {
+                                            Ok(action) => {
+                                                mud.action_list.retain(|a| a.pattern != action.pattern);
+                                                status.set_text(format!("Added trigger: {} => {}", action.pattern, action.commands));
+                                                mud.action_list.push(action);
+                                            }
+                                            Err(e) => status.set_text(e),
+                                        }
+                                    } else if line.starts_with(b"#subst ") {
+                                        // #subst <pattern> <replacement>
+                                        let args = String::from_utf8_lossy(&line[7..]).trim().to_string();
+                                        use okros::action::{Action, ActionType};
+                                        match Action::parse(&args, ActionType::Replacement) {
+                                            Ok(action) => {
+                                                mud.action_list.retain(|a| a.pattern != action.pattern);
+                                                status.set_text(format!("Added substitute: {} => {}", action.pattern, action.commands));
+                                                mud.action_list.push(action);
+                                            }
+                                            Err(e) => status.set_text(e),
+                                        }
+                                    } else if line.starts_with(b"#macro ") {
+                                        // #macro <keyname> <text>
+                                        let args = String::from_utf8_lossy(&line[7..]).trim().to_string();
+                                        if let Some((key_name, text)) = args.split_once(' ') {
+                                            // For now, just use ASCII value as key code
+                                            // TODO: implement key_lookup() like C++ for named keys (F1, etc.)
+                                            if let Some(ch) = key_name.chars().next() {
+                                                use okros::macro_def::Macro;
+                                                let key = ch as i32;
+                                                mud.macro_list.retain(|m| m.key != key);
+                                                mud.macro_list.push(Macro::new(key, text));
+                                                status.set_text(format!("Added macro: {} => {}", key_name, text));
+                                            } else {
+                                                status.set_text("Invalid key name");
+                                            }
+                                        } else {
+                                            status.set_text("Usage: #macro <key> <text>");
                                         }
                                     } else if line.starts_with(b"#") {
                                         // Other # commands - just echo for now

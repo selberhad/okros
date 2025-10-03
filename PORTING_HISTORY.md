@@ -96,20 +96,22 @@ Port MCL C++ codebase to Rust, applying patterns from Discovery phase. **Use Rus
 
 **Milestone**: Logic layer compiles, base interpreter interface ready
 
-**Current Status** (Session/Engine Complete, Client-Side Logic Deferred):
+**Current Status** (Session/Engine Complete, Automation Features Partially Complete):
 - ✅ `src/session.rs` — Wires MCCP → telnet → ANSI → scrollback with pipeline tests
 - ✅ `src/plugins/stack.rs` — Stacked interpreter with ordering, disable/enable, run_quietly, set/get (Toy 11 patterns)
 - ✅ `src/engine.rs` — Headless SessionEngine with viewport and attach/detach hooks
 - ✅ `src/control.rs` — Unix socket control server with JSON Lines protocol
-- ⏸️  `src/alias.rs` — DEFERRED (Perl/Python handles this)
-- ⏸️  `src/hotkey.rs` — DEFERRED (Perl/Python handles this)
-- ⏸️  `src/interpreter.rs` — DEFERRED (minimal # commands only for MVP)
-- ⏸️  `src/pipe.rs` — DEFERRED (not needed for MVP)
+- ✅ `src/alias.rs` — Text expansion with %N parameters (%1, %-2, %+3), # command wired
+- ✅ `src/action.rs` — Trigger/replacement/gag with regex (via Perl/Python), # commands wired
+- ✅ `src/macro_def.rs` — Keyboard shortcuts, # command wired
+- ✅ `src/mud.rs` — Extended with alias/action/macro storage and lookup methods
+- ✅ Interpreter trait — Extended with match_prepare/substitute_prepare/match_exec for regex support
+- ⏸️  Pipeline integration — Modules exist, need wiring into input/output flow
 - ❌ `src/chat.rs` — SKIP (niche feature)
 - ❌ `src/borg.rs` — SKIP (privacy concern)
 - ❌ `src/group.rs` — SKIP (post-MVP feature)
 
-**MVP Philosophy**: Client is a transport layer. Perl/Python scripts handle command logic.
+**Philosophy Evolution**: Simple automation (aliases, triggers, macros) now included for convenience. Complex logic still deferred to Perl/Python scripts.
 
 ---
 

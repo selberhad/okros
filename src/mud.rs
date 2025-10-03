@@ -1,5 +1,8 @@
 use crate::socket::{Socket, ConnState};
 use crate::config::Config;
+use crate::alias::Alias;
+use crate::action::Action;
+use crate::macro_def::Macro;
 use std::io;
 use std::net::Ipv4Addr;
 
@@ -7,10 +10,31 @@ use std::net::Ipv4Addr;
 pub struct Mud {
     pub sock: Option<Socket>,
     pub state: ConnState,
+    pub alias_list: Vec<Alias>,
+    pub action_list: Vec<Action>,
+    pub macro_list: Vec<Macro>,
 }
 
 impl Mud {
-    pub fn new() -> Self { Self{ sock: None, state: ConnState::Idle } }
+    pub fn new() -> Self {
+        Self {
+            sock: None,
+            state: ConnState::Idle,
+            alias_list: Vec::new(),
+            action_list: Vec::new(),
+            macro_list: Vec::new(),
+        }
+    }
+
+    /// Find alias by name
+    pub fn find_alias(&self, name: &str) -> Option<&Alias> {
+        self.alias_list.iter().find(|a| a.name == name)
+    }
+
+    /// Find macro by key code
+    pub fn find_macro(&self, key: i32) -> Option<&Macro> {
+        self.macro_list.iter().find(|m| m.key == key)
+    }
     pub fn connect_from_config(&mut self, cfg: &Config) -> io::Result<()> {
         if let Some((ip, port)) = &cfg.server {
             let mut s = Socket::new()?;
