@@ -1,0 +1,21 @@
+[package]
+name = "toy2_ncurses"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "ncurses_test"
+path = "src/ncurses_test.rs"
+
+[[bin]]
+name = "pancurses_test"
+path = "src/pancurses_test.rs"
+
+[[bin]]
+name = "complete_test"
+path = "src/complete_test.rs"
+
+[dependencies]
+ncurses = "5.101"
+pancurses = "0.17"
+libc = "0.2"
