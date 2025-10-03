@@ -12,7 +12,7 @@ use libc::{fcntl, F_SETFL, O_NONBLOCK};
 use std::net::Ipv4Addr;
 
 fn main() {
-    // CLI: --headless --instance NAME | --attach NAME
+    // CLI: --headless --instance NAME | --attach NAME | --offline
     let args: Vec<String> = std::env::args().collect();
     if args.len() > 2 && args[1] == "--headless" {
         let inst = args.get(3).cloned().unwrap_or_else(|| "default".to_string());
@@ -36,6 +36,10 @@ fn main() {
             }
             Err(e) => { eprintln!("attach failed: {}", e); }
         }
+        return;
+    } else if args.len() > 1 && args[1] == "--offline" {
+        // Offline mode: internal MUD
+        run_offline_mode();
         return;
     }
     println!("MCL Rust Port scaffold initialized.");
@@ -290,6 +294,106 @@ fn main() {
     }
 
     // Restore keypad mode will be handled by Drop, but be explicit
+    let _ = tty.keypad_application_mode(false);
+}
+
+fn run_offline_mode() {
+    use okros::offline_mud::{World, parse};
+
+    // Initialize internal MUD
+    let mut world = World::new();
+
+    // Set up TTY
+    let mut tty = match okros::tty::Tty::new() {
+        Ok(t) => t,
+        Err(e) => {
+            eprintln!("tty init failed: {}", e);
+            return;
+        }
+    };
+    let _ = tty.enable_raw();
+    let _ = tty.keypad_application_mode(true);
+
+    // UI setup
+    let width = 80usize;
+    let height = 24usize;
+    let caps = get_acs_caps();
+    let mut prev = vec![0u16; width*height];
+    let mut cur = prev.clone();
+
+    // Session for processing output
+    let mut session = Session::new(PassthroughDecomp::new(), width, height.saturating_sub(2), 200);
+    // Input line
+    let mut input = okros::input_line::InputLine::new(width, 0x07);
+    // Status line
+    let mut status = okros::status_line::StatusLine::new(width, 0x07);
+    status.set_text("Internal MUD - type 'help' for commands, 'quit' to exit");
+
+    // Show initial room
+    let look_output = world.execute(parse("look").unwrap());
+    session.feed(look_output.as_bytes());
+
+    // Set stdin nonblocking
+    unsafe { let _ = fcntl(libc::STDIN_FILENO, F_SETFL, O_NONBLOCK); }
+
+    let mut dec = KeyDecoder::new();
+    let mut buf = [0u8; 1024];
+    let mut quit = false;
+
+    // Main event loop for offline mode
+    while !quit {
+        // Render UI
+        render_surface(width, height, &mut prev, &mut cur, &session, &input, &status, &caps);
+
+        // Poll stdin with 250ms timeout
+        let fds = vec![(libc::STDIN_FILENO, READ)];
+        let ready = poll_fds(&fds, 250).unwrap_or_default();
+
+        // Process input
+        for (fd, r) in ready {
+            if fd == libc::STDIN_FILENO && (r.revents & READ) != 0 {
+                if let Ok(n) = io::stdin().read(&mut buf) { if n > 0 {
+                    for ev in dec.feed(&buf[..n]) {
+                        match ev {
+                            KeyEvent::Byte(b'\n') => {
+                                let line = input.take_line();
+                                if !line.is_empty() {
+                                    let cmd_str = String::from_utf8_lossy(&line).to_string();
+
+                                    // Parse and execute MUD command
+                                    match parse(&cmd_str) {
+                                        Ok(cmd) => {
+                                            // Check for quit command
+                                            if matches!(cmd, okros::offline_mud::parser::Command::Quit) {
+                                                quit = true;
+                                            }
+                                            let output = world.execute(cmd);
+                                            session.feed(output.as_bytes());
+                                        }
+                                        Err(e) => {
+                                            // Parse error - show in red
+                                            let err_msg = format!("\x1b[31m{}\x1b[0m\n", e);
+                                            session.feed(err_msg.as_bytes());
+                                        }
+                                    }
+                                }
+                            }
+                            KeyEvent::Byte(b) if b.is_ascii_graphic() || b==b' ' => input.insert(b),
+                            KeyEvent::Key(KeyCode::ArrowLeft) => input.move_left(),
+                            KeyEvent::Key(KeyCode::ArrowRight) => input.move_right(),
+                            KeyEvent::Key(KeyCode::Home) => input.home(),
+                            KeyEvent::Key(KeyCode::End) => input.end(),
+                            KeyEvent::Key(KeyCode::Delete) => input.backspace(),
+                            KeyEvent::Byte(0x7f) | KeyEvent::Byte(0x08) => input.backspace(),
+                            _ => {}
+                        }
+                    }
+                }}
+            }
+        }
+    }
+
+    // Restore keypad mode
     let _ = tty.keypad_application_mode(false);
 }
 

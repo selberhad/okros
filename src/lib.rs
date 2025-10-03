@@ -26,3 +26,4 @@ pub mod session;
 pub mod tty;
 pub mod curses;
 pub mod input;
+pub mod offline_mud;
