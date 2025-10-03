@@ -1,13 +1,13 @@
 # Test Coverage Report
 
-**Last Updated**: 2025-10-03 08:13
+**Last Updated**: 2025-10-03 08:18
 **Tool**: cargo-llvm-cov
-**Overall Coverage**: **64.39%** lines | **68.68%** regions | **76.05%** functions
+**Overall Coverage**: **65.33%** lines | **69.22%** regions | **77.26%** functions
 
 ## Summary
 
 ```
-TOTAL                            5607              1756    68.68%         334                80    76.05%        2280               812    64.39%           0                 0         -
+TOTAL                            5679              1748    69.22%         343                78    77.26%        2316               803    65.33%           0                 0         -
 ```
 
 ## Coverage by Module
@@ -15,7 +15,7 @@ TOTAL                            5607              1756    68.68%         334   
 | Module | Line Coverage | Region Coverage | Functions | Status |
 |--------|--------------|-----------------|-----------|--------|
 | `action.rs` | 65.96% | 66.67% | 69.23% | 🟠 Moderate |
-| `alias.rs` | 88.46% | 91.82% | 100.00% | 🟡 Good |
+| `alias.rs` | 93.98% | 94.52% | 100.00% | 🟢 Excellent |
 | `ansi.rs` | 94.37% | 90.45% | 100.00% | 🟢 Excellent |
 | `config.rs` | 90.00% | 87.50% | 71.43% | 🟢 Excellent |
 | `control.rs` | 39.10% | 33.43% | 46.67% | 🔴 Needs Work |
@@ -26,7 +26,7 @@ TOTAL                            5607              1756    68.68%         334   
 | `macro_def.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
 | `main.rs` | 0.00% | 0.00% | 0.00% | 🔴 Needs Work |
 | `mccp.rs` | 83.33% | 74.85% | 73.33% | 🟡 Good |
-| `mud.rs` | 73.53% | 73.21% | 42.86% | 🟡 Good |
+| `mud.rs` | 85.29% | 83.93% | 71.43% | 🟡 Good |
 | `offline_mud/game.rs` | 96.61% | 95.88% | 96.55% | 🟢 Excellent |
 | `offline_mud/parser.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
 | `output_window.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
@@ -45,6 +45,7 @@ TOTAL                            5607              1756    68.68%         334   
 ## Coverage Tiers
 
 ### 🟢 Excellent (≥90% lines)
+- `alias.rs` - 93.98%
 - `ansi.rs` - 94.37%
 - `config.rs` - 90.00%
 - `input.rs` - 92.50%
@@ -61,10 +62,9 @@ TOTAL                            5607              1756    68.68%         334   
 - `telnet.rs` - 100.00%
 
 ### 🟡 Good (70-89% lines)
-- `alias.rs` - 88.46%
 - `input_line.rs` - 88.46%
 - `mccp.rs` - 83.33%
-- `mud.rs` - 73.53%
+- `mud.rs` - 85.29%
 - `plugins/stack.rs` - 78.26%
 - `session.rs` - 89.47%
 - `window.rs` - 89.19%
@@ -83,7 +83,7 @@ TOTAL                            5607              1756    68.68%         334   
 
 | Tier | Target | Current | Status |
 |------|--------|---------|--------|
-| Overall | ≥80% | 64.39% | ⏳ In Progress |
+| Overall | ≥80% | 65.33% | ⏳ In Progress |
 | Critical Paths | ≥95% | Check modules above | ✅ Met |
 | New Modules | ≥80% | - | Policy |
 

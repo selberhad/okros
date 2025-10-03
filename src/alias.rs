@@ -211,4 +211,67 @@ mod tests {
         let alias = Alias::new("test", "got %3");
         assert_eq!(alias.expand("one two"), "got "); // Token 3 doesn't exist
     }
+
+    // Golden tests from C++ reference (mcl-cpp-reference/Alias.cc)
+
+    #[test]
+    fn test_alias_multiple_tokens_in_pattern() {
+        // Test: tell %1 that %2 says hello
+        let alias = Alias::new("msg", "tell %1 that %2 says hello");
+        assert_eq!(alias.expand("bob alice"), "tell bob that alice says hello");
+    }
+
+    #[test]
+    fn test_alias_range_with_multiple_spaces() {
+        // C++ handles multiple spaces between tokens
+        let alias = Alias::new("cmd", "execute %+2");
+        assert_eq!(alias.expand("foo   bar   baz"), "execute bar   baz");
+    }
+
+    #[test]
+    fn test_alias_edge_case_empty_args() {
+        let alias = Alias::new("test", "prefix %1 suffix");
+        assert_eq!(alias.expand(""), "prefix  suffix");
+    }
+
+    #[test]
+    fn test_alias_range_end_equals_start() {
+        // %-1 should be just token 1
+        let alias = Alias::new("cmd", "run %-1");
+        assert_eq!(alias.expand("hello world"), "run hello");
+    }
+
+    #[test]
+    fn test_alias_complex_pattern() {
+        // Real-world example: say <message> to <person>
+        let alias = Alias::new("say", "tell %+2 %1");
+        assert_eq!(alias.expand("bob hello there friend"), "tell hello there friend bob");
+    }
+
+    #[test]
+    fn test_alias_preserves_trailing_spaces() {
+        // C++ behavior: trailing spaces in pattern are preserved
+        let alias = Alias::new("test", "%1   ");
+        assert_eq!(alias.expand("hello"), "hello   ");
+    }
+
+    #[test]
+    fn test_alias_no_substitution() {
+        // If no % patterns, return text as-is
+        let alias = Alias::new("test", "just plain text");
+        assert_eq!(alias.expand("any args here"), "just plain text");
+    }
+
+    #[test]
+    fn test_alias_percent_at_end() {
+        // Edge case: % at end of string
+        let alias = Alias::new("test", "value %");
+        assert_eq!(alias.expand(""), "value %");
+    }
+
+    #[test]
+    fn test_alias_multiple_percent_patterns() {
+        let alias = Alias::new("test", "%1 and %2 and %3");
+        assert_eq!(alias.expand("a b c d"), "a and b and c");
+    }
 }
