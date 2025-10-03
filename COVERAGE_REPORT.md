@@ -1,13 +1,13 @@
 # Test Coverage Report
 
-**Last Updated**: 2025-10-03 04:03
+**Last Updated**: 2025-10-03 04:23
 **Tool**: cargo-llvm-cov
-**Overall Coverage**: **65.88%** lines | **71.16%** regions | **78.28%** functions
+**Overall Coverage**: **65.87%** lines | **71.06%** regions | **78.35%** functions
 
 ## Summary
 
 ```
-TOTAL                            4809              1387    71.16%         290                63    78.28%        1858               634    65.88%           0                 0         -
+TOTAL                            4834              1399    71.06%         291                63    78.35%        1872               639    65.87%           0                 0         -
 ```
 
 ## Coverage by Module
@@ -16,9 +16,9 @@ TOTAL                            4809              1387    71.16%         290   
 |--------|--------------|-----------------|-----------|--------|
 | `ansi.rs` | 95.65% | 90.32% | 100.00% | 🟢 Excellent |
 | `config.rs` | 90.00% | 87.50% | 71.43% | 🟢 Excellent |
-| `control.rs` | 40.27% | 34.49% | 46.67% | 🟠 Moderate |
+| `control.rs` | 39.74% | 34.20% | 46.67% | 🔴 Needs Work |
 | `curses.rs` | 18.56% | 13.55% | 40.00% | 🔴 Needs Work |
-| `engine.rs` | 84.62% | 85.05% | 93.33% | 🟡 Good |
+| `engine.rs` | 84.21% | 84.16% | 93.33% | 🟡 Good |
 | `input_line.rs` | 88.46% | 84.21% | 75.00% | 🟡 Good |
 | `input.rs` | 92.50% | 87.03% | 100.00% | 🟢 Excellent |
 | `main.rs` | 0.00% | 0.00% | 0.00% | 🔴 Needs Work |
@@ -32,7 +32,7 @@ TOTAL                            4809              1387    71.16%         290   
 | `scrollback.rs` | 100.00% | 99.31% | 100.00% | 🟢 Excellent |
 | `select.rs` | 100.00% | 96.61% | 100.00% | 🟢 Excellent |
 | `selectable.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
-| `session.rs` | 96.15% | 91.43% | 80.00% | 🟢 Excellent |
+| `session.rs` | 91.18% | 85.71% | 83.33% | 🟢 Excellent |
 | `socket.rs` | 92.86% | 92.35% | 100.00% | 🟢 Excellent |
 | `status_line.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
 | `telnet.rs` | 100.00% | 99.02% | 100.00% | 🟢 Excellent |
@@ -53,22 +53,22 @@ TOTAL                            4809              1387    71.16%         290   
 - `scrollback.rs` - 100.00%
 - `select.rs` - 100.00%
 - `selectable.rs` - 100.00%
-- `session.rs` - 96.15%
+- `session.rs` - 91.18%
 - `socket.rs` - 92.86%
 - `status_line.rs` - 100.00%
 - `telnet.rs` - 100.00%
 
 ### 🟡 Good (70-89% lines)
-- `engine.rs` - 84.62%
+- `engine.rs` - 84.21%
 - `input_line.rs` - 88.46%
 - `mccp.rs` - 83.33%
 - `plugins/stack.rs` - 80.90%
 - `window.rs` - 89.19%
 
 ### 🟠 Moderate (40-69% lines)
-- `control.rs` - 40.27%
 
 ### 🔴 Needs Work (<40% lines)
+- `control.rs` - 39.74%
 - `curses.rs` - 18.56% (ncurses FFI - TTY dependent)
 - `main.rs` - 0.00% (event loop - needs integration tests)
 - `tty.rs` - 34.15% (requires real TTY)
@@ -77,7 +77,7 @@ TOTAL                            4809              1387    71.16%         290   
 
 | Tier | Target | Current | Status |
 |------|--------|---------|--------|
-| Overall | ≥80% | 65.88% | ⏳ In Progress |
+| Overall | ≥80% | 65.87% | ⏳ In Progress |
 | Critical Paths | ≥95% | Check modules above | ✅ Met |
 | New Modules | ≥80% | - | Policy |
 

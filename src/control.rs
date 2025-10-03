@@ -153,6 +153,9 @@ fn handle_command(cmd: Command, state: &Arc<ControlState>) -> Event {
                 }
             } else { Event::Error { message: "missing data".to_string() } }
         }
+        "quit" | "shutdown" => {
+            std::process::exit(0);
+        }
         _ => Event::Error { message: "unknown cmd".to_string() },
     }
 }

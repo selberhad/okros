@@ -53,6 +53,7 @@ All commands are JSON Lines format (one JSON object per line).
 | `attach` | (none) | Attach to session (for multi-agent) |
 | `detach` | (none) | Detach from session |
 | `stream` | `interval_ms: 200` | Stream live output (blocking) |
+| `quit` / `shutdown` | (none) | Gracefully shutdown headless daemon |
 
 ### Responses
 

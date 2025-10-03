@@ -23,7 +23,8 @@ impl<D: Decompressor> Session<D> {
         while self.decomp.pending() {
             let out = self.decomp.take_output();
             self.telnet.feed(&out);
-            self.prompt_events += self.telnet.drain_prompt_events();
+            let prompt_count = self.telnet.drain_prompt_events();
+            self.prompt_events += prompt_count;
             let app = self.telnet.take_app_out();
             for ev in self.ansi.feed(&app) {
                 match ev {
@@ -32,10 +33,20 @@ impl<D: Decompressor> Session<D> {
                     AnsiEvent::Text(b) => self.line_buf.push(b),
                 }
             }
+            // Flush line_buf on prompt events (GA/EOR) - prompts don't have trailing newlines
+            if prompt_count > 0 && !self.line_buf.is_empty() {
+                self.scrollback.print_line(&self.line_buf, self.cur_color);
+                self.line_buf.clear();
+            }
         }
     }
 
     pub fn drain_prompt_events(&mut self) -> usize { let n = self.prompt_events; self.prompt_events = 0; n }
+
+    /// Get current incomplete line (not yet terminated by newline or prompt event)
+    pub fn current_line(&self) -> &[u8] {
+        &self.line_buf
+    }
 }
 
 #[cfg(test)]

@@ -84,6 +84,12 @@ impl<D: Decompressor> SessionEngine<D> {
         // Advance cursor to current position
         *self.read_cursor.borrow_mut() = total_lines_written;
 
+        // Include current incomplete line if it exists (for prompts without newlines/GA/EOR)
+        let current = self.session.current_line();
+        if !current.is_empty() {
+            out.push(String::from_utf8_lossy(current).to_string());
+        }
+
         out
     }
 
