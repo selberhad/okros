@@ -137,6 +137,81 @@ impl TelnetParser {
     }
 }
 
+// ANSI SGR → attrib color converter
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AnsiEvent {
+    Text(u8),
+    SetColor(u8),
+}
+
+fn ansi_to_internal(idx: u8) -> u8 {
+    match idx & 0x07 { 0=>0, 1=>4, 2=>2, 3=>6, 4=>1, 5=>5, 6=>3, _=>7 }
+}
+
+pub struct AnsiConverter {
+    buf: Vec<u8>,
+    in_csi: bool,
+    cur_fg: u8,
+    cur_bg: u8,
+    bold: bool,
+}
+
+impl Default for AnsiConverter {
+    fn default() -> Self { Self{ buf: Vec::new(), in_csi: false, cur_fg: 7, cur_bg: 0, bold: false } }
+}
+
+impl AnsiConverter {
+    pub fn new() -> Self { Self::default() }
+    pub fn feed(&mut self, bytes: &[u8]) -> Vec<AnsiEvent> {
+        let mut out = Vec::new();
+        let mut i = 0usize;
+        while i < bytes.len() {
+            let b = bytes[i];
+            if !self.in_csi {
+                if b == 0x1B { // ESC
+                    self.in_csi = true;
+                    self.buf.clear();
+                    i += 1; continue;
+                } else {
+                    out.push(AnsiEvent::Text(b)); i+=1; continue;
+                }
+            } else {
+                // Expect '[' then params then 'm'
+                if self.buf.is_empty() {
+                    if b != b'[' { // not SGR, cancel
+                        self.in_csi = false; continue;
+                    } else { self.buf.push(b); i+=1; continue; }
+                } else {
+                    self.buf.push(b); i+=1;
+                    if b == b'm' {
+                        // parse params excluding initial '[' and final 'm'
+                        let params_str = std::str::from_utf8(&self.buf[1..self.buf.len()-1]).unwrap_or("");
+                        let mut new_fg = self.cur_fg; let mut new_bg = self.cur_bg; let mut new_bold = self.bold;
+                        for part in params_str.split(';').filter(|s| !s.is_empty()) {
+                            if let Ok(n) = part.parse::<u32>() {
+                                match n {
+                                    0 => { new_bold=false; new_fg=7; new_bg=0; }
+                                    1 => { new_bold=true; }
+                                    30..=37 => { new_fg = ansi_to_internal((n as u8)-30); }
+                                    40..=47 => { new_bg = ansi_to_internal((n as u8)-40); }
+                                    _ => {}
+                                }
+                            }
+                        }
+                        self.cur_fg = new_fg; self.cur_bg = new_bg; self.bold = new_bold;
+                        let mut color: u8 = (self.cur_bg << 4) | (self.cur_fg & 0x0F);
+                        if self.bold { color |= 1<<7; }
+                        out.push(AnsiEvent::SetColor(color));
+                        self.in_csi = false; self.buf.clear();
+                    }
+                    continue;
+                }
+            }
+        }
+        out
+    }
+}
+
 // Phase B scaffold: MCCP decompression interface and pipeline
 
 pub trait Decompressor {
@@ -328,6 +403,10 @@ pub struct MccpInflate {
 impl MccpInflate {
     pub fn new() -> Self {
         Self { residual: Vec::new(), out: Vec::new(), responses: Vec::new(), got_v2: false, compressing: false, error: false, comp_bytes: 0, uncomp_bytes: 0, decompressor: None }
+    }
+    pub fn stats(&self) -> (usize, usize) { (self.comp_bytes, self.uncomp_bytes) }
+    pub fn version(&self) -> u8 {
+        if self.decompressor.is_none() && !self.compressing { 0 } else if self.got_v2 { 2 } else { 1 }
     }
 }
 
@@ -652,6 +731,56 @@ mod tests {
         // Further bytes should not be forwarded
         pl.feed(b"after");
         assert!(pl.telnet.take_app_out().is_empty());
+    }
+
+    #[test]
+    #[cfg(feature = "real_mccp")]
+    fn real_mccp_stats_and_version() {
+        let mut pl = Pipeline::new(MccpInflate::new());
+        pl.feed(&[IAC, WILL, TELOPT_COMPRESS2]);
+        let _ = pl.drain_decomp_responses();
+        pl.feed(&[IAC, SB, TELOPT_COMPRESS2, IAC, SE]);
+        // During compression, version should be 2
+        assert_eq!(pl.decomp.version(), 2);
+        let payload = compress_bytes(b"stat");
+        pl.feed(&payload);
+        assert_eq!(pl.telnet.take_app_out(), b"stat");
+        let (comp, uncomp) = pl.decomp.stats();
+        assert!(comp > 0);
+        assert_eq!(uncomp, 4);
+        // After EOS, version may be 0
+        assert!(matches!(pl.decomp.version(), 0|2));
+    }
+
+    #[test]
+    fn ansi_sgr_basic_and_fragmentation() {
+        let mut ac = AnsiConverter::new();
+        // Basic color set: ESC[31m
+        let mut ev = ac.feed(b"A ");
+        ev.extend(ac.feed(&[0x1B]));
+        ev.extend(ac.feed(b"[31m"));
+        ev.extend(ac.feed(b"B"));
+        // Expect Text('A'), Text(' '), SetColor(color for fg=red, bg=black, no bold), Text('B')
+        assert!(matches!(ev[0], AnsiEvent::Text(b'A')));
+        assert!(matches!(ev[1], AnsiEvent::Text(b' ')));
+        let c = match ev[2] { AnsiEvent::SetColor(c)=>c, _=>0 };
+        // red=ANSI 31 -> internal fg=4 via inverse map; bg=0
+        assert_eq!(c & 0x0F, 4);
+        assert_eq!((c & 0xF0)>>4, 0);
+        assert!(matches!(ev[3], AnsiEvent::Text(b'B')));
+
+        // Bold + bg + fg, then reset
+        let mut ac = AnsiConverter::new();
+        let ev2 = ac.feed(b"\x1b[1;44;33mZ\x1b[0m");
+        // First event should be SetColor with bold, bg=blue(4->1 internal?), fg=yellow(3->6 internal?)
+        if let AnsiEvent::SetColor(col) = ev2[0] {
+            assert_eq!((col & 0x80) != 0, true);
+            assert_eq!(((col & 0x70)>>4), 1); // blue ANSI 44 -> internal 1
+            assert_eq!(col & 0x0F, 6); // yellow ANSI 33 -> internal 6
+        } else { panic!("expected SetColor"); }
+        // Then Text('Z') then SetColor(reset white on black)
+        assert!(matches!(ev2[1], AnsiEvent::Text(b'Z')));
+        if let AnsiEvent::SetColor(col) = ev2[2] { assert_eq!(col & 0x0F, 7); assert_eq!((col & 0xF0)>>4, 0); assert_eq!(col & 0x80, 0);} else { panic!("expected reset SetColor"); }
     }
 
     #[test]
