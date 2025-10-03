@@ -90,20 +90,20 @@ Port MCL C++ codebase to Rust, applying patterns from Discovery phase. **Use Rus
 
 **Milestone**: Logic layer compiles, base interpreter interface ready
 
-**Current Status** (Session/Engine Complete, Command Processing Pending):
+**Current Status** (Session/Engine Complete, Client-Side Logic Deferred):
 - ✅ `src/session.rs` — Wires MCCP → telnet → ANSI → scrollback with pipeline tests
 - ✅ `src/plugins/stack.rs` — Stacked interpreter with ordering, disable/enable, run_quietly, set/get (Toy 11 patterns)
 - ✅ `src/engine.rs` — Headless SessionEngine with viewport and attach/detach hooks
 - ✅ `src/control.rs` — Unix socket control server with JSON Lines protocol
-- ❌ `src/alias.rs` — NOT PORTED (command expansion/substitution)
-- ❌ `src/hotkey.rs` — NOT PORTED (keyboard macros)
-- ❌ `src/interpreter.rs` — NOT PORTED (command interpreter/dispatcher)
-- ❌ `src/pipe.rs` — NOT PORTED (command piping)
-- ❌ `src/chat.rs` — NOT PORTED (peer-to-peer chat)
-- ❌ `src/borg.rs` — NOT PORTED (phone-home statistics)
-- ❌ `src/group.rs` — NOT PORTED (grouped sessions)
+- ⏸️  `src/alias.rs` — DEFERRED (Perl/Python handles this)
+- ⏸️  `src/hotkey.rs` — DEFERRED (Perl/Python handles this)
+- ⏸️  `src/interpreter.rs` — DEFERRED (minimal # commands only for MVP)
+- ⏸️  `src/pipe.rs` — DEFERRED (not needed for MVP)
+- ❌ `src/chat.rs` — SKIP (niche feature)
+- ❌ `src/borg.rs` — SKIP (privacy concern)
+- ❌ `src/group.rs` — SKIP (post-MVP feature)
 
-**Remaining Work**: Port command processing (aliases, hotkeys, interpreter) for full interactive functionality
+**MVP Philosophy**: Client is a transport layer. Perl/Python scripts handle command logic.
 
 ---
 
@@ -257,30 +257,31 @@ features = ["auto-initialize"]
 
 **Execution Phase**: ~70% COMPLETE
 
-**Tier Completion**:
+**Tier Completion** (MVP Focus):
 - [x] Tier 1 (Foundation) - Using Rust stdlib throughout
 - [x] Tier 2 (Core) - All network/telnet/MCCP/TTY modules ported
 - [x] Tier 3 (UI) - All rendering modules ported (ncurses, screen, widgets)
-- [ ] Tier 4 (Logic) - Session/engine done; aliases/hotkeys/interpreter pending
+- [x] Tier 4 (Logic) - Session/engine done (aliases/hotkeys deferred to Perl/Python)
 - [x] Tier 5a (Python) - Plugin ported with Interpreter trait
 - [x] Tier 5b (Perl) - Plugin ported with Interpreter trait + build.rs
-- [ ] Tier 6 (Main) - Minimal demo exists; full event loop pending
+- [ ] Tier 6 (Main) - Minimal demo exists; **need full event loop + CLI args**
 - [x] Tier 6b (Headless) - Control server operational with JSON Lines
-- [ ] Tier 7 (Integration) - Not started (smoke tests, validation)
+- [ ] Tier 7 (Integration) - **Not started (critical path to MVP)**
 
 **Build Status**:
 - [x] Compiles without errors (all feature combinations)
 - [x] Unit tests pass (54+ tests across modules)
 - [x] Integration tests pass (control server, loopback sockets)
 
-**Functional Status** (Minimal Viable Client):
+**Functional Status** (MVP - Transport Layer):
 - [x] Can connect to MUD server (socket + telnet working)
 - [x] Send/receive text (basic I/O working)
-- [ ] UI renders correctly (components exist but not wired to main)
-- [ ] Commands work (interpreter/aliases not ported yet)
-- [x] Python scripts work (`--features python` - tested in isolation)
-- [x] Perl scripts work (`--features perl` - tested in isolation)
-- [ ] Headless mode works (engine exists, CLI flags not wired)
+- [ ] UI renders correctly (components exist but not wired to main) - **NEXT**
+- [x] Perl/Python scripts can handle commands (interpreter trait working)
+- [x] Python plugin functional (`--features python` - tested in isolation)
+- [x] Perl plugin functional (`--features perl` - tested in isolation)
+- [ ] Headless mode works (engine exists, CLI flags not wired) - **NEXT**
+- [ ] Perl bot integration validated (real-world use case) - **VALIDATION**
 
 **Documentation**:
 - [x] CODE_MAP.md updated for src/ and src/plugins/
@@ -338,29 +339,33 @@ features = ["auto-initialize"]
 
 ## Next Steps
 
-### Immediate Priorities (Core Functionality)
+### Immediate Priorities (MVP - Minimal Viable Product)
 
-1. **Tier 4 (Command Processing)** - Port aliases, hotkeys, interpreter for interactive use
-   - `Alias.cc` → `src/alias.rs` (command expansion with % arguments)
-   - `Hotkey.cc` → `src/hotkey.rs` (keyboard macros)
-   - `Interpreter.cc` → `src/interpreter.rs` (# command dispatcher)
-
-2. **Tier 6 (Main Loop)** - Wire everything together for standalone binary
+1. **Tier 6 (Main Loop)** - Wire everything together for standalone binary
    - Expand `src/main.rs` with full event loop (select/poll abstraction)
-   - Connect TTY input → interpreter → MUD socket → screen output
+   - Connect TTY input → MUD socket → screen output (direct passthrough)
    - Add CLI args: `--headless`, `--instance`, `--attach`
+   - Wire up plugin loading (`--features python/perl`)
 
-3. **Tier 7 (Integration)** - End-to-end validation
+2. **Tier 7 (Integration)** - End-to-end validation
    - Manual smoke test: connect to real MUD, send/receive text
-   - Test headless mode: LLM agent reads buffer, sends commands
+   - Test headless mode: LLM agent/Perl bot reads buffer, sends commands
    - Validate feature combinations (base, python, perl, all)
+   - Test Perl bot integration (real use case validation)
 
-### Optional (Nice-to-Have)
+### Deferred to Post-MVP (Script Layer Handles These)
 
-4. **Chat/Borg/Group** - Advanced features from original MCL
-   - Chat.cc → peer-to-peer chat (low priority - niche feature)
-   - Borg.cc → phone-home statistics (skip - privacy concern)
-   - Group.cc → grouped sessions (defer to post-1.0)
+3. **Tier 4 (Client-Side Command Processing)** - **DEFER**
+   - Rationale: Perl/Python scripts handle aliases, actions, hotkeys
+   - `Alias.cc` → `src/alias.rs` (command expansion) - **NOT NEEDED**
+   - `Hotkey.cc` → `src/hotkey.rs` (keyboard macros) - **NOT NEEDED**
+   - `Interpreter.cc` → `src/interpreter.rs` (# commands) - **MINIMAL ONLY**
+   - Only port minimal # command interpreter for basic client commands (#quit, #open, etc.)
+
+4. **Chat/Borg/Group** - Advanced MCL features - **SKIP**
+   - Chat.cc → peer-to-peer chat (niche feature, not needed)
+   - Borg.cc → phone-home statistics (privacy concern, skip)
+   - Group.cc → grouped sessions (nice-to-have, defer)
 
 ### Post-1.0 (Future Work)
 
