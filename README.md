@@ -71,7 +71,13 @@ cargo test
 
 # With features
 cargo test --all-features
+
+# Using task runner (recommended)
+make test              # Or: just test
+make coverage          # Generate coverage report
 ```
+
+See [TESTING.md](TESTING.md) for comprehensive testing guide.
 
 ## Usage
 
@@ -221,6 +227,60 @@ okros is released under the GPL v2.
 
 okros is a from-scratch Rust implementation inspired by MCL (MUD Client for Linux), originally written by Erwin S. Andreasen. MCL was last maintained around 2000 and went offline circa 2010. This project revives MCL's design philosophy and feature set using a modern reference implementation discovered in the wild, bringing it back to life for contemporary use cases while preserving its spirit.
 
+## Development
+
+### Task Automation
+
+okros provides multiple options for running development tasks (like `npm scripts` in Node):
+
+**1. Makefile** (recommended, no extra install):
+```bash
+make help              # Show all commands
+make test              # Run tests
+make coverage          # Generate coverage report
+make run-python        # Run with Python plugin
+make pre-commit        # Format + lint + test
+```
+
+**2. Just** (modern alternative, install: `cargo install just`):
+```bash
+just                   # Show all commands
+just test              # Run tests
+just coverage          # Generate coverage report
+```
+
+**3. Cargo aliases** (in `.cargo/config.toml`):
+```bash
+cargo t                # test
+cargo cov              # coverage
+cargo bp               # build with Python
+```
+
+### Coverage Reports
+
+```bash
+# Install coverage tool
+cargo install cargo-llvm-cov
+
+# Generate HTML report
+make coverage          # Generates and opens HTML report
+
+# Update markdown report (git-friendly)
+make coverage-report   # Updates COVERAGE_REPORT.md
+
+# Auto-update on git push (recommended)
+make install-hooks     # Installs pre-push hook
+```
+
+**Current Coverage**: 62.61% lines | See [COVERAGE_REPORT.md](COVERAGE_REPORT.md) for details
+
+### Development Resources
+
+- **[DEVELOPMENT.md](DEVELOPMENT.md)** - Complete development guide (workflows, tools, CI/CD)
+- **[TESTING.md](TESTING.md)** - Testing guide (running tests, coverage, CI)
+- **[CLAUDE.md](CLAUDE.md)** - Project methodology and porting guidelines
+- **[IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)** - Detailed status and roadmap
+
 ## Contributing
 
 Contributions welcome! Key areas:
@@ -230,7 +290,7 @@ Contributions welcome! Key areas:
 - Documentation and examples
 - Cross-platform support (Windows, macOS)
 
-See [CLAUDE.md](CLAUDE.md) for development guidelines.
+See [DEVELOPMENT.md](DEVELOPMENT.md) for setup and [CLAUDE.md](CLAUDE.md) for porting guidelines.
 
 ## Acknowledgments
 

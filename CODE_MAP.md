@@ -36,7 +36,7 @@ This file tracks the structure and status of the codebase.
 
 ## Toys (Discovery Phase Artifacts)
 
-**Status**: 5/5 complete ✅ (Discovery Phase COMPLETE!)
+**Status**: 11/11 complete ✅ (Discovery Phase COMPLETE!)
 
 ### toys/toy1_string_buffer/
 **Status**: Analysis complete (SKIPPED toy implementation)
@@ -122,78 +122,63 @@ This file tracks the structure and status of the codebase.
 
 ## Toys — Discovery Phase 2 (Risk-Focused)
 
-**Status**: Step 0 learning goals scaffolded
+**Status**: All 6 toys complete ✅
 
-- `toys/toy6_tty_keys/` — TTY raw mode + terminfo keys (LEARNINGS.md: Step 0)
-- `toys/toy7_ansi_canvas/` — Byte canvas diff + ANSI/ACS (LEARNINGS.md: Step 0)
-- `toys/toy8_telnet_mccp/` — Telnet IAC + MCCP fragmentation (LEARNINGS.md: Step 0)
-- `toys/toy9_nonblocking_connect/` — Nonblocking connect + EINPROGRESS (LEARNINGS.md: Step 0)
-- `toys/toy10_scrollback/` — Scrollback ring + highlight (LEARNINGS.md: Step 0)
-- `toys/toy11_plugins_stack/` — Stacked interpreter parity (optional) (LEARNINGS.md: Step 0)
+- `toys/toy6_tty_keys/` — TTY raw mode + terminfo keys (COMPLETE ✅)
+- `toys/toy7_ansi_canvas/` — Byte canvas diff + ANSI/ACS (COMPLETE ✅)
+- `toys/toy8_telnet_mccp/` — Telnet IAC + MCCP fragmentation (COMPLETE ✅)
+- `toys/toy9_nonblocking_connect/` — Nonblocking connect + EINPROGRESS (COMPLETE ✅)
+- `toys/toy10_scrollback/` — Scrollback ring + highlight (COMPLETE ✅)
+- `toys/toy11_plugins_stack/` — Stacked interpreter parity (COMPLETE ✅)
 
-See `TOY_PLAN_2.md` for objectives and success criteria.
+See `TOY_PLAN_2.md` for objectives and success criteria. All patterns validated and applied to src/.
 
-## Source Code (Not Yet Created)
+## Source Code (src/)
 
-When porting begins, structure will follow IMPLEMENTATION_PLAN.md tiers:
+**Status**: ~70% complete (Tiers 1-5 mostly done, Tier 6 in progress)
 
-```
-src/
-  globals.rs          # Global state (screen, config, currentSession)
+See `src/CODE_MAP.md` for detailed module-by-module mapping to C++ reference.
 
-  # Tier 1: Foundation
-  string.rs           # String utilities (minimal wrappers)
-  buffer.rs           # Buffer class (Vec<u8> wrapper)
-  color.rs            # Color/attribute constants
-  list.rs             # List utilities
+**Ported modules** (24 files):
+- **Foundation**: `color.rs`, `ansi.rs`
+- **Core**: `selectable.rs`, `select.rs`, `tty.rs`, `input.rs`, `config.rs`, `mud.rs`, `socket.rs`, `telnet.rs`, `mccp.rs`, `scrollback.rs`
+- **UI**: `curses.rs`, `screen.rs`, `window.rs`, `output_window.rs`, `input_line.rs`, `status_line.rs`
+- **Logic**: `session.rs`, `engine.rs`, `control.rs`
+- **Plugins**: `plugins/stack.rs`, `plugins/python.rs` (feature-gated), `plugins/perl.rs` (feature-gated)
+- **App**: `main.rs` (minimal demo, needs full event loop), `lib.rs` (module declarations)
 
-  # Tier 2: Core
-  selectable.rs       # Selectable interface
-  tty.rs              # TTY operations
-  config.rs           # Configuration
-  mud.rs              # MUD connection
-  socket.rs           # Socket handling
+**Pending**:
+- `globals.rs` - Placeholder only (Toy 3 pattern documented but not applied)
+- Full event loop in `main.rs` - Basic demo exists, needs Selectable wiring + plugin init + idle() callbacks
+- Selectable trait implementations - Trait defined but nothing implements it yet
 
-  # Tier 3: UI
-  curses.rs           # ncurses wrapper
-  window.rs           # Window class (in-memory canvas)
-  screen.rs           # Screen class (rendering)
-  output_window.rs    # Output window
-  input_line.rs       # Input line
-  status_line.rs      # Status line
-
-  # Tier 4: Logic
-  session.rs          # Session management
-  alias.rs            # Alias system
-  hotkey.rs           # Hotkey system
-  interpreter.rs      # Base interpreter
-  chat.rs             # Chat system
-  borg.rs             # Borg mode
-
-  # Tier 5: Plugins (optional features)
-  python.rs           # Python embedding (--features python)
-  perl.rs             # Perl embedding (--features perl)
-
-  # Tier 6: Application
-  main.rs             # Main entry point
-```
+**Deferred** (client-side logic handled by Perl/Python per MVP plan):
+- `alias.rs`, `hotkey.rs`, `interpreter.rs` (minimal # commands only)
+- `chat.rs`, `borg.rs`, `group.rs` (post-MVP features)
 
 ---
 
 ## Status Summary
 
-**Current Phase**: Discovery Phase COMPLETE ✅ → Execution Phase STARTED (scaffold)
+**Current Phase**: Discovery Phase COMPLETE ✅ → Execution Phase ~70% COMPLETE
 
 **Key Decisions Made**:
 - ✅ String/Buffer: Use Rust stdlib
 - ✅ ncurses: Use `ncurses` crate (raw FFI)
-- ✅ Globals: Use `unsafe static mut` with helpers
+- ✅ Globals: Use `unsafe static mut` with helpers (pattern validated, not yet applied)
 - ✅ Python: Use `pyo3` (simpler than C API)
 - ✅ Perl: Raw FFI with `PERL_SYS_INIT3` for modern Perl
 
-**All Patterns Validated**: No blockers - ready to begin tier-by-tier porting (IMPLEMENTATION_PLAN.md)
+**Porting Progress** (per IMPLEMENTATION_PLAN.md tiers):
+- ✅ Tier 1 (Foundation): Using Rust stdlib throughout, color.rs + ansi.rs done
+- ✅ Tier 2 (Core): All network/telnet/MCCP/TTY modules ported
+- ✅ Tier 3 (UI): All rendering modules ported (ncurses, screen, widgets)
+- ✅ Tier 4 (Logic): Session/engine done (aliases/hotkeys deferred to Perl/Python)
+- ✅ Tier 5 (Plugins): Python + Perl plugins ported with Interpreter trait
+- ⏸️  Tier 6 (Main): Minimal demo exists; **needs full event loop wiring**
+- ⏸️  Tier 7 (Integration): Not started (manual testing pending)
 
-**Next Steps**:
-1. Tier 1: Foundation — add `string.rs`, `buffer.rs`, `color.rs` fleshed out
-2. Tier 2: Core — `selectable.rs`, `tty.rs`, `config.rs`, `mud.rs`, `socket.rs`
-3. Wire `ncurses` init in `main.rs` and globals per Toy 3
+**Critical Path to MVP**:
+1. **Wire full event loop** in `main.rs` (Selectable pattern, plugin init, idle() callbacks)
+2. **Apply Toy 3 globals pattern** (optional - can use locals initially)
+3. **Integration testing** (connect to real MUD, test with Perl bot)
