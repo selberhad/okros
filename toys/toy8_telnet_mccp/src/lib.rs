@@ -623,6 +623,38 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "real_mccp")]
+    fn real_mccp_v1_handshake_and_decompress() {
+        let mut pl = Pipeline::new(MccpInflate::new());
+        // Will COMPRESS (v1)
+        pl.feed(&[IAC, WILL, TELOPT_COMPRESS]);
+        // Accept v1 (no prior v2)
+        assert_eq!(pl.drain_decomp_responses(), vec![IAC, DO, TELOPT_COMPRESS]);
+        // Start sequence v1: IAC SB 85 WILL SE
+        pl.feed(&[IAC, SB, TELOPT_COMPRESS, WILL, SE]);
+        // Compressed payload
+        let payload = compress_bytes(b"v1-ok");
+        pl.feed(&payload);
+        assert_eq!(pl.telnet.take_app_out(), b"v1-ok");
+        assert!(!pl.error());
+    }
+
+    #[test]
+    #[cfg(feature = "real_mccp")]
+    fn real_mccp_error_on_invalid_stream() {
+        let mut pl = Pipeline::new(MccpInflate::new());
+        pl.feed(&[IAC, WILL, TELOPT_COMPRESS2]);
+        let _ = pl.drain_decomp_responses();
+        pl.feed(&[IAC, SB, TELOPT_COMPRESS2, IAC, SE]);
+        // Feed invalid zlib bytes
+        pl.feed(&[0x00, 0x01, 0x02, 0x03]);
+        assert!(pl.error());
+        // Further bytes should not be forwarded
+        pl.feed(b"after");
+        assert!(pl.telnet.take_app_out().is_empty());
+    }
+
+    #[test]
     fn one_byte_fragmentation_mixed_text_and_ga() {
         let mut pl = Pipeline::new(PassthroughDecomp::new());
         for &b in b"hello" { pl.feed(&[b]); }

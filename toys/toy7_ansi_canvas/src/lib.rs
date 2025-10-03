@@ -274,6 +274,14 @@ mod tests {
     }
 
     #[test]
+    fn scroll_region_planner_returns_none_when_no_match() {
+        let w=3; let h=3; let reg_y=0; let reg_h=2;
+        let last = vec![cell(b'A',0); w*h];
+        let next = vec![cell(b'B',0); w*h];
+        assert_eq!(plan_scroll_up(&last, &next, w, h, reg_y, reg_h), None);
+    }
+
+    #[test]
     fn minimal_goto_across_line_wrap() {
         // Updates at (1,1)->(2,1)->(1,2) should use only one goto
         let w=2; let h=2;
