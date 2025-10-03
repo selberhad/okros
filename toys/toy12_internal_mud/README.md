@@ -67,10 +67,13 @@ cd ../.. && cargo test --test internal_mud_integration
 3. **Game State**: Simple HashMap<RoomId, Room> + Player is sufficient
 4. **ANSI Colors**: Work perfectly through Session pipeline
 5. **Testing**: Fully automated e2e tests with zero external dependencies
+6. **Headless Mode**: ✅ **VALIDATED** - Internal MUD works via control server!
 
 ### 📊 Results
 
-- **Tests**: 14 unit tests + 4 integration tests passing
+- **Tests**: 14 unit tests + 6 integration tests passing
+  - 4 tests: Session pipeline integration
+  - 2 tests: Headless mode via control server
 - **Performance**: <1ms per command
 - **Memory**: <1KB game state
 - **LOC**: ~300 lines for complete game
