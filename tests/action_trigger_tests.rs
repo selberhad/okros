@@ -51,7 +51,7 @@ fn test_action_parsing_pattern_with_spaces() {
 #[test]
 fn test_mud_alias_lookup() {
     // C++ MUD::findAlias()
-    let mut mud = Mud::new();
+    let mut mud = Mud::empty();
     mud.alias_list.push(Alias::new("go", "go %1"));
     mud.alias_list.push(Alias::new("say", "tell bob %0"));
 
@@ -63,7 +63,7 @@ fn test_mud_alias_lookup() {
 #[test]
 fn test_mud_action_storage() {
     // C++ stores actions in action_list, checks by type
-    let mut mud = Mud::new();
+    let mut mud = Mud::empty();
 
     let trigger = Action::new("^You hit", "say ouch", ActionType::Trigger);
     let replacement = Action::new("stupid", "smart", ActionType::Replacement);
@@ -79,7 +79,7 @@ fn test_mud_action_storage() {
 #[test]
 fn test_alias_expansion_with_mud() {
     // Integration: MUD finds alias, expands it
-    let mut mud = Mud::new();
+    let mut mud = Mud::empty();
     mud.alias_list.push(Alias::new("n", "go north"));
     mud.alias_list.push(Alias::new("tell", "whisper %1 %+2"));
 
@@ -94,7 +94,7 @@ fn test_alias_expansion_with_mud() {
 #[test]
 fn test_action_list_iteration() {
     // C++ FOREACH pattern over action_list
-    let mut mud = Mud::new();
+    let mut mud = Mud::empty();
     mud.action_list
         .push(Action::new("pattern1", "cmd1", ActionType::Trigger));
     mud.action_list

@@ -13,6 +13,16 @@ if ! command -v cargo-llvm-cov &> /dev/null; then
     exit 1
 fi
 
+# Set DYLD_LIBRARY_PATH for macOS Python plugin (if needed)
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    # Check if Python is from Homebrew and add to library path
+    if [ -d "/opt/homebrew/Caskroom/miniforge/base/lib" ]; then
+        export DYLD_LIBRARY_PATH="/opt/homebrew/Caskroom/miniforge/base/lib:${DYLD_LIBRARY_PATH:-}"
+    elif [ -d "/opt/homebrew/opt/python@3.10/lib" ]; then
+        export DYLD_LIBRARY_PATH="/opt/homebrew/opt/python@3.10/lib:${DYLD_LIBRARY_PATH:-}"
+    fi
+fi
+
 # Generate coverage data silently
 echo "Generating coverage data..."
 cargo llvm-cov --summary-only > /tmp/coverage-summary.txt 2>&1
