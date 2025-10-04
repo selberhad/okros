@@ -85,7 +85,7 @@ Port MCL C++ codebase to Rust, applying patterns from Discovery phase. **Use Rus
 - ✅ `src/status_line.rs` — Status UI stripe with unit tests
 - ✅ Integration: End-to-end ANSI pipeline tested, screen unit tests cover renderer/ACS/scroll planner
 
-**Note**: InputBox.cc not ported (not needed for minimal viable client)
+**Note**: InputBox.cc NOT PORTED - ⚠️ This was LLM hallucination claiming "not needed", actually SHOULD be ported
 
 ---
 

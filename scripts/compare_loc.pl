@@ -103,4 +103,143 @@ foreach my $lang (sort keys %$rust_data) {
     printf "  %-20s %4d files, %6d lines\n", $lang, $files, $code;
 }
 
+# File-by-file mapping to identify cut corners
+print "\n" . "=" x 80 . "\n";
+print "File-by-File Comparison (C++ → Rust)\n";
+print "=" x 80 . "\n\n";
+
+# Define mapping of C++ files to Rust equivalents
+my %file_mapping = (
+    'main.cc' => 'main.rs',
+    'Window.cc' => 'window.rs',
+    'OutputWindow.cc' => 'output_window.rs',
+    'InputLine.cc' => 'input_line.rs',
+    'StatusLine.cc' => 'status_line.rs',
+    'Screen.cc' => 'screen.rs',
+    'Session.cc' => 'session.rs',
+    'TTY.cc' => 'tty.rs',
+    'Curses.cc' => 'curses.rs',
+    'Socket.cc' => 'socket.rs',
+    'Selectable.cc' => 'selectable.rs',
+    'Selection.cc' => 'selection.rs',
+    'MUD.cc' => 'mud.rs',
+    'Config.cc' => 'config.rs',
+    'Alias.cc' => 'alias.rs',
+    'Hotkey.cc' => 'macro_def.rs',
+    'Interpreter.cc' => 'plugins/stack.rs',
+    'plugins/PythonEmbeddedInterpreter.cc' => 'plugins/python.rs',
+    'plugins/PerlEmbeddedInterpreter.cc' => 'plugins/perl.rs',
+
+    # Headers (major ones)
+    'h/Window.h' => 'window.rs',
+    'h/Session.h' => 'session.rs',
+    'h/Config.h' => 'config.rs',
+    'h/Action.h' => 'action.rs',
+    'h/TTY.h' => 'tty.rs',
+    'h/Socket.h' => 'socket.rs',
+    'h/mccpDecompress.h' => 'mccp.rs',
+    'h/OutputWindow.h' => 'output_window.rs',
+    'h/InputLine.h' => 'input_line.rs',
+
+    # Intentionally skipped/deferred
+    'String.cc' => undef,  # Using stdlib
+    'Buffer.cc' => undef,  # Using Vec<u8>
+    'StaticBuffer.cc' => undef,  # Not needed
+    'Chat.cc' => undef,  # Deferred (inter-client chat)
+    'Borg.cc' => undef,  # Deferred (privacy concern)
+    'Group.cc' => undef,  # Deferred (post-MVP)
+
+    # Missing (needs investigation/porting)
+    'InputBox.cc' => undef,  # NOT PORTED - needs implementation
+    'Pipe.cc' => undef,  # Needs investigation
+    'Shell.cc' => undef,  # Needs investigation
+    'Option.cc' => undef,  # Needs investigation
+    'misc.cc' => undef,  # Needs investigation
+    'Embedded.cc' => undef,  # Split across plugins
+);
+
+my @suspicious;
+my @missing;
+
+printf "%-40s %8s → %-25s %8s %8s\n", "C++ File", "Lines", "Rust File", "Lines", "Ratio";
+print "-" x 80 . "\n";
+
+for my $cpp_file (sort keys %file_mapping) {
+    my $rust_file = $file_mapping{$cpp_file};
+    my $cpp_path = "$cpp_ref/$cpp_file";
+
+    next unless -f $cpp_path;
+
+    my $cpp_lines = `wc -l < "$cpp_path" 2>/dev/null`;
+    chomp $cpp_lines;
+    $cpp_lines ||= 0;
+
+    if (!defined $rust_file) {
+        printf "%-40s %8d → %-25s %8s %8s\n",
+            $cpp_file, $cpp_lines, "SKIPPED/DEFERRED", "-", "-";
+        next;
+    }
+
+    my $rust_path = "$rust_src/$rust_file";
+    if (!-f $rust_path) {
+        printf "%-40s %8d → %-25s %8s %8s ⚠️ MISSING\n",
+            $cpp_file, $cpp_lines, $rust_file, "-", "-";
+        push @missing, {cpp => $cpp_file, rust => $rust_file, cpp_lines => $cpp_lines};
+        next;
+    }
+
+    my $rust_lines = `wc -l < "$rust_path" 2>/dev/null`;
+    chomp $rust_lines;
+    $rust_lines ||= 0;
+
+    my $ratio = $cpp_lines > 0 ? $rust_lines / $cpp_lines : 0;
+    my $ratio_str = sprintf("%.2f", $ratio);
+
+    my $flag = "";
+    if ($ratio < 0.4) {
+        $flag = " ⚠️ SUSPICIOUS";
+        push @suspicious, {
+            cpp => $cpp_file,
+            rust => $rust_file,
+            cpp_lines => $cpp_lines,
+            rust_lines => $rust_lines,
+            ratio => $ratio
+        };
+    } elsif ($ratio < 0.6) {
+        $flag = " 🔍 SHORT";
+    }
+
+    printf "%-40s %8d → %-25s %8d %8s%s\n",
+        $cpp_file, $cpp_lines, $rust_file, $rust_lines, $ratio_str, $flag;
+}
+
+# Print issues summary
+print "\n" . "=" x 80 . "\n";
+print "ISSUES REQUIRING INVESTIGATION\n";
+print "=" x 80 . "\n\n";
+
+if (@missing) {
+    print "MISSING FILES (C++ code not ported):\n";
+    for my $issue (@missing) {
+        printf "  • %s (%d lines) → %s NOT FOUND\n",
+            $issue->{cpp}, $issue->{cpp_lines}, $issue->{rust};
+    }
+    print "\n";
+}
+
+if (@suspicious) {
+    print "SUSPICIOUSLY SHORT (<40% of C++ size - likely incomplete port):\n";
+    for my $issue (sort { $a->{ratio} <=> $b->{ratio} } @suspicious) {
+        printf "  • %s (%d lines) → %s (%d lines) = %.0f%%\n",
+            $issue->{cpp}, $issue->{cpp_lines},
+            $issue->{rust}, $issue->{rust_lines},
+            $issue->{ratio} * 100;
+    }
+    print "\n";
+}
+
+if (!@missing && !@suspicious) {
+    print "✅ No obvious missing or suspiciously short files detected.\n\n";
+}
+
 print "\n";
