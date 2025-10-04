@@ -116,9 +116,18 @@ pub fn diff_to_ansi(prev: &[Attrib], next: &[Attrib], opt: &DiffOptions) -> Stri
                 out.push_str(&get_color_code(color, opt.set_bg_always));
                 saved_color = color as i32;
             }
-            // Position cursor (C++ Screen.cc:256-271)
+            // Are we there yet? (C++ Screen.cc:256-271)
             if x != last_x || y != last_y {
-                out.push_str(&vt_goto(y + 1, x + 1));
+                // Optimization: print skipped char if adjacent & same color
+                if last_y == y
+                    && last_x == x - 1
+                    && idx > 0
+                    && (next[idx - 1] >> 8) as i32 == saved_color
+                {
+                    print_character(&mut out, (next[idx - 1] & 0xFF) as u8, &mut acs, opt);
+                } else {
+                    out.push_str(&vt_goto(y + 1, x + 1));
+                }
             }
             last_y = y;
             last_x = x + 1;
@@ -126,23 +135,7 @@ pub fn diff_to_ansi(prev: &[Attrib], next: &[Attrib], opt: &DiffOptions) -> Stri
                 last_x = 0;
                 last_y += 1;
             }
-            if ch >= 0xEC && ch < 0xEC + 8 {
-                if !acs {
-                    if let Some(s) = opt.smacs {
-                        out.push_str(s);
-                    }
-                    acs = true;
-                }
-                out.push('#');
-            } else {
-                if acs {
-                    if let Some(r) = opt.rmacs {
-                        out.push_str(r);
-                    }
-                    acs = false;
-                }
-                out.push(if ch >= 32 { ch as char } else { ' ' });
-            }
+            print_character(&mut out, ch, &mut acs, opt);
         }
     }
     out.push_str(&vt_goto(opt.cursor_y + 1, opt.cursor_x + 1));
@@ -152,6 +145,28 @@ pub fn diff_to_ansi(prev: &[Attrib], next: &[Attrib], opt: &DiffOptions) -> Stri
         }
     }
     out
+}
+
+/// Print character with ACS handling (C++ Screen::printCharacter)
+#[inline]
+fn print_character(out: &mut String, ch: u8, acs: &mut bool, opt: &DiffOptions) {
+    if ch >= 0xEC && ch < 0xEC + 8 {
+        if !*acs {
+            if let Some(s) = opt.smacs {
+                out.push_str(s);
+            }
+            *acs = true;
+        }
+        out.push('#');
+    } else {
+        if *acs {
+            if let Some(r) = opt.rmacs {
+                out.push_str(r);
+            }
+            *acs = false;
+        }
+        out.push(if ch >= 32 { ch as char } else { ' ' });
+    }
 }
 
 pub fn plan_scroll_up(

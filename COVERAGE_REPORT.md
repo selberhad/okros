@@ -1,13 +1,13 @@
 # Test Coverage Report
 
-**Last Updated**: 2025-10-03 23:38
+**Last Updated**: 2025-10-03 23:41
 **Tool**: cargo-llvm-cov
-**Overall Coverage**: **74.01%** lines | **76.13%** regions | **80.83%** functions
+**Overall Coverage**: **73.97%** lines | **76.09%** regions | **80.87%** functions
 
 ## Summary
 
 ```
-TOTAL                            8713              2080    76.13%         506                97    80.83%        5125              1332    74.01%           0                 0         -
+TOTAL                            8728              2087    76.09%         507                97    80.87%        5136              1337    73.97%           0                 0         -
 ```
 
 ## Coverage by Module
@@ -34,7 +34,7 @@ TOTAL                            8713              2080    76.13%         506   
 | `plugins/perl.rs` | 82.80% | 87.61% | 85.00% | 🟡 Good |
 | `plugins/python.rs` | 88.14% | 89.22% | 90.91% | 🟡 Good |
 | `plugins/stack.rs` | 73.13% | 78.10% | 55.00% | 🟡 Good |
-| `screen.rs` | 95.78% | 97.78% | 96.15% | 🟢 Excellent |
+| `screen.rs` | 94.79% | 96.75% | 96.30% | 🟢 Excellent |
 | `scrollback.rs` | 91.71% | 93.13% | 100.00% | 🟢 Excellent |
 | `select.rs` | 97.50% | 96.61% | 100.00% | 🟢 Excellent |
 | `selectable.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
@@ -56,7 +56,7 @@ TOTAL                            8713              2080    76.13%         506   
 - `offline_mud/game.rs` - 96.58%
 - `offline_mud/parser.rs` - 100.00%
 - `output_window.rs` - 100.00%
-- `screen.rs` - 95.78%
+- `screen.rs` - 94.79%
 - `scrollback.rs` - 91.71%
 - `select.rs` - 97.50%
 - `selectable.rs` - 100.00%
@@ -91,7 +91,7 @@ TOTAL                            8713              2080    76.13%         506   
 
 | Tier | Target | Current | Status |
 |------|--------|---------|--------|
-| Overall | ≥80% | 74.01% | ⏳ In Progress |
+| Overall | ≥80% | 73.97% | ⏳ In Progress |
 | Critical Paths | ≥95% | Check modules above | ✅ Met |
 | New Modules | ≥80% | - | Policy |
 
