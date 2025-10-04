@@ -1,13 +1,13 @@
 # Test Coverage Report
 
-**Last Updated**: 2025-10-03 21:55
+**Last Updated**: 2025-10-03 22:02
 **Tool**: cargo-llvm-cov
-**Overall Coverage**: **72.51%** lines | **75.65%** regions | **80.46%** functions
+**Overall Coverage**: **74.51%** lines | **77.64%** regions | **80.92%** functions
 
 ## Summary
 
 ```
-TOTAL                            7474              1820    75.65%         435                85    80.46%        4515              1241    72.51%           0                 0         -
+TOTAL                            7474              1671    77.64%         435                83    80.92%        4515              1151    74.51%           0                 0         -
 ```
 
 ## Coverage by Module
@@ -18,9 +18,9 @@ TOTAL                            7474              1820    75.65%         435   
 | `alias.rs` | 94.01% | 94.52% | 100.00% | 🟢 Excellent |
 | `ansi.rs` | 88.65% | 90.45% | 100.00% | 🟡 Good |
 | `config.rs` | 94.67% | 96.30% | 77.42% | 🟢 Excellent |
-| `control.rs` | 58.08% | 63.59% | 87.50% | 🟠 Moderate |
+| `control.rs` | 72.75% | 74.25% | 87.50% | 🟡 Good |
 | `curses.rs` | 18.56% | 13.55% | 40.00% | 🔴 Needs Work |
-| `engine.rs` | 66.91% | 63.67% | 87.50% | 🟠 Moderate |
+| `engine.rs` | 97.06% | 97.00% | 100.00% | 🟢 Excellent |
 | `input_line.rs` | 83.58% | 84.21% | 75.00% | 🟡 Good |
 | `input.rs` | 89.69% | 87.03% | 100.00% | 🟡 Good |
 | `macro_def.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
@@ -49,6 +49,7 @@ TOTAL                            7474              1820    75.65%         435   
 ### 🟢 Excellent (≥90% lines)
 - `alias.rs` - 94.01%
 - `config.rs` - 94.67%
+- `engine.rs` - 97.06%
 - `macro_def.rs` - 100.00%
 - `mud_selection.rs` - 95.06%
 - `offline_mud/game.rs` - 96.58%
@@ -64,6 +65,7 @@ TOTAL                            7474              1820    75.65%         435   
 
 ### 🟡 Good (70-89% lines)
 - `ansi.rs` - 88.65%
+- `control.rs` - 72.75%
 - `input.rs` - 89.69%
 - `input_line.rs` - 83.58%
 - `mccp.rs` - 71.09%
@@ -75,8 +77,6 @@ TOTAL                            7474              1820    75.65%         435   
 
 ### 🟠 Moderate (40-69% lines)
 - `action.rs` - 68.93%
-- `control.rs` - 58.08%
-- `engine.rs` - 66.91%
 
 ### 🔴 Needs Work (<40% lines)
 - `curses.rs` - 18.56% (ncurses FFI - TTY dependent)
@@ -87,7 +87,7 @@ TOTAL                            7474              1820    75.65%         435   
 
 | Tier | Target | Current | Status |
 |------|--------|---------|--------|
-| Overall | ≥80% | 72.51% | ⏳ In Progress |
+| Overall | ≥80% | 74.51% | ⏳ In Progress |
 | Critical Paths | ≥95% | Check modules above | ✅ Met |
 | New Modules | ≥80% | - | Policy |
 
