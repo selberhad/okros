@@ -46,7 +46,6 @@ just pre-commit        # Format + lint + test
 
 ```bash
 cargo t                # cargo test
-cargo ttt              # Run with TTY (./test-with-tty.sh)
 cargo cov              # Coverage report
 cargo bp               # Build with Python
 ```
@@ -66,8 +65,6 @@ cargo test --lib       # Unit tests only (57 tests)
 cargo test --tests     # Integration tests only (2 tests)
 cargo test --features python   # With Python plugin
 
-# With pseudo-TTY (ncurses tests execute)
-./test-with-tty.sh     # Or: make test-tty / just test-tty
 ```
 
 ### Coverage Reports
@@ -410,10 +407,8 @@ cargo test              # Works fine, skips plugin tests
 
 **Problem**: `curses::tests::*` fail in CI or non-TTY environment
 
-**Solution**: Tests auto-skip gracefully. To run them:
+**Solution**: Tests auto-skip gracefully. To run them from a real terminal:
 ```bash
-./test-with-tty.sh     # Provides pseudo-TTY
-# Or from real terminal:
 cargo test --lib curses::tests -- --nocapture
 ```
 

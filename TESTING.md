@@ -4,17 +4,33 @@
 
 ### Standard Test Suite
 ```bash
-cargo test              # Run all tests (59 total)
-cargo test --lib        # Run only library unit tests (57 tests)
-cargo test --tests      # Run integration tests
+cargo test              # Run all tests (192 total)
+cargo test --lib        # Run only library unit tests (151 tests)
+cargo test --tests      # Run integration tests (41 tests)
 ```
 
 All tests should pass in any environment. Tests that require special conditions (like a TTY) will skip gracefully with a message.
 
-### Test Results
-- **✅ 57 unit tests** - All core functionality (network, UI, plugins, etc.)
-- **✅ 2 integration tests** - Control server, pipeline validation
-- **✅ 0 failures** - All tests pass
+### Test Architecture
+
+**In-Process Tests** (Preferred for Coverage):
+- Unit tests run library functions directly (same process)
+- Integration tests start servers in background threads (same process)
+- Coverage tools (llvm-cov) track all code execution
+- Example: `tests/control_inprocess.rs` - starts ControlServer in thread
+
+**Subprocess Tests** (Legacy, E2E only):
+- Some tests spawn `cargo run` as separate process
+- Do NOT contribute to coverage metrics (different process)
+- Kept for end-to-end validation only
+- Example: `tests/offline_tty_smoke.rs` - validates binary works
+
+### Test Results (Current)
+- **✅ 192 total tests** - 151 unit + 41 integration
+- **✅ 74.51% coverage** - Overall project (see COVERAGE_REPORT.md)
+- **✅ 0 failures** - All tests pass in any environment
+- **✅ In-process tests** - Contribute to coverage metrics
+- **✅ Graceful skips** - TTY/FFI tests skip when not applicable
 
 ## Special Test Requirements
 
@@ -80,17 +96,6 @@ For automated CI environments:
 1. **Base tests**: `cargo test` always passes (ncurses tests skip automatically)
 2. **Feature tests**: May need library path configuration for Python/Perl
 3. **No manual intervention required**: All tests are defensive and skip when preconditions aren't met
-
-## Test Script (Optional)
-
-`test-with-tty.sh` provides a pseudo-TTY using the `script` command:
-
-```bash
-./test-with-tty.sh              # Run all tests with pseudo-TTY
-./test-with-tty.sh --lib        # Library tests only
-```
-
-**Note**: Even with pseudo-TTY, ncurses tests may skip if terminfo database isn't accessible in the sandboxed environment. This is expected and correct behavior.
 
 ## Debugging Tests
 

@@ -170,7 +170,7 @@ mod tests {
     #[test]
     fn test_init_curses() {
         if !has_tty() {
-            eprintln!("SKIP: test_init_curses requires a TTY (run with ./test-with-tty.sh)");
+            eprintln!("SKIP: test_init_curses requires a TTY (run from a real terminal)");
             return;
         }
         unsafe {
@@ -182,7 +182,7 @@ mod tests {
     #[test]
     fn test_get_acs_caps() {
         if !has_tty() {
-            eprintln!("SKIP: test_get_acs_caps requires a TTY (run with ./test-with-tty.sh)");
+            eprintln!("SKIP: test_get_acs_caps requires a TTY (run from a real terminal)");
             return;
         }
         let caps = get_acs_caps();
@@ -194,7 +194,7 @@ mod tests {
     #[test]
     fn test_get_acs_codes() {
         if !has_tty() {
-            eprintln!("SKIP: test_get_acs_codes requires a TTY (run with ./test-with-tty.sh)");
+            eprintln!("SKIP: test_get_acs_codes requires a TTY (run from a real terminal)");
             return;
         }
         unsafe {
