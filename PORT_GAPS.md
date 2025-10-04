@@ -144,13 +144,14 @@ The Rust port is NOT a 1:1 translation. It's a pure data processor with NO sessi
   - Add to interpreter queue
   - **Priority**: P1 - Macros may not work in TTY mode
 
-- [ ] **triggerCheck()** (lines 640-683)
-  - Strip SET_COLOR markers to get plain text
-  - Call `mud.checkActionMatch()` for triggers
-  - Call `mud.checkReplacement()` for substitutions
-  - Call sys/output hook: `embed_interp->run_quietly("sys/output", buf, *new_out-len)`
-  - Support line gagging (return true to hide line)
+- [x] **triggerCheck()** (lines 640-683) ✅ **DONE** (commit 30eaf2f)
+  - ✅ Strip SET_COLOR markers to get plain text
+  - ✅ Call `mud.checkActionMatch()` for triggers
+  - ✅ Call `mud.checkReplacement()` for substitutions
+  - ✅ Call sys/output hook: `embed_interp->run_quietly("sys/output", buf, *new_out-len)`
+  - ✅ Support line gagging (return true to hide line)
   - **Priority**: P0 - Triggers may not work correctly
+  - **Implementation**: Session::check_line_triggers() with callbacks
 
 ### Missing from inputReady() - THE BIG ONE (lines 393-606)
 
@@ -158,14 +159,15 @@ The C++ inputReady() is a MASSIVE 213-line method handling the entire input pipe
 
 Missing from Rust:
 
-- [ ] **Prompt handling** (lines 455-499)
-  - Detect IAC GA/EOR for prompts
-  - Build prompt from partial lines across multiple reads
-  - Handle opt_snarf_prompt config
-  - Handle opt_showprompt config (hide prompt)
-  - Call sys/prompt hook
-  - Insert color reset after prompt (SET_COLOR + default)
+- [x] **Prompt handling** (lines 455-499) ✅ **DONE** (commit 30eaf2f)
+  - ✅ Detect IAC GA/EOR for prompts (telnet parser already does this)
+  - ✅ Build prompt from partial lines across multiple reads (prompt_buffer)
+  - ⚠️ Handle opt_snarf_prompt config (via callback - not config-based yet)
+  - ✅ Handle opt_showprompt config (callback returns true/false to show/hide)
+  - ✅ Call sys/prompt hook (via PromptCallback)
+  - ⚠️ Insert color reset after prompt (TODO - needs color tracking)
   - **Priority**: P0 - Prompts likely broken in interactive mode
+  - **Implementation**: Session::handle_prompt_event() with PromptCallback
 
 - [ ] **Telnet IAC WILL EOR response** (lines 501-507)
   - Send IAC DO EOR response
@@ -180,11 +182,12 @@ Missing from Rust:
   - Write to STDOUT
   - **Priority**: P3
 
-- [ ] **Trigger checking per line** (lines 527-538)
-  - Call triggerCheck() on each \n
-  - Support line gagging
-  - Adjust prompt_begin pointer
+- [x] **Trigger checking per line** (lines 527-538) ✅ **DONE** (commit 30eaf2f)
+  - ✅ Call triggerCheck() on each \n (via check_line_triggers())
+  - ✅ Support line gagging (return false to skip printing)
+  - ✅ Adjust output based on replacement (line_buf modification)
   - **Priority**: P0 - Triggers may not fire correctly
+  - **Implementation**: Session::feed() calls check_line_triggers() on AnsiEvent::Text(b'\n')
 
 - [ ] **Incomplete ANSI sequence buffering** (lines 583-592)
   - Save incomplete ANSI codes in input_buffer
