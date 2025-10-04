@@ -233,19 +233,29 @@ fn main() {
 
     // Main event loop (matching main.cc:141-170)
     while !quit {
-        // Manually redraw modal windows if dirty (composition vs inheritance workaround)
+        // Manually redraw windows if dirty (composition vs inheritance workaround)
+        // InputLine, StatusLine, and Selection own Windows, so Window::refresh() won't call their redraw()
+        unsafe {
+            if (*input.win.as_mut()).dirty {
+                input.redraw();
+                (*input.win.as_mut()).dirty = true; // Keep dirty for compositing
+            }
+            if (*status.win.as_mut()).dirty {
+                status.redraw();
+                (*status.win.as_mut()).dirty = true; // Keep dirty for compositing
+            }
+        }
+
         if let ModalState::ConnectMenu(ref mut menu) = modal {
             unsafe {
                 if (*menu.window_mut_ptr()).dirty {
                     menu.redraw();
-                    // redraw() sets dirty=false, but we need Window::refresh() to composite it
-                    (*menu.window_mut_ptr()).dirty = true;
+                    (*menu.window_mut_ptr()).dirty = true; // Keep dirty for compositing
                 }
             }
         }
 
         // Refresh Screen (calls Window::refresh() to composite tree, then refreshTTY) - C++ main.cc:142
-        // Window::refresh() automatically composites all windows including MudSelection via tree walk
         screen.refresh(&caps);
 
         // 2. Poll file descriptors (main.cc:147) - stdin + socket with 250ms timeout
@@ -305,7 +315,13 @@ fn main() {
                                         }
                                     }
                                 } else if matches!(ev, KeyEvent::Key(KeyCode::Escape)) {
-                                    // Escape pressed - exit connect menu
+                                    // Escape pressed - exit connect menu and remove window from tree
+                                    unsafe {
+                                        // Remove MudSelection window from Screen's child list
+                                        screen.window_mut().remove(menu.window_mut_ptr());
+                                        // Mark screen dirty to trigger refresh
+                                        screen.window_mut().dirty = true;
+                                    }
                                     modal = ModalState::Normal;
                                     status.set_text("Connect menu closed.");
                                 }
