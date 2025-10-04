@@ -4,12 +4,14 @@
 
 ### Standard Test Suite
 ```bash
-cargo test              # Run all tests (192 total)
-cargo test --lib        # Run only library unit tests (151 tests)
-cargo test --tests      # Run integration tests (41 tests)
+cargo test              # Run all tests
+cargo test --lib        # Run only library unit tests
+cargo test --tests      # Run integration tests
 ```
 
 All tests should pass in any environment. Tests that require special conditions (like a TTY) will skip gracefully with a message.
+
+**See [COVERAGE_REPORT.md](COVERAGE_REPORT.md) for current test counts and pass rates**
 
 ### Test Architecture
 
@@ -25,12 +27,14 @@ All tests should pass in any environment. Tests that require special conditions 
 - Kept for end-to-end validation only
 - Example: `tests/offline_tty_smoke.rs` - validates binary works
 
-### Test Results (Current)
-- **✅ 192 total tests** - 151 unit + 41 integration
-- **✅ 74.51% coverage** - Overall project (see COVERAGE_REPORT.md)
-- **✅ 0 failures** - All tests pass in any environment
+### Test Results
+
+All tests pass in any environment:
+- **✅ 0 failures** - Tests skip gracefully when preconditions not met
 - **✅ In-process tests** - Contribute to coverage metrics
-- **✅ Graceful skips** - TTY/FFI tests skip when not applicable
+- **✅ TTY tests** - Run when real terminal available (pseudo-TTY via `script`)
+
+**For current test counts and coverage stats, see [COVERAGE_REPORT.md](COVERAGE_REPORT.md)**
 
 ## Special Test Requirements
 
