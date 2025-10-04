@@ -2,7 +2,7 @@
 
 [![Built with DocDD](https://img.shields.io/badge/built_with-DocDD-blue)](https://selberhad.github.io/docdd-book/)
 
-_This project is both a working MUD client and a DocDD case study. We ported ~11k LOC of C++ to Rust in ~20 days using Discovery Mode (12 toys to validate FFI/unsafe patterns) + Execution Mode (tier-by-tier production port). Check `/toys/` for intermediate artifacts and [PORT_LEARNINGS.md](PORT_LEARNINGS.md) for the full story. The codebase doubles as a reference implementation._
+_This project is both a working MUD client and a DocDD case study. We ported ~11k LOC of C++ to Rust in ~1 day (~12 hours of focused work) using Discovery Mode (12 toys to validate FFI/unsafe patterns) + Execution Mode (tier-by-tier production port). Check `/toys/` for intermediate artifacts and [PORT_LEARNINGS.md](PORT_LEARNINGS.md) for the full story. The codebase doubles as a reference implementation._
 
 **okros** (from _ochre_, rusty mud) is a modern MUD client written in Rust, reviving the design principles of MCL (MUD Client for Linux). Built for headless/detachable operation, it's perfect for automation, LLM agents, and cloud deployments.
 

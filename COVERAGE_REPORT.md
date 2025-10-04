@@ -1,64 +1,93 @@
 # Test Coverage Report
 
-**Last Updated**: 2025-10-03 22:19
+**Last Updated**: 2025-10-03 22:39
 **Tool**: cargo-llvm-cov
-**Overall Coverage**: **76.90%** lines | **79.78%** regions | **82.76%** functions
+**Overall Coverage**: **74.51%** lines | **77.64%** regions | **80.92%** functions
 
 ## Summary
 
 ```
-TOTAL                            7474              1511    79.78%         435                75    82.76%        4515              1043    76.90%           0                 0         -
+TOTAL                            7474              1671    77.64%         435                83    80.92%        4515              1151    74.51%           0                 0         -
 ```
 
 ## Coverage by Module
 
 | Module | Line Coverage | Region Coverage | Functions | Status |
 |--------|--------------|-----------------|-----------|--------|
-| `action.rs` | 68.93% | 68.05% | 71.43% | 🔴 Needs Work |
-| `alias.rs` | 94.01% | 94.52% | 100.00% | 🔴 Needs Work |
-| `ansi.rs` | 88.65% | 90.45% | 100.00% | 🔴 Needs Work |
-| `config.rs` | 94.67% | 96.30% | 77.42% | 🔴 Needs Work |
-| `control.rs` | 72.75% | 74.25% | 87.50% | 🔴 Needs Work |
-| `curses.rs` | 85.57% | 82.58% | 80.00% | 🔴 Needs Work |
-| `engine.rs` | 97.06% | 97.00% | 100.00% | 🔴 Needs Work |
-| `input_line.rs` | 83.58% | 84.21% | 75.00% | 🔴 Needs Work |
-| `input.rs` | 89.69% | 87.03% | 100.00% | 🔴 Needs Work |
-| `macro_def.rs` | 100.00% | 100.00% | 100.00% | 🔴 Needs Work |
+| `action.rs` | 68.93% | 68.05% | 71.43% | 🟠 Moderate |
+| `alias.rs` | 94.01% | 94.52% | 100.00% | 🟢 Excellent |
+| `ansi.rs` | 88.65% | 90.45% | 100.00% | 🟡 Good |
+| `config.rs` | 94.67% | 96.30% | 77.42% | 🟢 Excellent |
+| `control.rs` | 72.75% | 74.25% | 87.50% | 🟡 Good |
+| `curses.rs` | 18.56% | 13.55% | 40.00% | 🔴 Needs Work |
+| `engine.rs` | 97.06% | 97.00% | 100.00% | 🟢 Excellent |
+| `input_line.rs` | 83.58% | 84.21% | 75.00% | 🟡 Good |
+| `input.rs` | 89.69% | 87.03% | 100.00% | 🟡 Good |
+| `macro_def.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
 | `main.rs` | 0.00% | 0.00% | 0.00% | 🔴 Needs Work |
-| `mccp.rs` | 71.09% | 74.85% | 73.33% | 🔴 Needs Work |
-| `mud_selection.rs` | 95.06% | 96.67% | 100.00% | 🔴 Needs Work |
-| `mud.rs` | 88.21% | 90.65% | 85.19% | 🔴 Needs Work |
-| `offline_mud/game.rs` | 96.92% | 96.34% | 96.55% | 🔴 Needs Work |
-| `offline_mud/parser.rs` | 100.00% | 100.00% | 100.00% | 🔴 Needs Work |
-| `output_window.rs` | 100.00% | 100.00% | 100.00% | 🔴 Needs Work |
-| `plugins/stack.rs` | 73.13% | 78.10% | 55.00% | 🔴 Needs Work |
-| `screen.rs` | 95.78% | 97.79% | 96.15% | 🔴 Needs Work |
-| `scrollback.rs` | 91.71% | 93.13% | 100.00% | 🔴 Needs Work |
-| `select.rs` | 97.50% | 96.61% | 100.00% | 🔴 Needs Work |
-| `selectable.rs` | 100.00% | 100.00% | 100.00% | 🔴 Needs Work |
-| `selection.rs` | 71.14% | 76.47% | 75.00% | 🔴 Needs Work |
-| `session.rs` | 85.92% | 88.62% | 87.50% | 🔴 Needs Work |
-| `socket.rs` | 91.54% | 92.35% | 100.00% | 🔴 Needs Work |
-| `status_line.rs` | 100.00% | 100.00% | 100.00% | 🔴 Needs Work |
-| `telnet.rs` | 97.67% | 99.02% | 100.00% | 🔴 Needs Work |
-| `tty.rs` | 77.78% | 83.15% | 100.00% | 🔴 Needs Work |
-| `window.rs` | 88.24% | 84.51% | 85.71% | 🔴 Needs Work |
+| `mccp.rs` | 71.09% | 74.85% | 73.33% | 🟡 Good |
+| `mud_selection.rs` | 95.06% | 96.67% | 100.00% | 🟢 Excellent |
+| `mud.rs` | 88.21% | 90.65% | 85.19% | 🟡 Good |
+| `offline_mud/game.rs` | 96.58% | 95.88% | 96.55% | 🟢 Excellent |
+| `offline_mud/parser.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
+| `output_window.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
+| `plugins/stack.rs` | 73.13% | 78.10% | 55.00% | 🟡 Good |
+| `screen.rs` | 95.78% | 97.79% | 96.15% | 🟢 Excellent |
+| `scrollback.rs` | 91.71% | 93.13% | 100.00% | 🟢 Excellent |
+| `select.rs` | 97.50% | 96.61% | 100.00% | 🟢 Excellent |
+| `selectable.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
+| `selection.rs` | 71.14% | 76.47% | 75.00% | 🟡 Good |
+| `session.rs` | 85.92% | 88.62% | 87.50% | 🟡 Good |
+| `socket.rs` | 91.54% | 92.35% | 100.00% | 🟢 Excellent |
+| `status_line.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
+| `telnet.rs` | 97.67% | 99.02% | 100.00% | 🟢 Excellent |
+| `tty.rs` | 31.11% | 25.84% | 55.56% | 🔴 Needs Work |
+| `window.rs` | 88.24% | 84.51% | 85.71% | 🟡 Good |
 
 ## Coverage Tiers
 
 ### 🟢 Excellent (≥90% lines)
+- `alias.rs` - 94.01%
+- `config.rs` - 94.67%
+- `engine.rs` - 97.06%
+- `macro_def.rs` - 100.00%
+- `mud_selection.rs` - 95.06%
+- `offline_mud/game.rs` - 96.58%
+- `offline_mud/parser.rs` - 100.00%
+- `output_window.rs` - 100.00%
+- `screen.rs` - 95.78%
+- `scrollback.rs` - 91.71%
+- `select.rs` - 97.50%
+- `selectable.rs` - 100.00%
+- `socket.rs` - 91.54%
+- `status_line.rs` - 100.00%
+- `telnet.rs` - 97.67%
 
 ### 🟡 Good (70-89% lines)
+- `ansi.rs` - 88.65%
+- `control.rs` - 72.75%
+- `input.rs` - 89.69%
+- `input_line.rs` - 83.58%
+- `mccp.rs` - 71.09%
+- `mud.rs` - 88.21%
+- `plugins/stack.rs` - 73.13%
+- `selection.rs` - 71.14%
+- `session.rs` - 85.92%
+- `window.rs` - 88.24%
 
 ### 🟠 Moderate (40-69% lines)
+- `action.rs` - 68.93%
 
 ### 🔴 Needs Work (<40% lines)
+- `curses.rs` - 18.56% (ncurses FFI - TTY dependent)
+- `main.rs` - 0.00% (event loop - needs integration tests)
+- `tty.rs` - 31.11% (requires real TTY)
 
 ## Coverage Targets
 
 | Tier | Target | Current | Status |
 |------|--------|---------|--------|
-| Overall | ≥80% | 76.90% | ⏳ In Progress |
+| Overall | ≥80% | 74.51% | ⏳ In Progress |
 | Critical Paths | ≥95% | Check modules above | ✅ Met |
 | New Modules | ≥80% | - | Policy |
 

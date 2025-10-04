@@ -1,5 +1,9 @@
 # Cargo configuration and custom aliases
 
+[env]
+# Python dylib path (required for pyo3 tests on macOS)
+DYLD_LIBRARY_PATH = "/opt/homebrew/Caskroom/miniforge/base/lib"
+
 [alias]
 # Testing
 t = "test"

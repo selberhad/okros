@@ -440,52 +440,64 @@ impl Drop for PerlPlugin {
 mod tests {
     use super::*;
 
+    // NOTE: Perl C API has singleton limitations - running multiple tests with separate
+    // PerlPlugin instances causes segfaults. Solution: Run all tests in one function.
     #[test]
-    fn test_initialization() {
-        let _interp = PerlPlugin::new().unwrap();
-        // If we got here, initialization worked
-    }
+    fn test_perl_all_features() {
+        use std::io::Write;
+        use tempfile::NamedTempFile;
 
-    #[test]
-    fn test_set_get_int() {
+        // Create single Perl interpreter for all subtests
         let mut interp = PerlPlugin::new().unwrap();
+
+        // Test 1: Initialization (implicit - we created it above)
+
+        // Test 2: Set/get integer
         interp.set_int("test_num", 42);
+        assert_eq!(interp.get_int("test_num"), 42);
 
-        let value = interp.get_int("test_num");
-        assert_eq!(value, 42);
-    }
-
-    #[test]
-    fn test_set_get_string() {
-        let mut interp = PerlPlugin::new().unwrap();
+        // Test 3: Set/get string
         interp.set_str("test_var", "Hello from Rust!");
+        assert_eq!(interp.get_str("test_var"), "Hello from Rust!");
 
-        let value = interp.get_str("test_var");
-        assert_eq!(value, "Hello from Rust!");
-    }
-
-    #[test]
-    fn test_eval() {
-        let mut interp = PerlPlugin::new().unwrap();
+        // Test 4: Eval
         let mut out = String::new();
-        interp.eval("$x = 123", &mut out);
+        interp.eval("$test_x = 123", &mut out);
+        assert_eq!(interp.get_int("test_x"), 123);
 
-        let value = interp.get_int("x");
-        assert_eq!(value, 123);
-    }
-
-    #[test]
-    fn test_run_function() {
-        let mut interp = PerlPlugin::new().unwrap();
-
-        // Define a function that uppercases
-        let mut out = String::new();
+        // Test 5: Run function
         interp.eval("sub test_func { my $s = shift; return uc($s); }", &mut out);
-
-        // Call it via run
         let mut result = String::new();
         let ok = interp.run("test_func", "hello", &mut result);
         assert!(ok);
         assert_eq!(result, "HELLO");
+
+        // Test 6: Load file
+        let mut script_file = NamedTempFile::new().unwrap();
+        writeln!(script_file, "$loaded_from_file = 999;").unwrap();
+        script_file.flush().unwrap();
+
+        let loaded = interp.load_file(script_file.path().to_str().unwrap(), false);
+        assert!(loaded);
+        assert_eq!(interp.get_int("loaded_from_file"), 999);
+
+        // Test 7: Computation (like Python's test)
+        interp.eval(
+            "sub compute { my $n = shift; return $n * 2 + 10; }",
+            &mut out,
+        );
+        let mut compute_result = String::new();
+        let ok = interp.run("compute", "5", &mut compute_result);
+        assert!(ok);
+        assert_eq!(compute_result, "20");
+
+        // Test 8: Run quietly (matches Python's behavior - suppresses stderr)
+        let mut quiet_result = String::new();
+        // Note: Perl's eval can succeed even for undefined functions (returns undef)
+        let _ok = interp.run_quietly("maybe_undefined", "arg", &mut quiet_result, true);
+        // Just verify it doesn't panic - Perl error handling is complex
+
+        // TODO: Add match_prepare/match_exec tests once perl_call_sv is properly implemented
+        // (See TODO in match_exec implementation - current eval-based approach incomplete)
     }
 }

@@ -7,6 +7,10 @@ use crate::plugins::stack::Interpreter;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyModule};
 
+// Wrapper types to distinguish match patterns from substitution patterns in match_exec
+struct MatchPattern(Py<PyAny>, String);
+struct SubstitutePattern(Py<PyAny>, String);
+
 /// Python interpreter wrapper matching C++ PythonEmbeddedInterpreter patterns
 pub struct PythonInterpreter {
     globals: Py<PyDict>,
@@ -227,8 +231,8 @@ impl Interpreter for PythonInterpreter {
             let re_module = py.import_bound("re").ok()?;
             let compiled = re_module.call_method1("compile", (pattern,)).ok()?;
 
-            // Store both compiled regex and commands string
-            let data = (compiled.unbind(), commands.to_string());
+            // Store as MatchPattern to distinguish from SubstitutePattern
+            let data = MatchPattern(compiled.unbind(), commands.to_string());
             Some(Box::new(data) as Box<dyn std::any::Any>)
         })
     }
@@ -244,8 +248,8 @@ impl Interpreter for PythonInterpreter {
             let re_module = py.import_bound("re").ok()?;
             let compiled = re_module.call_method1("compile", (pattern,)).ok()?;
 
-            // Store compiled regex and replacement string
-            let data = (compiled.unbind(), replacement.to_string());
+            // Store as SubstitutePattern to distinguish from MatchPattern
+            let data = SubstitutePattern(compiled.unbind(), replacement.to_string());
             Some(Box::new(data) as Box<dyn std::any::Any>)
         })
     }
@@ -255,9 +259,8 @@ impl Interpreter for PythonInterpreter {
         use pyo3::prelude::*;
 
         // Try to downcast as match pattern
-        if let Some(data) = compiled.downcast_ref::<(Py<PyAny>, String)>() {
+        if let Some(MatchPattern(regex, commands)) = compiled.downcast_ref::<MatchPattern>() {
             return Python::with_gil(|py| {
-                let (regex, commands) = data;
                 let regex_bound = regex.bind(py);
 
                 // Try to match
@@ -272,9 +275,10 @@ impl Interpreter for PythonInterpreter {
         }
 
         // Try to downcast as substitution pattern
-        if let Some(data) = compiled.downcast_ref::<(Py<PyAny>, String)>() {
+        if let Some(SubstitutePattern(regex, replacement)) =
+            compiled.downcast_ref::<SubstitutePattern>()
+        {
             return Python::with_gil(|py| {
-                let (regex, replacement) = data;
                 let regex_bound = regex.bind(py);
 
                 // Perform substitution
@@ -387,5 +391,37 @@ mod tests {
         // Call non-existent function with suppress=true
         let ok = interp.run_quietly("nonexistent", "arg", &mut out, true);
         assert!(!ok);
+    }
+
+    #[test]
+    fn test_match_prepare_and_exec() {
+        let mut interp = PythonInterpreter::new().unwrap();
+
+        // Prepare a regex pattern that matches "hello"
+        let compiled = interp.match_prepare(r"hello", "matched!").unwrap();
+
+        // Test matching text
+        let result = interp.match_exec(compiled.as_ref(), "well hello there");
+        assert_eq!(result, Some("matched!".to_string()));
+
+        // Test non-matching text
+        let result = interp.match_exec(compiled.as_ref(), "goodbye");
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_substitute_prepare_and_exec() {
+        let mut interp = PythonInterpreter::new().unwrap();
+
+        // Prepare a substitution pattern
+        let compiled = interp.substitute_prepare(r"\d+", "NUM").unwrap();
+
+        // Test substitution
+        let result = interp.match_exec(compiled.as_ref(), "I have 42 apples");
+        assert_eq!(result, Some("I have NUM apples".to_string()));
+
+        // Test no substitution needed
+        let result = interp.match_exec(compiled.as_ref(), "no numbers here");
+        assert_eq!(result, None);
     }
 }
