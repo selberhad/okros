@@ -1,7 +1,11 @@
 use crate::scrollback::{Attrib, Scrollback};
 use crate::window::Window;
-use std::ptr;
 
+/// OutputWindow - Window that displays scrollback buffer
+/// Ported from: mcl-cpp-reference/OutputWindow.cc
+///
+/// C++ pattern: OutputWindow : public Window, overrides scroll()
+/// Rust pattern: OutputWindow owns Window, implements redraw()
 pub struct OutputWindow {
     pub win: Box<Window>,
     pub sb: Scrollback,
@@ -9,10 +13,12 @@ pub struct OutputWindow {
 }
 
 impl OutputWindow {
-    pub fn new(width: usize, height: usize, lines: usize, color: u8) -> Self {
-        let mut win = Window::new(ptr::null_mut(), width, height);
+    /// Create OutputWindow as child of parent (C++ OutputWindow.cc:8-19)
+    pub fn new(parent: *mut Window, width: usize, height: usize, lines: usize, color: u8) -> Self {
+        let mut win = Window::new(parent, width, height);
         win.color = color;
         win.clear();
+
         Self {
             win,
             sb: Scrollback::new(width, height, lines),
@@ -20,14 +26,26 @@ impl OutputWindow {
         }
     }
 
+    /// Print line to scrollback and mark dirty (C++ OutputWindow prints to canvas)
     pub fn print_line(&mut self, bytes: &[u8], color: u8) {
         self.sb.print_line(bytes, color);
+        self.redraw();
+    }
+
+    /// Redraw window: blit scrollback viewport to canvas (C++ Window::redraw pattern)
+    pub fn redraw(&mut self) {
         let view = self.sb.viewport_slice();
         self.win.blit(view);
     }
 
+    /// Get viewport for direct rendering
     pub fn viewport(&self) -> &[Attrib] {
         &self.win.canvas
+    }
+
+    /// Get mutable window pointer for tree operations
+    pub fn window_mut_ptr(&mut self) -> *mut Window {
+        self.win.as_mut()
     }
 }
 
@@ -38,7 +56,9 @@ mod tests {
 
     #[test]
     fn prints_lines_and_renders_diff() {
-        let mut ow = OutputWindow::new(5, 2, 20, 0);
+        use std::ptr;
+
+        let mut ow = OutputWindow::new(ptr::null_mut(), 5, 2, 20, 0);
         ow.print_line(b"hello", 0);
         ow.print_line(b"world", 0);
         let v = ow.viewport();

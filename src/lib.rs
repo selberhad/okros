@@ -9,6 +9,7 @@ pub mod mud;
 pub mod mud_selection;
 pub mod output_window;
 pub mod screen;
+pub mod screen2;
 pub mod scrollback;
 pub mod select;
 pub mod selectable;

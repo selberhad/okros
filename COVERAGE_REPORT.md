@@ -1,13 +1,13 @@
 # Test Coverage Report
 
-**Last Updated**: 2025-10-03 23:48
+**Last Updated**: 2025-10-03 23:52
 **Tool**: cargo-llvm-cov
-**Overall Coverage**: **72.89%** lines | **75.26%** regions | **79.81%** functions
+**Overall Coverage**: **73.33%** lines | **75.55%** regions | **79.85%** functions
 
 ## Summary
 
 ```
-TOTAL                            8889              2199    75.26%         515               104    79.81%        5261              1426    72.89%           0                 0         -
+TOTAL                            8988              2198    75.55%         526               106    79.85%        5340              1424    73.33%           0                 0         -
 ```
 
 ## Coverage by Module
@@ -27,10 +27,10 @@ TOTAL                            8889              2199    75.26%         515   
 | `main.rs` | 0.00% | 0.00% | 0.00% | 🔴 Needs Work |
 | `mccp.rs` | 71.09% | 74.85% | 73.33% | 🟡 Good |
 | `mud_selection.rs` | 87.36% | 90.06% | 84.62% | 🟡 Good |
-| `mud.rs` | 88.21% | 90.65% | 85.19% | 🟡 Good |
+| `mud.rs` | 88.32% | 90.65% | 85.19% | 🟡 Good |
 | `offline_mud/game.rs` | 96.58% | 95.88% | 96.55% | 🟢 Excellent |
 | `offline_mud/parser.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
-| `output_window.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
+| `output_window.rs` | 93.88% | 96.00% | 85.71% | 🟢 Excellent |
 | `plugins/perl.rs` | 82.80% | 87.61% | 85.00% | 🟡 Good |
 | `plugins/python.rs` | 88.14% | 89.22% | 90.91% | 🟡 Good |
 | `plugins/stack.rs` | 73.13% | 78.10% | 55.00% | 🟡 Good |
@@ -44,7 +44,7 @@ TOTAL                            8889              2199    75.26%         515   
 | `status_line.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
 | `telnet.rs` | 97.67% | 99.02% | 100.00% | 🟢 Excellent |
 | `tty.rs` | 31.11% | 25.84% | 55.56% | 🔴 Needs Work |
-| `window.rs` | 45.71% | 46.52% | 46.67% | 🟠 Moderate |
+| `window.rs` | 57.14% | 56.09% | 66.67% | 🟠 Moderate |
 
 ## Coverage Tiers
 
@@ -55,7 +55,7 @@ TOTAL                            8889              2199    75.26%         515   
 - `macro_def.rs` - 100.00%
 - `offline_mud/game.rs` - 96.58%
 - `offline_mud/parser.rs` - 100.00%
-- `output_window.rs` - 100.00%
+- `output_window.rs` - 93.88%
 - `screen.rs` - 94.79%
 - `scrollback.rs` - 91.71%
 - `select.rs` - 97.50%
@@ -70,7 +70,7 @@ TOTAL                            8889              2199    75.26%         515   
 - `input.rs` - 89.69%
 - `input_line.rs` - 83.58%
 - `mccp.rs` - 71.09%
-- `mud.rs` - 88.21%
+- `mud.rs` - 88.32%
 - `mud_selection.rs` - 87.36%
 - `plugins/perl.rs` - 82.80%
 - `plugins/python.rs` - 88.14%
@@ -80,7 +80,7 @@ TOTAL                            8889              2199    75.26%         515   
 
 ### 🟠 Moderate (40-69% lines)
 - `action.rs` - 68.93%
-- `window.rs` - 45.71%
+- `window.rs` - 57.14%
 
 ### 🔴 Needs Work (<40% lines)
 - `curses.rs` - 18.56% (ncurses FFI - TTY dependent)
@@ -91,7 +91,7 @@ TOTAL                            8889              2199    75.26%         515   
 
 | Tier | Target | Current | Status |
 |------|--------|---------|--------|
-| Overall | ≥80% | 72.89% | ⏳ In Progress |
+| Overall | ≥80% | 73.33% | ⏳ In Progress |
 | Critical Paths | ≥95% | Check modules above | ✅ Met |
 | New Modules | ≥80% | - | Policy |
 
