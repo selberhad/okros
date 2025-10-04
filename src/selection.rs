@@ -1,25 +1,30 @@
 // Selection - Scrollable list widget
 //
-// Ported from mcl-cpp-reference/Selection.cc
+// Ported from mcl-cpp-reference/Selection.cc (1:1 port)
 
 use crate::input::{KeyCode, KeyEvent};
 use crate::window::Window;
-use std::ptr;
 
-/// Base class for scrollable selection lists
+/// Base class for scrollable selection lists (C++ Selection.cc:7-37)
 /// Subclass and override get_data(), do_select(), do_choose() for custom behavior
 pub struct Selection {
-    window: Box<Window>,
+    pub win: Box<Window>,
     items: Vec<String>,
     colors: Vec<u8>,
     selection: i32, // Currently selected index (-1 = none)
 }
 
 impl Selection {
-    /// Create new selection widget
-    pub fn new(width: usize, height: usize, x: usize, y: usize) -> Self {
+    /// Create new selection widget (C++ Selection.cc:7-9)
+    /// Note: C++ uses Bordered style, we'll draw border manually for now
+    pub fn new(parent: *mut Window, width: usize, height: usize, x: isize, y: isize) -> Self {
+        let mut win = Window::new(parent, width, height);
+        win.parent_x = x;
+        win.parent_y = y;
+        win.color = 0x17; // bg_blue | fg_white
+
         Self {
-            window: Window::new(ptr::null_mut(), width, height),
+            win,
             items: Vec::new(),
             colors: Vec::new(),
             selection: -1,
@@ -98,11 +103,69 @@ impl Selection {
         // Override in subclass - default is to close
     }
 
+    /// Redraw window (C++ Selection.cc:38-66)
+    pub fn redraw(&mut self) {
+        // Set blue background color (C++ Selection.cc:41-42)
+        let bg_blue_fg_white = 0x17u16; // bg_blue (1) | fg_white (7)
+        let bg_green_fg_black = 0x20u16; // bg_green (2) | fg_black (0)
+
+        // Clear with blue background (C++ Selection.cc:42)
+        let blank = (bg_blue_fg_white << 8) | (b' ' as u16);
+        for a in &mut self.win.canvas {
+            *a = blank;
+        }
+
+        // Calculate top line for scrolling (C++ Selection.cc:47-48)
+        let count = self.items.len() as i32;
+        let height = self.win.height as i32;
+        let mut top = 0.max(self.selection - height / 2);
+        top = 0.max(count - height).min(top);
+
+        // Draw items (C++ Selection.cc:50-63)
+        for y in 0..height {
+            let idx = (y + top) as usize;
+            if idx >= self.items.len() {
+                break;
+            }
+
+            // Determine color for this line (C++ Selection.cc:52-60)
+            let color = if y + top == self.selection {
+                // Selected line - green background (C++ Selection.cc:53)
+                bg_green_fg_black
+            } else {
+                // Check if item has custom color (C++ Selection.cc:55-60)
+                let item_color = self.colors.get(idx).copied().unwrap_or(0);
+                if item_color != 0 {
+                    item_color as u16
+                } else {
+                    bg_blue_fg_white
+                }
+            };
+
+            // Write line to canvas (C++ Selection.cc:62)
+            // Copy data to avoid borrow conflict
+            let data_bytes: Vec<u8> = self.get_data(idx).unwrap_or("").as_bytes().to_vec();
+            let width = self.win.width;
+            for x in 0..width {
+                let ch = if x < data_bytes.len() {
+                    data_bytes[x]
+                } else {
+                    b' '
+                };
+                self.win.canvas[y as usize * width + x] = (color << 8) | (ch as u16);
+            }
+        }
+
+        self.win.dirty = false; // C++ Selection.cc:65
+    }
+
     /// Handle keypress - returns true if handled
     pub fn keypress(&mut self, event: KeyEvent) -> bool {
+        self.win.dirty = true; // C++ Selection.cc:69
+
         if self.selection >= 0 {
             let count = self.items.len() as i32;
-            let height = self.window.height as i32;
+            let height = self.win.height as i32;
 
             match event {
                 KeyEvent::Key(KeyCode::ArrowUp) => {
@@ -176,21 +239,20 @@ impl Selection {
         }
     }
 
-    /// Render the selection list
-    pub fn render(&mut self) -> Vec<u8> {
-        // TODO: Full rendering implementation
-        // For now, return placeholder
-        Vec::new()
+    /// Get mutable window pointer for tree operations
+    pub fn window_mut_ptr(&mut self) -> *mut Window {
+        self.win.as_mut()
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::ptr;
 
     #[test]
     fn selection_basic() {
-        let mut sel = Selection::new(80, 24, 0, 0);
+        let mut sel = Selection::new(ptr::null_mut(), 80, 24, 0, 0);
         sel.add_string("Item 1", 0);
         sel.add_string("Item 2", 0);
         sel.add_string("Item 3", 0);
@@ -201,7 +263,7 @@ mod tests {
 
     #[test]
     fn selection_navigation() {
-        let mut sel = Selection::new(80, 24, 0, 0);
+        let mut sel = Selection::new(ptr::null_mut(), 80, 24, 0, 0);
         for i in 1..=10 {
             sel.add_string(format!("Item {}", i), 0);
         }
@@ -226,7 +288,7 @@ mod tests {
 
     #[test]
     fn selection_letter_jump() {
-        let mut sel = Selection::new(80, 24, 0, 0);
+        let mut sel = Selection::new(ptr::null_mut(), 80, 24, 0, 0);
         sel.add_string("Apple", 0);
         sel.add_string("Banana", 0);
         sel.add_string("Cherry", 0);
@@ -243,5 +305,20 @@ mod tests {
         // Jump to 'A'
         sel.keypress(KeyEvent::Byte(b'A'));
         assert_eq!(sel.get_selection(), 0);
+    }
+
+    #[test]
+    fn selection_redraw_blue_background() {
+        let mut sel = Selection::new(ptr::null_mut(), 20, 5, 0, 0);
+        sel.add_string("Test Item", 0);
+        sel.redraw();
+
+        // Check that canvas has blue background (0x17)
+        let bg_blue_fg_white = 0x17u16;
+        for &attr in &sel.win.canvas {
+            let color = (attr >> 8) as u8;
+            // Should be either blue background or green selection
+            assert!(color == 0x17 || color == 0x20);
+        }
     }
 }

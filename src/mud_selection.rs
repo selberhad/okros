@@ -1,21 +1,38 @@
 // MUDSelection - Specialized selection widget for MUD connect menu
 //
-// Ported from mcl-cpp-reference/Selection.cc (MUDSelection class)
+// Ported from mcl-cpp-reference/Selection.cc:170-213 (1:1 port)
 
 use crate::config::Config;
 use crate::input::{KeyCode, KeyEvent};
 use crate::selection::Selection;
+use crate::window::Window;
 
-/// Specialized selection widget for choosing MUDs from config
+/// Specialized selection widget for choosing MUDs from config (C++ Selection.cc:39-48)
 pub struct MudSelection {
     selection: Selection,
     config: Config,
 }
 
 impl MudSelection {
-    /// Create new MUD selection menu
-    pub fn new(config: Config, width: usize, height: usize) -> Self {
-        let mut selection = Selection::new(width, height, 0, 0);
+    /// Create new MUD selection menu (C++ Selection.cc:170-175)
+    /// C++: Selection (_parent, _parent->width-2, _parent->height/2, 0, _parent->height/4)
+    pub fn new(parent: *mut Window, config: Config) -> Self {
+        // Get parent dimensions for centered window
+        let (parent_width, parent_height) = unsafe {
+            if !parent.is_null() {
+                ((*parent).width, (*parent).height)
+            } else {
+                (80, 24) // Fallback
+            }
+        };
+
+        // C++ MUDSelection.cc:171 - centered window
+        let width = parent_width.saturating_sub(2); // parent->width - 2
+        let height = parent_height / 2; // parent->height / 2
+        let x = 0;
+        let y = (parent_height / 4) as isize; // parent->height / 4 (centered)
+
+        let mut selection = Selection::new(parent, width, height, x, y);
 
         // Populate selection with MUD names
         for mud in config.mud_list.iter() {
@@ -63,6 +80,16 @@ impl MudSelection {
             .map(|m| (m.name.as_str(), m.hostname.as_str(), m.port))
     }
 
+    /// Get mutable window pointer for tree operations
+    pub fn window_mut_ptr(&mut self) -> *mut Window {
+        self.selection.window_mut_ptr()
+    }
+
+    /// Redraw the window
+    pub fn redraw(&mut self) {
+        self.selection.redraw();
+    }
+
     /// Handle keypress event
     pub fn keypress(&mut self, event: KeyEvent) -> bool {
         // Special handling for Alt-A (show aliases) - not implemented yet
@@ -100,6 +127,7 @@ fn truncate(s: &str, max_len: usize) -> String {
 mod tests {
     use super::*;
     use crate::mud::Mud;
+    use std::ptr;
 
     #[test]
     fn mud_selection_basic() {
@@ -109,7 +137,7 @@ mod tests {
             .insert(Mud::new("TestMUD", "127.0.0.1", 4000));
         config.mud_list.insert(Mud::new("Nodeka", "nodeka.com", 23));
 
-        let sel = MudSelection::new(config, 80, 24);
+        let sel = MudSelection::new(ptr::null_mut(), config);
         assert_eq!(sel.count(), 2);
         assert_eq!(sel.get_selection(), 0);
     }
@@ -123,7 +151,7 @@ mod tests {
                 .insert(Mud::new(&format!("MUD{}", i), "127.0.0.1", 4000 + i));
         }
 
-        let mut sel = MudSelection::new(config, 80, 24);
+        let mut sel = MudSelection::new(ptr::null_mut(), config);
 
         // Navigate down
         sel.keypress(KeyEvent::Key(KeyCode::ArrowDown));
@@ -146,7 +174,7 @@ mod tests {
             .insert(Mud::new("TestMUD", "127.0.0.1", 4000));
         config.mud_list.insert(Mud::new("Nodeka", "nodeka.com", 23));
 
-        let sel = MudSelection::new(config, 80, 24);
+        let sel = MudSelection::new(ptr::null_mut(), config);
         assert_eq!(sel.get_selected_mud_name(), Some("TestMUD"));
     }
 

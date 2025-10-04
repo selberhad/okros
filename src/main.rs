@@ -234,14 +234,14 @@ fn main() {
     // Main event loop (matching main.cc:141-170)
     while !quit {
         // 1. Render UI (main.cc:142)
-        if let ModalState::ConnectMenu(ref menu) = modal {
-            // Render connect menu modal
-            render_connect_menu(menu, width, height);
-        } else {
-            // Refresh Screen (calls Window::refresh() to composite tree, then refreshTTY) - C++ main.cc:142
-            // Window::refresh() automatically composites StatusLine, OutputWindow, and InputLine via tree walk
-            screen.refresh(&caps);
+        if let ModalState::ConnectMenu(ref mut menu) = modal {
+            // Redraw MUD selection window (it's in the Window tree)
+            menu.redraw();
         }
+
+        // Refresh Screen (calls Window::refresh() to composite tree, then refreshTTY) - C++ main.cc:142
+        // Window::refresh() automatically composites all windows including MudSelection via tree walk
+        screen.refresh(&caps);
 
         // 2. Poll file descriptors (main.cc:147) - stdin + socket with 250ms timeout
         let mut fds = vec![(libc::STDIN_FILENO, READ)];
@@ -314,8 +314,10 @@ fn main() {
 
                                 let mut config = okros::config::Config::new();
                                 if config.load_file(&config_path).is_ok() {
+                                    // Create MUD selection window as child of Screen
                                     let menu = okros::mud_selection::MudSelection::new(
-                                        config, width, height,
+                                        screen.window_mut() as *mut okros::window::Window,
+                                        config,
                                     );
                                     if menu.count() > 0 {
                                         modal = ModalState::ConnectMenu(menu);
@@ -997,41 +999,4 @@ fn run_headless_offline_mode(args: &[String]) {
     }
 }
 
-fn render_connect_menu(menu: &okros::mud_selection::MudSelection, _width: usize, _height: usize) {
-    use std::io::Write;
-
-    // Clear screen and position cursor at top
-    print!("\x1b[2J\x1b[H");
-
-    // Title
-    println!("\x1b[1;36m=== MUD Connect Menu ===\x1b[0m\n");
-
-    // Instructions
-    println!("\x1b[33mArrows: Navigate | Enter: Connect | Esc: Cancel\x1b[0m\n");
-
-    // Menu items
-    let selection = menu.get_selection();
-    let count = menu.count();
-
-    for i in 0..count.min(20) {
-        // Show max 20 items
-        if i as i32 == selection {
-            print!("\x1b[1;32m> ");
-        } else {
-            print!("  ");
-        }
-
-        // Get MUD info at this index
-        if let Some((name, hostname, port)) = menu.get_mud_at(i) {
-            if hostname.is_empty() {
-                // Offline MUD or MUD without hostname
-                println!("{}\x1b[0m", name);
-            } else {
-                // Network MUD
-                println!("{:<20} {}:{}\x1b[0m", name, hostname, port);
-            }
-        }
-    }
-
-    std::io::stdout().flush().unwrap();
-}
+// Note: render_connect_menu removed - MudSelection now renders via Window tree
