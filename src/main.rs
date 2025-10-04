@@ -233,10 +233,15 @@ fn main() {
 
     // Main event loop (matching main.cc:141-170)
     while !quit {
-        // 1. Render UI (main.cc:142)
+        // Manually redraw modal windows if dirty (composition vs inheritance workaround)
         if let ModalState::ConnectMenu(ref mut menu) = modal {
-            // Redraw MUD selection window (it's in the Window tree)
-            menu.redraw();
+            unsafe {
+                if (*menu.window_mut_ptr()).dirty {
+                    menu.redraw();
+                    // redraw() sets dirty=false, but we need Window::refresh() to composite it
+                    (*menu.window_mut_ptr()).dirty = true;
+                }
+            }
         }
 
         // Refresh Screen (calls Window::refresh() to composite tree, then refreshTTY) - C++ main.cc:142
@@ -264,12 +269,7 @@ fn main() {
                             // Handle modal connect menu first
                             if let ModalState::ConnectMenu(ref mut menu) = modal {
                                 if menu.keypress(ev) {
-                                    // Keypress handled - redraw menu with updated selection
-                                    menu.redraw();
-                                    // IMPORTANT: redraw() sets dirty=false, but we need it dirty for screen.refresh()
-                                    unsafe {
-                                        (*menu.window_mut_ptr()).dirty = true;
-                                    }
+                                    // Keypress handled - dirty flag set, Window::refresh() will call redraw()
 
                                     // Enter pressed - connect to selected MUD
                                     if matches!(ev, KeyEvent::Byte(b'\n')) {
