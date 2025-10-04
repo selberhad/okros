@@ -8,17 +8,17 @@
 
 ## Overall Summary
 
-**Rust is 15% more concise than C++** (0.85x the size)
+**Rust is 10% more concise than C++** (0.90x the size)
 
 | Metric | C++ (Reference) | Rust (okros) | Ratio |
 |--------|----------------|--------------|-------|
-| **Code Lines** | 8,815 | 7,452 | **0.85x** |
-| **Comments** | 637 | 887 | 1.39x |
-| **Blank Lines** | 2,219 | 974 | 0.44x |
-| **TOTAL** | 11,671 | 9,313 | **0.80x** |
-| **Files** | 79 | 37 | 0.47x |
+| **Code Lines** | 8,815 | 7,972 | **0.90x** |
+| **Comments** | 637 | 1,033 | 1.62x |
+| **Blank Lines** | 2,219 | 1,102 | 0.50x |
+| **TOTAL** | 11,671 | 10,107 | **0.87x** |
+| **Files** | 79 | 39 | 0.49x |
 
-**Difference**: -1363 lines of code (-15.5%)
+**Difference**: -843 lines of code (-9.6%)
 
 ---
 
@@ -36,7 +36,7 @@
 | Group.cc | 144 | SKIPPED/DEFERRED | - | - | ⏭️ |
 | Hotkey.cc | 93 | macro_def.rs | 54 | 0.58 | ✅ |
 | InputBox.cc | 50 | SKIPPED/DEFERRED | - | - | ⏭️ |
-| InputLine.cc | 522 | input_line.rs | 133 | 0.25 | ✅ ⚠️ SHORT |
+| InputLine.cc | 522 | input_line.rs | 461 | 0.88 | ✅ |
 | Interpreter.cc | 834 | plugins/stack.rs | 258 | 0.31 | ✅ ⚠️ SHORT |
 | MUD.cc | 135 | mud.rs | 375 | 2.78 | ✅ |
 | Option.cc | 136 | SKIPPED/DEFERRED | - | - | ⏭️ |
@@ -53,7 +53,7 @@
 | String.cc | 19 | SKIPPED/DEFERRED | - | - | ⏭️ |
 | TTY.cc | 297 | tty.rs | 172 | 0.58 | ✅ |
 | Window.cc | 721 | window.rs | 286 | 0.40 | ✅ ⚠️ SHORT |
-| main.cc | 250 | main.rs | 1009 | 4.04 | ✅ |
+| main.cc | 250 | main.rs | 988 | 3.95 | ✅ |
 | misc.cc | 209 | SKIPPED/DEFERRED | - | - | ⏭️ |
 | plugins/PerlEmbeddedInterpreter.cc | 260 | plugins/perl.rs | 533 | 2.05 | ✅ |
 | plugins/PythonEmbeddedInterpreter.cc | 268 | plugins/python.rs | 427 | 1.59 | ✅ |
@@ -64,7 +64,6 @@
 
 The following files are suspiciously short (<40% of C++ size) and may be incomplete:
 
-- **InputLine.cc** (522 lines) → **input_line.rs** (133 lines) = **25%** of original
 - **OutputWindow.cc** (339 lines) → **output_window.rs** (87 lines) = **26%** of original
 - **Interpreter.cc** (834 lines) → **plugins/stack.rs** (258 lines) = **31%** of original
 - **Window.cc** (721 lines) → **window.rs** (286 lines) = **40%** of original
@@ -82,6 +81,6 @@ The following files are suspiciously short (<40% of C++ size) and may be incompl
 
 ---
 
-*Generated: Sat Oct  4 15:34:25 2025*
+*Generated: Sat Oct  4 15:50:16 2025*
 *Tool: [cloc](https://github.com/AlDanial/cloc) v
 *

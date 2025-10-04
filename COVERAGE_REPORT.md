@@ -1,13 +1,13 @@
 # Test Coverage Report
 
-**Last Updated**: 2025-10-04 15:34
+**Last Updated**: 2025-10-04 15:50
 **Tool**: cargo-llvm-cov
-**Overall Coverage**: **73.34%** lines | **75.68%** regions | **79.32%** functions
+**Overall Coverage**: **72.15%** lines | **74.55%** regions | **78.17%** functions
 
 ## Summary
 
 ```
-TOTAL                            9570              2327    75.68%         561               116    79.32%        5717              1524    73.34%           0                 0         -
+TOTAL                           10307              2623    74.55%         600               131    78.17%        6151              1713    72.15%           0                 0         -
 ```
 
 ## Coverage by Module
@@ -17,11 +17,13 @@ TOTAL                            9570              2327    75.68%         561   
 | `action.rs` | 68.93% | 68.05% | 71.43% | 🟠 Moderate |
 | `alias.rs` | 94.01% | 94.52% | 100.00% | 🟢 Excellent |
 | `ansi.rs` | 86.99% | 88.94% | 100.00% | 🟡 Good |
+| `command_queue.rs` | 78.38% | 81.33% | 57.14% | 🟡 Good |
 | `config.rs` | 94.67% | 96.30% | 77.42% | 🟢 Excellent |
 | `control.rs` | 72.75% | 74.25% | 87.50% | 🟡 Good |
 | `curses.rs` | 18.56% | 13.55% | 40.00% | 🔴 Needs Work |
 | `engine.rs` | 97.06% | 97.00% | 100.00% | 🟢 Excellent |
-| `input_line.rs` | 80.46% | 83.05% | 69.23% | 🟡 Good |
+| `history.rs` | 65.85% | 65.81% | 77.27% | 🟠 Moderate |
+| `input_line.rs` | 44.94% | 50.76% | 50.00% | 🟠 Moderate |
 | `input.rs` | 89.69% | 87.03% | 100.00% | 🟡 Good |
 | `macro_def.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
 | `main.rs` | 0.00% | 0.00% | 0.00% | 🔴 Needs Work |
@@ -67,9 +69,9 @@ TOTAL                            9570              2327    75.68%         561   
 
 ### 🟡 Good (70-89% lines)
 - `ansi.rs` - 86.99%
+- `command_queue.rs` - 78.38%
 - `control.rs` - 72.75%
 - `input.rs` - 89.69%
-- `input_line.rs` - 80.46%
 - `mccp.rs` - 71.09%
 - `mud.rs` - 72.80%
 - `mud_selection.rs` - 82.18%
@@ -81,6 +83,8 @@ TOTAL                            9570              2327    75.68%         561   
 
 ### 🟠 Moderate (40-69% lines)
 - `action.rs` - 68.93%
+- `history.rs` - 65.85%
+- `input_line.rs` - 44.94%
 - `session_manager.rs` - 59.07%
 - `window.rs` - 57.14%
 
@@ -93,7 +97,7 @@ TOTAL                            9570              2327    75.68%         561   
 
 | Tier | Target | Current | Status |
 |------|--------|---------|--------|
-| Overall | ≥80% | 73.34% | ⏳ In Progress |
+| Overall | ≥80% | 72.15% | ⏳ In Progress |
 | Critical Paths | ≥95% | Check modules above | ✅ Met |
 | New Modules | ≥80% | - | Policy |
 
