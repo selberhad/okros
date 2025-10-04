@@ -127,6 +127,11 @@ impl Scrollback {
         &self.buf[self.viewpoint..self.viewpoint + self.width * self.height]
     }
 
+    /// Get total number of lines written (for testing)
+    pub fn total_lines(&self) -> usize {
+        self.total_lines_written
+    }
+
     /// Get recent scrollback lines (for headless mode)
     /// Returns last N lines from scrollback, accounting for circular buffer
     pub fn recent_lines(&self, count: usize) -> Vec<Attrib> {
