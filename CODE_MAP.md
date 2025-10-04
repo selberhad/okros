@@ -9,8 +9,9 @@ This file tracks the structure and status of the codebase.
 - `TOY_PLAN.md` - Discovery phase strategy and progress (toys 1-5)
 - `TOY_PLAN_2.md` - Discovery phase 2 plan (risk-focused toys 6-11)
 - `PORTING_HISTORY.md` - Historical record of C++ → Rust porting (tier-by-tier completion)
+- `PORT_LEARNINGS.md` - How DocDD was applied to this port (case study)
 - `FUTURE_WORK.md` - Remaining tasks, post-MVP enhancements, deferred features
-- `DDD.md` - Doc-Driven Development methodology
+- `DDD.md` - Doc-Driven Development methodology (project-agnostic)
 - `PLAYBOOK.md` - Condensed porting workflow guide
 - `AGENTS.md` - Quick reference summary
 - `TOY_DEV.md` - Toy development methodology

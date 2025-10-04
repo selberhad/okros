@@ -29,7 +29,7 @@ help:
 	@echo "  make run-python     - Run with Python plugin"
 	@echo "  make run-perl       - Run with Perl plugin"
 	@echo "  make run-all        - Run with all features"
-	@echo "  make demo           - Run with demo MUD connection (MCL_CONNECT env var)"
+	@echo "  make demo           - Run with demo MUD connection (OKROS_CONNECT env var)"
 	@echo ""
 	@echo "Code Quality:"
 	@echo "  make check          - Fast syntax check (no codegen)"
@@ -124,10 +124,10 @@ run-perl:
 run-all:
 	cargo run --all-features
 
-# Demo with connection (set MCL_CONNECT=127.0.0.1:4000)
+# Demo with connection (set OKROS_CONNECT=127.0.0.1:4000)
 demo:
-	@if [ -z "$$MCL_CONNECT" ]; then \
-		echo "Error: Set MCL_CONNECT env var (e.g., MCL_CONNECT=127.0.0.1:4000 make demo)"; \
+	@if [ -z "$$OKROS_CONNECT" ]; then \
+		echo "Error: Set OKROS_CONNECT env var (e.g., OKROS_CONNECT=127.0.0.1:4000 make demo)"; \
 		exit 1; \
 	fi
 	cargo run

@@ -164,9 +164,9 @@ fn main() {
     }
     // MUD instance (contains socket + aliases/actions/macros)
     let mut mud = okros::mud::Mud::empty();
-    // Optional: try to connect if MCL_CONNECT=127.0.0.1:PORT is set
+    // Optional: try to connect if OKROS_CONNECT=127.0.0.1:PORT is set
     let mut sock: Option<Socket> = None;
-    if let Ok(addr) = std::env::var("MCL_CONNECT") {
+    if let Ok(addr) = std::env::var("OKROS_CONNECT") {
         if let Some((ip_s, port_s)) = addr.split_once(':') {
             if let (Ok(ip), Ok(port)) = (ip_s.parse::<Ipv4Addr>(), port_s.parse::<u16>()) {
                 let mut s = Socket::new().unwrap();

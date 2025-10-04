@@ -190,10 +190,10 @@ just attach mybot
 
 ```bash
 # Connect to MUD on startup
-MCL_CONNECT=127.0.0.1:4000 cargo run
+OKROS_CONNECT=127.0.0.1:4000 cargo run
 
 # Or
-MCL_CONNECT=mud.example.com:4000 make demo
+OKROS_CONNECT=mud.example.com:4000 make demo
 ```
 
 ## Code Quality

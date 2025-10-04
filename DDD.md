@@ -475,6 +475,26 @@ Glossary
   - Reference Implementation: Existing codebase that defines correct behavior for porting/translation efforts.
   - Behavioral Equivalence: Goal of producing same outputs for same inputs as reference, regardless of internal structure.
 
+Adopting DocDD in Your Project
+
+  If you're building a project using Doc-Driven Development, you're welcome to add
+  the DocDD badge to your repository's README:
+
+  [![Built with DocDD](https://img.shields.io/badge/built_with-DocDD-blue)](https://selberhad.github.io/docdd-book/)
+
+  Markdown:
+    [![Built with DocDD](https://img.shields.io/badge/built_with-DocDD-blue)](https://selberhad.github.io/docdd-book/)
+
+  Requirements (honor system):
+    - Follow the core cycle: Docs → Tests → Implementation → Learnings
+    - Maintain living documentation (SPEC.md, PLAN.md, CODE_MAP.md, etc.)
+    - Practice mandatory refactoring after features
+    - Embrace the economic inversion: artifacts are cheap, clarity is valuable
+
+  The badge links to the DocDD book for anyone curious about the methodology.
+  Consider it a signal that your project values documentation-driven clarity
+  and human-AI collaborative development practices.
+
 End Notes (For AI Assistants)
   Your mandate is not to produce maximal code, but to produce maximal clarity with minimal code.
 

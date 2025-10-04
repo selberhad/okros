@@ -65,7 +65,7 @@
 - [ ] Connect to selected MUD via Mud::connect()
 
 **Estimated effort**: 2-3 hours (full UI) or 30 minutes (simple CLI prompt)
-**Alternative**: Use `#open` command or `MCL_CONNECT` env var (already working)
+**Alternative**: Use `#open` command or `OKROS_CONNECT` env var (already working)
 
 ### 2. Perl Bot Integration Testing (Real-World Validation)
 **Goal**: Validate production automation scripts
@@ -107,11 +107,11 @@ cargo test --all-features            # Include plugin tests
 
 **Run**:
 ```bash
-cargo run                            # Interactive mode (TTY UI)
-cargo run --offline                  # Offline mode (play internal MUD)
-cargo run --headless --instance test # Headless mode (control via Unix socket)
-cargo run --attach test              # Attach to headless instance
-MCL_CONNECT=127.0.0.1:4000 cargo run # Auto-connect to MUD on startup
+cargo run                              # Interactive mode (TTY UI)
+cargo run --offline                    # Offline mode (play internal MUD)
+cargo run --headless --instance test   # Headless mode (control via Unix socket)
+cargo run --attach test                # Attach to headless instance
+OKROS_CONNECT=127.0.0.1:4000 cargo run # Auto-connect to MUD on startup
 ```
 
 **Basic Usage** (interactive mode):

@@ -1,5 +1,9 @@
 # okros - Rust MUD Client
 
+[![Built with DocDD](https://img.shields.io/badge/built_with-DocDD-blue)](https://selberhad.github.io/docdd-book/)
+
+_This project is both a working MUD client and a DocDD case study. We ported ~11k LOC of C++ to Rust in ~20 days using Discovery Mode (12 toys to validate FFI/unsafe patterns) + Execution Mode (tier-by-tier production port). Check `/toys/` for intermediate artifacts and [PORT_LEARNINGS.md](PORT_LEARNINGS.md) for the full story. The codebase doubles as a reference implementation._
+
 **okros** (from _ochre_, rusty mud) is a modern MUD client written in Rust, reviving the design principles of MCL (MUD Client for Linux). Built for headless/detachable operation, it's perfect for automation, LLM agents, and cloud deployments.
 
 > **Current Status**: MVP complete and validated! Successfully tested with Nodeka MUD (nodeka.com:23) - first AI/LLM to play autonomously. See [ORIENTATION.md](ORIENTATION.md) for detailed status and [MUD_LEARNINGS.md](MUD_LEARNINGS.md) for validation results.
@@ -102,7 +106,7 @@ okros --headless --offline --instance NAME    # Headless offline MUD (for testin
 okros --attach NAME                           # Attach to running session
 
 # Environment variables
-MCL_CONNECT=127.0.0.1:4000 okros   # Auto-connect on startup
+OKROS_CONNECT=127.0.0.1:4000 okros   # Auto-connect on startup
 ```
 
 ### Interactive Mode
@@ -111,7 +115,7 @@ Connect to a MUD server interactively:
 
 ```bash
 # Auto-connect via environment variable
-MCL_CONNECT=example.com:4000 okros
+OKROS_CONNECT=example.com:4000 okros
 
 # Start client, then connect manually
 okros
@@ -209,37 +213,29 @@ echo '{"cmd":"stream"}' | nc -U /tmp/okros/ar.sock
 
 okros headless mode is designed for simplicity - LLM agents just need to read text buffers and send commands:
 
-```python
-import socket
-import json
-
+```bash
+#!/bin/bash
 # Start headless offline MUD for testing (no real MUD server needed)
-# $ okros --headless --offline --instance demo
+./scripts/start_headless.sh demo --offline
 
-# Connect to headless okros instance
-sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-sock.connect("/tmp/okros/demo.sock")
+# Helper function for sending commands
+mud_send() { ./scripts/mud_cmd.sh /tmp/okros/demo.sock "$1"; }
 
 # Read MUD output
-sock.sendall(json.dumps({"cmd": "get_buffer"}).encode() + b'\n')
-response = json.loads(sock.recv(4096))
-# Parse buffer response (format: {"event":"Buffer","lines":[...]})
-mud_text = "\n".join(response.get("lines", []))
+mud_text=$(./scripts/get_buffer.sh demo)
 
-# LLM processes mud_text and decides next action...
-# (Your LLM logic here)
+# LLM processes $mud_text and decides next action...
+# (Your LLM logic here - call API, parse response, etc.)
 
 # Send command back to MUD
-action = "take rusty sword\n"  # LLM's decision
-sock.sendall(json.dumps({"cmd": "send", "data": action}).encode() + b'\n')
-sock.recv(4096)  # Read OK response
+mud_send "take rusty sword"
 
 # Check game state (offline mode provides structured status)
-sock.sendall(json.dumps({"cmd": "status"}).encode() + b'\n')
-status = json.loads(sock.recv(4096))
+echo '{"cmd":"status"}' | nc -U /tmp/okros/demo.sock
 # Returns: {"event":"Status","inventory_count":1,"location":"clearing"}
 
-sock.close()
+# Clean up
+./scripts/stop_headless.sh demo
 ```
 
 **Philosophy**: No structured events, no complex parsing - just raw MUD text. LLMs already understand natural language; let them do what they do best.
@@ -371,7 +367,7 @@ okros is released under the GPL v2.
 
 ## Historical Note
 
-okros is a from-scratch Rust implementation inspired by MCL (MUD Client for Linux), originally written by Erwin S. Andreasen. MCL was last maintained around 2000 and went offline circa 2010. This project revives MCL's design philosophy and feature set using a modern reference implementation discovered in the wild, bringing it back to life for contemporary use cases while preserving its spirit.
+okros is a from-scratch Rust implementation of MCL (MUD Client for Linux), originally written by Erwin S. Andreasen. MCL was last maintained around 2000 and went offline circa 2010. This project revives MCL's design philosophy and feature set for contemporary use cases.
 
 ## Development
 
