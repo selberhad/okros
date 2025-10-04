@@ -1,13 +1,13 @@
 # Test Coverage Report
 
-**Last Updated**: 2025-10-04 19:31
+**Last Updated**: 2025-10-04 17:08
 **Tool**: cargo-llvm-cov
-**Overall Coverage**: **72.02%** lines | **74.68%** regions | **77.65%** functions
+**Overall Coverage**: **71.90%** lines | **74.57%** regions | **77.58%** functions
 
 ## Summary
 
 ```
-TOTAL                           11819              2992    74.68%         671               150    77.65%        7047              1972    72.02%           0                 0         -
+TOTAL                           11839              3011    74.57%         669               150    77.58%        7063              1985    71.90%           0                 0         -
 ```
 
 ## Coverage by Module
@@ -33,13 +33,13 @@ TOTAL                           11819              2992    74.68%         671   
 | `mud.rs` | 72.80% | 78.24% | 79.31% | 🟡 Good |
 | `offline_mud/game.rs` | 96.58% | 95.88% | 96.55% | 🟢 Excellent |
 | `offline_mud/parser.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
-| `output_window.rs` | 49.03% | 55.17% | 50.00% | 🟠 Moderate |
+| `output_window.rs` | 48.26% | 54.25% | 50.00% | 🟠 Moderate |
 | `plugins/perl.rs` | 82.80% | 87.61% | 85.00% | 🟡 Good |
 | `plugins/python.rs` | 88.14% | 89.22% | 90.91% | 🟡 Good |
 | `plugins/stack.rs` | 78.11% | 80.95% | 60.00% | 🟡 Good |
 | `screen.rs` | 94.79% | 96.75% | 96.30% | 🟢 Excellent |
 | `scrollback_search.rs` | 65.71% | 68.29% | 66.67% | 🟠 Moderate |
-| `scrollback.rs` | 97.21% | 97.74% | 100.00% | 🟢 Excellent |
+| `scrollback.rs` | 93.73% | 94.86% | 100.00% | 🟢 Excellent |
 | `select.rs` | 97.50% | 96.61% | 100.00% | 🟢 Excellent |
 | `selectable.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
 | `selection.rs` | 77.73% | 82.46% | 77.78% | 🟡 Good |
@@ -62,7 +62,7 @@ TOTAL                           11819              2992    74.68%         671   
 - `offline_mud/game.rs` - 96.58%
 - `offline_mud/parser.rs` - 100.00%
 - `screen.rs` - 94.79%
-- `scrollback.rs` - 97.21%
+- `scrollback.rs` - 93.73%
 - `select.rs` - 97.50%
 - `selectable.rs` - 100.00%
 - `socket.rs` - 91.54%
@@ -87,7 +87,7 @@ TOTAL                           11819              2992    74.68%         671   
 - `history.rs` - 65.85%
 - `input_box.rs` - 54.24%
 - `input_line.rs` - 44.44%
-- `output_window.rs` - 49.03%
+- `output_window.rs` - 48.26%
 - `scrollback_search.rs` - 65.71%
 - `session_manager.rs` - 59.07%
 - `window.rs` - 54.88%
@@ -101,7 +101,7 @@ TOTAL                           11819              2992    74.68%         671   
 
 | Tier | Target | Current | Status |
 |------|--------|---------|--------|
-| Overall | ≥80% | 72.02% | ⏳ In Progress |
+| Overall | ≥80% | 71.90% | ⏳ In Progress |
 | Critical Paths | ≥95% | Check modules above | ✅ Met |
 | New Modules | ≥80% | - | Policy |
 
