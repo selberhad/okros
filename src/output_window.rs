@@ -254,6 +254,101 @@ impl OutputWindow {
         self.highlight.line = -1;
         self.redraw();
     }
+
+    /// Save scrollback to file (C++ OutputWindow::saveToFile, lines 301-322)
+    /// Returns Some(message) for status bar
+    pub fn save_to_file(&self, filename: &str, use_color: bool) -> Option<String> {
+        use std::fs::File;
+        use std::io::Write;
+
+        // Open file for writing (C++ line 302)
+        let mut file = match File::create(filename) {
+            Ok(f) => f,
+            Err(e) => {
+                return Some(format!("Cannot open {} for writing: {}", filename, e));
+            }
+        };
+
+        // Write header (C++ line 306)
+        let timestamp = chrono::Local::now().format("%a %b %e %H:%M:%S %Y");
+        if let Err(e) = writeln!(file, "Scrollback saved from okros at {}", timestamp) {
+            return Some(format!("Write error: {}", e));
+        }
+
+        // Write scrollback content (C++ lines 308-318)
+        // Iterate through all lines from scrollback start to canvas end
+        let total_lines = if self.sb.canvas_off > 0 {
+            self.sb.canvas_off / self.sb.width + self.sb.height
+        } else {
+            self.sb.height
+        };
+
+        let mut last_color = 255u8; // Invalid color to force first color code
+
+        for line_num in 0..total_lines {
+            let line_offset = line_num * self.sb.width;
+
+            if line_offset >= self.sb.buf.len() {
+                break;
+            }
+
+            let line_end = (line_offset + self.sb.width).min(self.sb.buf.len());
+
+            for &attrib in &self.sb.buf[line_offset..line_end] {
+                let ch = (attrib & 0xFF) as u8;
+                let color = ((attrib >> 8) & 0xFF) as u8;
+
+                // Output color code if changed and use_color is true (C++ lines 311-313)
+                if use_color && color != last_color {
+                    // Generate ANSI color code
+                    let ansi_code = attrib_to_ansi_color(color);
+                    if let Err(e) = write!(file, "{}", ansi_code) {
+                        return Some(format!("Write error: {}", e));
+                    }
+                    last_color = color;
+                }
+
+                // Write character (C++ line 315)
+                if let Err(e) = write!(file, "{}", ch as char) {
+                    return Some(format!("Write error: {}", e));
+                }
+            }
+
+            // Write newline (C++ line 317)
+            if let Err(e) = writeln!(file) {
+                return Some(format!("Write error: {}", e));
+            }
+        }
+
+        Some(format!("Scrollback saved to {} successfully", filename))
+    }
+}
+
+/// Convert attribute color byte to ANSI escape sequence
+/// Simplified version of C++ Screen::getColorCode()
+fn attrib_to_ansi_color(color: u8) -> String {
+    let fg = color & 0x0F;
+    let bg = (color >> 4) & 0x0F;
+
+    // ANSI color codes: 30-37 for foreground, 40-47 for background
+    // Mapping: 0=black, 1=red, 2=green, 3=yellow, 4=blue, 5=magenta, 6=cyan, 7=white
+    // Bold (bright) colors use the bold attribute (1) + base color
+
+    let mut codes = Vec::new();
+
+    // Foreground color
+    if fg & 0x08 != 0 {
+        // Bright/bold
+        codes.push("1".to_string());
+        codes.push(format!("{}", 30 + (fg & 0x07)));
+    } else {
+        codes.push(format!("{}", 30 + fg));
+    }
+
+    // Background color
+    codes.push(format!("{}", 40 + (bg & 0x07)));
+
+    format!("\x1b[{}m", codes.join(";"))
 }
 
 #[cfg(test)]
@@ -290,5 +385,58 @@ mod tests {
         assert!(s.contains("hello"));
         // bottom-right cell is skipped by renderer, so only 'worl' present
         assert!(s.contains("worl"));
+    }
+
+    #[test]
+    fn save_to_file_plain_text() {
+        use std::fs;
+        use std::ptr;
+
+        let mut ow = OutputWindow::new(ptr::null_mut(), 10, 3, 20, 0x07);
+        ow.print_line(b"line one", 0x07);
+        ow.print_line(b"line two", 0x07);
+        ow.print_line(b"line three", 0x07);
+
+        // Save without color
+        let filename = "/tmp/test_scrollback.txt";
+        let result = ow.save_to_file(filename, false);
+        assert!(result.is_some());
+        assert!(result.unwrap().contains("successfully"));
+
+        // Read file and verify contents
+        let content = fs::read_to_string(filename).unwrap();
+        assert!(content.contains("line one"));
+        assert!(content.contains("line two"));
+        assert!(content.contains("line three"));
+        assert!(content.contains("Scrollback saved from okros"));
+
+        // Should not contain ANSI codes
+        assert!(!content.contains("\x1b["));
+
+        fs::remove_file(filename).ok();
+    }
+
+    #[test]
+    fn save_to_file_with_color() {
+        use std::fs;
+        use std::ptr;
+
+        let mut ow = OutputWindow::new(ptr::null_mut(), 10, 2, 20, 0x07);
+        ow.print_line(b"red text", 0x0C); // Red foreground
+        ow.print_line(b"blue text", 0x09); // Blue foreground
+
+        // Save with color
+        let filename = "/tmp/test_scrollback_color.txt";
+        let result = ow.save_to_file(filename, true);
+        assert!(result.is_some());
+        assert!(result.unwrap().contains("successfully"));
+
+        // Read file and verify ANSI codes present
+        let content = fs::read_to_string(filename).unwrap();
+        assert!(content.contains("red text"));
+        assert!(content.contains("blue text"));
+        assert!(content.contains("\x1b[")); // Should have ANSI codes
+
+        fs::remove_file(filename).ok();
     }
 }

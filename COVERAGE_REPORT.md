@@ -1,13 +1,13 @@
 # Test Coverage Report
 
-**Last Updated**: 2025-10-04 17:03
+**Last Updated**: 2025-10-04 17:08
 **Tool**: cargo-llvm-cov
-**Overall Coverage**: **71.82%** lines | **74.45%** regions | **77.44%** functions
+**Overall Coverage**: **71.90%** lines | **74.57%** regions | **77.58%** functions
 
 ## Summary
 
 ```
-TOTAL                           11642              2975    74.45%         665               150    77.44%        6970              1964    71.82%           0                 0         -
+TOTAL                           11839              3011    74.57%         669               150    77.58%        7063              1985    71.90%           0                 0         -
 ```
 
 ## Coverage by Module
@@ -33,7 +33,7 @@ TOTAL                           11642              2975    74.45%         665   
 | `mud.rs` | 72.80% | 78.24% | 79.31% | 🟡 Good |
 | `offline_mud/game.rs` | 96.58% | 95.88% | 96.55% | 🟢 Excellent |
 | `offline_mud/parser.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
-| `output_window.rs` | 29.94% | 29.07% | 37.50% | 🔴 Needs Work |
+| `output_window.rs` | 48.26% | 54.25% | 50.00% | 🟠 Moderate |
 | `plugins/perl.rs` | 82.80% | 87.61% | 85.00% | 🟡 Good |
 | `plugins/python.rs` | 88.14% | 89.22% | 90.91% | 🟡 Good |
 | `plugins/stack.rs` | 78.11% | 80.95% | 60.00% | 🟡 Good |
@@ -87,6 +87,7 @@ TOTAL                           11642              2975    74.45%         665   
 - `history.rs` - 65.85%
 - `input_box.rs` - 54.24%
 - `input_line.rs` - 44.44%
+- `output_window.rs` - 48.26%
 - `scrollback_search.rs` - 65.71%
 - `session_manager.rs` - 59.07%
 - `window.rs` - 54.88%
@@ -94,14 +95,13 @@ TOTAL                           11642              2975    74.45%         665   
 ### 🔴 Needs Work (<40% lines)
 - `curses.rs` - 18.56% (ncurses FFI - TTY dependent)
 - `main.rs` - 0.00% (event loop - needs integration tests)
-- `output_window.rs` - 29.94%
 - `tty.rs` - 31.11% (requires real TTY)
 
 ## Coverage Targets
 
 | Tier | Target | Current | Status |
 |------|--------|---------|--------|
-| Overall | ≥80% | 71.82% | ⏳ In Progress |
+| Overall | ≥80% | 71.90% | ⏳ In Progress |
 | Critical Paths | ≥95% | Check modules above | ✅ Met |
 | New Modules | ≥80% | - | Policy |
 

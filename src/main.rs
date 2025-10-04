@@ -454,6 +454,23 @@ fn main() {
                                 } else {
                                     status.set_text("Usage: #alias <name> <expansion>");
                                 }
+                            } else if line.starts_with("#save") {
+                                // #save [-c] <filename> (C++ Interpreter.cc:791-804)
+                                let args = line[5..].trim();
+                                let (use_color, filename) = if args.starts_with("-c ") {
+                                    (true, args[3..].trim())
+                                } else {
+                                    (false, args)
+                                };
+
+                                if filename.is_empty() {
+                                    status.set_text("Specify file to save scrollback to.");
+                                } else {
+                                    // Save scrollback to file
+                                    if let Some(msg) = output.save_to_file(filename, use_color) {
+                                        status.set_text(msg);
+                                    }
+                                }
                             } else if line.starts_with("#action ") {
                                 // #action <pattern> <commands>
                                 let args = line[8..].trim().to_string();

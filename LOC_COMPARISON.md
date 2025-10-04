@@ -8,17 +8,17 @@
 
 ## Overall Summary
 
-**Rust is 2% larger than C++** (1.02x the size)
+**Rust is 3% larger than C++** (1.03x the size)
 
 | Metric | C++ (Reference) | Rust (okros) | Ratio |
 |--------|----------------|--------------|-------|
-| **Code Lines** | 8,815 | 8,950 | **1.02x** |
-| **Comments** | 637 | 1,220 | 1.92x |
-| **Blank Lines** | 2,219 | 1,290 | 0.58x |
-| **TOTAL** | 11,671 | 11,460 | **0.98x** |
+| **Code Lines** | 8,815 | 9,059 | **1.03x** |
+| **Comments** | 637 | 1,245 | 1.95x |
+| **Blank Lines** | 2,219 | 1,321 | 0.60x |
+| **TOTAL** | 11,671 | 11,625 | **1.00x** |
 | **Files** | 79 | 41 | 0.52x |
 
-**Difference**: +135 lines of code (+1.5%)
+**Difference**: +244 lines of code (+2.8%)
 
 ---
 
@@ -40,7 +40,7 @@
 | Interpreter.cc | 834 | plugins/stack.rs | 258 | 0.31 | ✅ ⚠️ SHORT |
 | MUD.cc | 135 | mud.rs | 375 | 2.78 | ✅ |
 | Option.cc | 136 | SKIPPED/DEFERRED | - | - | ⏭️ |
-| OutputWindow.cc | 339 | output_window.rs | 294 | 0.87 | ✅ |
+| OutputWindow.cc | 339 | output_window.rs | 442 | 1.30 | ✅ |
 | Pipe.cc | 97 | SKIPPED/DEFERRED | - | - | ⏭️ |
 | Screen.cc | 350 | screen.rs | 547 | 1.56 | ✅ |
 | Selectable.cc | 47 | selectable.rs | 24 | 0.51 | ✅ |
@@ -53,7 +53,7 @@
 | String.cc | 19 | SKIPPED/DEFERRED | - | - | ⏭️ |
 | TTY.cc | 297 | tty.rs | 172 | 0.58 | ✅ |
 | Window.cc | 721 | window.rs | 349 | 0.48 | ✅ |
-| main.cc | 250 | main.rs | 1023 | 4.09 | ✅ |
+| main.cc | 250 | main.rs | 1040 | 4.16 | ✅ |
 | misc.cc | 209 | SKIPPED/DEFERRED | - | - | ⏭️ |
 | plugins/PerlEmbeddedInterpreter.cc | 260 | plugins/perl.rs | 533 | 2.05 | ✅ |
 | plugins/PythonEmbeddedInterpreter.cc | 268 | plugins/python.rs | 427 | 1.59 | ✅ |
@@ -79,6 +79,6 @@ The following files are suspiciously short (<40% of C++ size) and may be incompl
 
 ---
 
-*Generated: Sat Oct  4 17:03:15 2025*
+*Generated: Sat Oct  4 17:08:58 2025*
 *Tool: [cloc](https://github.com/AlDanial/cloc) v
 *

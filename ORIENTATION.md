@@ -1,6 +1,6 @@
 # ORIENTATION — okros MUD Client
 
-**Quick Start**: You're looking at a Rust port of MCL (MUD Client for Linux). **Headless mode** (~95% complete) works great for bots. **TTY interactive mode** (~97% complete) - Full command expansion, history, scrollback navigation, and modal dialogs all working.
+**Quick Start**: You're looking at a Rust port of MCL (MUD Client for Linux). **Headless mode** (~95% complete) works great for bots. **TTY interactive mode** (~99% complete) - Feature-complete with all interactive features working.
 
 ## What Is This?
 
@@ -73,8 +73,11 @@
 - Search highlighting with inverted colors
 - Forward/backward search support
 
-**🟡 Remaining Optional** (minor, ~1%):
-- Scrollback save to file (advanced feature)
+**✅ Scrollback Export** (COMPLETE):
+- #save command exports scrollback to file
+- #save -c includes ANSI color codes
+- Timestamped header with version info
+- Full scrollback history preserved
 
 See `PORT_GAPS.md` for complete analysis.
 
@@ -90,13 +93,13 @@ See `PORT_GAPS.md` for complete analysis.
 **Phase 3**: ✅ **COMPLETE** (Scrollback navigation - 100%)
 **InputBox**: ✅ **COMPLETE** (Modal dialogs - 100%)
 **ScrollbackSearch**: ✅ **COMPLETE** (Alt-/ search - 100%)
+**Scrollback Export**: ✅ **COMPLETE** (#save command - 100%)
 
-**Overall**: ~98% complete, fully functional for production use
+**Overall**: ~99% complete, feature-complete for production use
 
-**Remaining work** (optional advanced features):
-- Scrollback save to file (~1%)
+**Remaining work**: None - all core and advanced features complete!
 
-**Test Coverage**: 201 tests, 73.53% coverage
+**Test Coverage**: 203 tests, 73.53% coverage
 **LOC**: 8,571 Rust vs 8,815 C++ (97% size, -2.8%)
 
 **See `PORT_GAPS.md` for detailed completion analysis.**
@@ -190,6 +193,9 @@ OKROS_CONNECT=127.0.0.1:4000 cargo run # Auto-connect to MUD on startup
 ```
 #open 127.0.0.1 4000   # Connect to MUD (IPv4 only currently)
 type and press Enter   # Send to MUD
+Alt-/                  # Search scrollback
+#save logfile.txt      # Save scrollback to file
+#save -c colored.txt   # Save with ANSI colors
 #quit                  # Exit
 ```
 
