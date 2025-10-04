@@ -8,17 +8,17 @@
 
 ## Overall Summary
 
-**Rust is 5% more concise than C++** (0.95x the size)
+**Rust is 3% more concise than C++** (0.97x the size)
 
 | Metric | C++ (Reference) | Rust (okros) | Ratio |
 |--------|----------------|--------------|-------|
-| **Code Lines** | 8,815 | 8,335 | **0.95x** |
-| **Comments** | 637 | 1,073 | 1.68x |
-| **Blank Lines** | 2,219 | 1,153 | 0.52x |
-| **TOTAL** | 11,671 | 10,561 | **0.90x** |
+| **Code Lines** | 8,815 | 8,571 | **0.97x** |
+| **Comments** | 637 | 1,113 | 1.75x |
+| **Blank Lines** | 2,219 | 1,217 | 0.55x |
+| **TOTAL** | 11,671 | 10,901 | **0.93x** |
 | **Files** | 79 | 39 | 0.49x |
 
-**Difference**: -480 lines of code (-5.4%)
+**Difference**: -244 lines of code (-2.8%)
 
 ---
 
@@ -40,7 +40,7 @@
 | Interpreter.cc | 834 | plugins/stack.rs | 258 | 0.31 | ✅ ⚠️ SHORT |
 | MUD.cc | 135 | mud.rs | 375 | 2.78 | ✅ |
 | Option.cc | 136 | SKIPPED/DEFERRED | - | - | ⏭️ |
-| OutputWindow.cc | 339 | output_window.rs | 87 | 0.26 | ✅ ⚠️ SHORT |
+| OutputWindow.cc | 339 | output_window.rs | 134 | 0.40 | ✅ ⚠️ SHORT |
 | Pipe.cc | 97 | SKIPPED/DEFERRED | - | - | ⏭️ |
 | Screen.cc | 350 | screen.rs | 547 | 1.56 | ✅ |
 | Selectable.cc | 47 | selectable.rs | 24 | 0.51 | ✅ |
@@ -52,7 +52,7 @@
 | StatusLine.cc | 60 | status_line.rs | 73 | 1.22 | ✅ |
 | String.cc | 19 | SKIPPED/DEFERRED | - | - | ⏭️ |
 | TTY.cc | 297 | tty.rs | 172 | 0.58 | ✅ |
-| Window.cc | 721 | window.rs | 286 | 0.40 | ✅ ⚠️ SHORT |
+| Window.cc | 721 | window.rs | 293 | 0.41 | ✅ |
 | main.cc | 250 | main.rs | 988 | 3.95 | ✅ |
 | misc.cc | 209 | SKIPPED/DEFERRED | - | - | ⏭️ |
 | plugins/PerlEmbeddedInterpreter.cc | 260 | plugins/perl.rs | 533 | 2.05 | ✅ |
@@ -64,9 +64,8 @@
 
 The following files are suspiciously short (<40% of C++ size) and may be incomplete:
 
-- **OutputWindow.cc** (339 lines) → **output_window.rs** (87 lines) = **26%** of original
 - **Interpreter.cc** (834 lines) → **plugins/stack.rs** (258 lines) = **31%** of original
-- **Window.cc** (721 lines) → **window.rs** (286 lines) = **40%** of original
+- **OutputWindow.cc** (339 lines) → **output_window.rs** (134 lines) = **40%** of original
 
 **See `PORT_GAPS.md` for detailed gap analysis.**
 
@@ -81,6 +80,6 @@ The following files are suspiciously short (<40% of C++ size) and may be incompl
 
 ---
 
-*Generated: Sat Oct  4 16:04:01 2025*
+*Generated: Sat Oct  4 16:12:22 2025*
 *Tool: [cloc](https://github.com/AlDanial/cloc) v
 *

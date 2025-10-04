@@ -123,6 +123,13 @@ impl Window {
         self.dirty = true;
     }
 
+    /// Handle keypress (C++ Window.h:33 - virtual bool keypress(int key))
+    /// Returns true if the key was handled
+    /// Default implementation does nothing
+    pub fn keypress(&mut self, _key: i32) -> bool {
+        false
+    }
+
     /// Copy source attribs to this canvas at position (C++ Window.cc:280-311)
     pub fn copy(&mut self, source: &[Attrib], w: usize, h: usize, x: isize, y: isize) {
         // Bounds check

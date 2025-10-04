@@ -1,13 +1,13 @@
 # Test Coverage Report
 
-**Last Updated**: 2025-10-04 16:03
+**Last Updated**: 2025-10-04 16:12
 **Tool**: cargo-llvm-cov
-**Overall Coverage**: **73.12%** lines | **75.53%** regions | **79.19%** functions
+**Overall Coverage**: **73.53%** lines | **75.98%** regions | **78.82%** functions
 
 ## Summary
 
 ```
-TOTAL                           10842              2653    75.53%         615               128    79.19%        6446              1733    73.12%           0                 0         -
+TOTAL                           11222              2695    75.98%         642               136    78.82%        6656              1762    73.53%           0                 0         -
 ```
 
 ## Coverage by Module
@@ -17,7 +17,7 @@ TOTAL                           10842              2653    75.53%         615   
 | `action.rs` | 68.93% | 68.05% | 71.43% | 🟠 Moderate |
 | `alias.rs` | 94.01% | 94.52% | 100.00% | 🟢 Excellent |
 | `ansi.rs` | 86.99% | 88.94% | 100.00% | 🟡 Good |
-| `command_queue.rs` | 89.16% | 91.30% | 89.66% | 🟡 Good |
+| `command_queue.rs` | 92.57% | 94.38% | 92.11% | 🟢 Excellent |
 | `config.rs` | 94.67% | 96.30% | 77.42% | 🟢 Excellent |
 | `control.rs` | 72.75% | 74.25% | 87.50% | 🟡 Good |
 | `curses.rs` | 18.56% | 13.55% | 40.00% | 🔴 Needs Work |
@@ -32,12 +32,12 @@ TOTAL                           10842              2653    75.53%         615   
 | `mud.rs` | 72.80% | 78.24% | 79.31% | 🟡 Good |
 | `offline_mud/game.rs` | 96.58% | 95.88% | 96.55% | 🟢 Excellent |
 | `offline_mud/parser.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
-| `output_window.rs` | 93.88% | 96.00% | 85.71% | 🟢 Excellent |
+| `output_window.rs` | 56.79% | 58.06% | 42.86% | 🟠 Moderate |
 | `plugins/perl.rs` | 82.80% | 87.61% | 85.00% | 🟡 Good |
 | `plugins/python.rs` | 88.14% | 89.22% | 90.91% | 🟡 Good |
 | `plugins/stack.rs` | 78.11% | 80.95% | 60.00% | 🟡 Good |
 | `screen.rs` | 94.79% | 96.75% | 96.30% | 🟢 Excellent |
-| `scrollback.rs` | 91.82% | 93.19% | 100.00% | 🟢 Excellent |
+| `scrollback.rs` | 93.73% | 94.86% | 100.00% | 🟢 Excellent |
 | `select.rs` | 97.50% | 96.61% | 100.00% | 🟢 Excellent |
 | `selectable.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
 | `selection.rs` | 77.73% | 82.46% | 77.78% | 🟡 Good |
@@ -47,20 +47,20 @@ TOTAL                           10842              2653    75.53%         615   
 | `status_line.rs` | 91.43% | 94.55% | 83.33% | 🟢 Excellent |
 | `telnet.rs` | 97.67% | 99.02% | 100.00% | 🟢 Excellent |
 | `tty.rs` | 31.11% | 25.84% | 55.56% | 🔴 Needs Work |
-| `window.rs` | 57.14% | 56.09% | 66.67% | 🟠 Moderate |
+| `window.rs` | 56.18% | 55.36% | 62.50% | 🟠 Moderate |
 
 ## Coverage Tiers
 
 ### 🟢 Excellent (≥90% lines)
 - `alias.rs` - 94.01%
+- `command_queue.rs` - 92.57%
 - `config.rs` - 94.67%
 - `engine.rs` - 97.06%
 - `macro_def.rs` - 100.00%
 - `offline_mud/game.rs` - 96.58%
 - `offline_mud/parser.rs` - 100.00%
-- `output_window.rs` - 93.88%
 - `screen.rs` - 94.79%
-- `scrollback.rs` - 91.82%
+- `scrollback.rs` - 93.73%
 - `select.rs` - 97.50%
 - `selectable.rs` - 100.00%
 - `socket.rs` - 91.54%
@@ -69,7 +69,6 @@ TOTAL                           10842              2653    75.53%         615   
 
 ### 🟡 Good (70-89% lines)
 - `ansi.rs` - 86.99%
-- `command_queue.rs` - 89.16%
 - `control.rs` - 72.75%
 - `input.rs` - 89.69%
 - `mccp.rs` - 71.09%
@@ -85,8 +84,9 @@ TOTAL                           10842              2653    75.53%         615   
 - `action.rs` - 68.93%
 - `history.rs` - 65.85%
 - `input_line.rs` - 44.94%
+- `output_window.rs` - 56.79%
 - `session_manager.rs` - 59.07%
-- `window.rs` - 57.14%
+- `window.rs` - 56.18%
 
 ### 🔴 Needs Work (<40% lines)
 - `curses.rs` - 18.56% (ncurses FFI - TTY dependent)
@@ -97,7 +97,7 @@ TOTAL                           10842              2653    75.53%         615   
 
 | Tier | Target | Current | Status |
 |------|--------|---------|--------|
-| Overall | ≥80% | 73.12% | ⏳ In Progress |
+| Overall | ≥80% | 73.53% | ⏳ In Progress |
 | Critical Paths | ≥95% | Check modules above | ✅ Met |
 | New Modules | ≥80% | - | Policy |
 

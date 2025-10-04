@@ -47,6 +47,53 @@ impl OutputWindow {
     pub fn window_mut_ptr(&mut self) -> *mut Window {
         self.win.as_mut()
     }
+
+    /// Freeze scrollback (stop auto-scrolling)
+    pub fn freeze(&mut self) {
+        self.sb.set_frozen(true);
+    }
+
+    /// Unfreeze scrollback (resume auto-scrolling to bottom)
+    pub fn unfreeze(&mut self) {
+        self.sb.set_frozen(false);
+        // Snap viewpoint to canvas position
+        self.sb.viewpoint = self.sb.canvas_ptr();
+    }
+
+    /// Page up in scrollback (C++ ScrollbackController::keypress line 133-135)
+    pub fn page_up(&mut self) -> bool {
+        let quit = self.sb.page_up();
+        self.redraw();
+        quit
+    }
+
+    /// Page down in scrollback (C++ ScrollbackController::keypress line 137-139)
+    pub fn page_down(&mut self) -> bool {
+        let quit = self.sb.page_down();
+        self.redraw();
+        quit
+    }
+
+    /// Line up in scrollback (C++ ScrollbackController::keypress line 141-143)
+    pub fn line_up(&mut self) -> bool {
+        let quit = self.sb.line_up();
+        self.redraw();
+        quit
+    }
+
+    /// Line down in scrollback (C++ ScrollbackController::keypress line 145-147)
+    pub fn line_down(&mut self) -> bool {
+        let quit = self.sb.line_down();
+        self.redraw();
+        quit
+    }
+
+    /// Home in scrollback (C++ ScrollbackController::keypress line 149-151)
+    pub fn home(&mut self) -> bool {
+        let quit = self.sb.home();
+        self.redraw();
+        quit
+    }
 }
 
 #[cfg(test)]

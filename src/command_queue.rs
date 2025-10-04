@@ -149,8 +149,8 @@ impl CommandQueue {
                 } else if ch == ';' {
                     // Split here (C++ lines 289-312)
                     let trimmed = current.trim_end();
-                    // Use back=false to maintain order
-                    self.add_with_context(trimmed, EXPAND_ALL, false, session, mud);
+                    // Use back=false to maintain order, pass through flags minus SEMICOLON
+                    self.add_with_context(trimmed, flags & !EXPAND_SEMICOLON, false, session, mud);
                     current.clear();
                 } else {
                     current.push(ch);
@@ -648,5 +648,155 @@ mod tests {
         assert_eq!(cmds[0], "north");
         assert_eq!(cmds[1], "south");
         assert_eq!(cmds[2], "east");
+    }
+
+    #[test]
+    fn speedwalk_with_zero_prefix() {
+        let mut cq = CommandQueue::new();
+        cq.add("0n", EXPAND_SPEEDWALK, false);
+
+        let cmds = cq.execute();
+        // 0 should be treated as 1 (C++ line 118: max(1, repeat))
+        assert_eq!(cmds.len(), 1);
+        assert_eq!(cmds[0], "n");
+    }
+
+    #[test]
+    fn speedwalk_all_directions() {
+        let mut cq = CommandQueue::new();
+        cq.add("nsewud", EXPAND_SPEEDWALK, false);
+
+        let cmds = cq.execute();
+        assert_eq!(cmds.len(), 6);
+        assert_eq!(cmds[0], "n");
+        assert_eq!(cmds[1], "s");
+        assert_eq!(cmds[2], "e");
+        assert_eq!(cmds[3], "w");
+        assert_eq!(cmds[4], "u");
+        assert_eq!(cmds[5], "d");
+    }
+
+    #[test]
+    fn speedwalk_extended_all_diagonals() {
+        let mut cq = CommandQueue::new();
+        cq.add("/hjkl", EXPAND_SPEEDWALK, false);
+
+        let cmds = cq.execute();
+        assert_eq!(cmds.len(), 4);
+        assert_eq!(cmds[0], "nw");
+        assert_eq!(cmds[1], "ne");
+        assert_eq!(cmds[2], "sw");
+        assert_eq!(cmds[3], "se");
+    }
+
+    #[test]
+    fn speedwalk_max_repeat_capped() {
+        let mut cq = CommandQueue::new();
+        cq.add("150n", EXPAND_SPEEDWALK, false); // 150 > 99 max
+
+        let cmds = cq.execute();
+        // Should be capped at 99
+        assert_eq!(cmds.len(), 99);
+    }
+
+    #[test]
+    fn alias_with_arguments() {
+        use crate::alias::Alias;
+        use crate::mud::Mud;
+
+        let mut cq = CommandQueue::new();
+        let mut mud = Mud::empty();
+
+        // Alias with arguments: "t" -> "tell %1"
+        mud.alias_list.push(Alias::new("t", "tell %1"));
+
+        cq.add_with_context("t bob", EXPAND_ALIASES, false, None, Some(&mud));
+
+        let cmds = cq.execute();
+        assert_eq!(cmds.len(), 1);
+        assert_eq!(cmds[0], "tell bob");
+    }
+
+    #[test]
+    fn alias_recursive_expansion() {
+        use crate::alias::Alias;
+        use crate::mud::Mud;
+
+        let mut cq = CommandQueue::new();
+        let mut mud = Mud::empty();
+
+        // Alias that expands to another command with semicolons
+        mud.alias_list.push(Alias::new("greet", "say hello;bow"));
+
+        cq.add_with_context("greet", EXPAND_ALL, false, None, Some(&mud));
+
+        let cmds = cq.execute();
+        // Should expand alias, then expand semicolons
+        assert_eq!(cmds.len(), 2);
+        assert_eq!(cmds[0], "say hello");
+        assert_eq!(cmds[1], "bow");
+    }
+
+    #[test]
+    fn variable_expansion_all_session_vars() {
+        use super::SessionContext;
+
+        let cq = CommandQueue::new();
+        let session = SessionContext {
+            hostname: "mud.test.com".to_string(),
+            port: 4000,
+            name: "TestMUD".to_string(),
+            local_port: 54321,
+        };
+
+        let result = cq.expand_variables("Host:%h Port:%p Name:%n Local:%P FTP:%f", Some(&session));
+        assert_eq!(
+            result,
+            "Host:mud.test.com Port:4000 Name:TestMUD Local:54321 FTP:4006"
+        );
+    }
+
+    #[test]
+    fn semicolon_then_speedwalk() {
+        // Test that semicolon splits first, then each part is expanded
+        let mut cq = CommandQueue::new();
+
+        // Split on semicolons first
+        cq.add("3n;look", EXPAND_SEMICOLON, false);
+        let cmds = cq.execute();
+        assert_eq!(cmds.len(), 2);
+        assert_eq!(cmds[0], "3n"); // Not expanded yet
+        assert_eq!(cmds[1], "look");
+
+        // Now test with both flags - speedwalk is checked first in pipeline
+        let mut cq2 = CommandQueue::new();
+        cq2.add("3n2e", EXPAND_SPEEDWALK, false);
+        let cmds2 = cq2.execute();
+        assert_eq!(cmds2.len(), 5);
+    }
+
+    #[test]
+    fn complex_expansion_chain() {
+        use super::SessionContext;
+        use crate::alias::Alias;
+        use crate::mud::Mud;
+
+        let mut cq = CommandQueue::new();
+        let mut mud = Mud::empty();
+        let session = SessionContext {
+            hostname: "game.com".to_string(),
+            port: 5000,
+            name: "Game".to_string(),
+            local_port: 12345,
+        };
+
+        // Alias that uses variables
+        mud.alias_list.push(Alias::new("conn", "connect %h %p"));
+
+        cq.add_with_context("conn", EXPAND_ALL, false, Some(&session), Some(&mud));
+
+        let cmds = cq.execute();
+        assert_eq!(cmds.len(), 1);
+        assert_eq!(cmds[0], "connect game.com 5000");
     }
 }

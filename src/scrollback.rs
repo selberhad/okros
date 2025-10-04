@@ -31,6 +31,65 @@ impl Scrollback {
     pub fn set_frozen(&mut self, f: bool) {
         self.frozen = f;
     }
+
+    /// Move viewpoint (C++ OutputWindow::moveViewpoint, lines 65-120)
+    /// Returns true if reached boundary (for "quit scrollback" feature)
+    pub fn move_viewpoint_lines(&mut self, amount: isize) -> bool {
+        let scroll_start = 0;
+        let scroll_end = self.canvas_off;
+
+        // C++ lines 100-103: Check boundaries BEFORE moving
+        if amount < 0 && self.viewpoint == scroll_start {
+            // Already at beginning (C++ line 100-101)
+            return false;
+        } else if amount > 0 && self.viewpoint == scroll_end {
+            // At end - return true to quit scrollback mode (C++ line 102-103)
+            return true;
+        }
+
+        // Calculate new viewpoint (C++ lines 106-111)
+        let new_vp = if amount < 0 {
+            self.viewpoint
+                .saturating_sub((-amount as usize) * self.width)
+        } else {
+            self.viewpoint + (amount as usize) * self.width
+        };
+
+        // Clamp to valid range
+        self.viewpoint = new_vp.clamp(scroll_start, scroll_end);
+
+        false
+    }
+
+    /// Page up (C++ move_page_up: height/2)
+    pub fn page_up(&mut self) -> bool {
+        self.move_viewpoint_lines(-(self.height as isize / 2))
+    }
+
+    /// Page down (C++ move_page_down: height/2)
+    pub fn page_down(&mut self) -> bool {
+        self.move_viewpoint_lines(self.height as isize / 2)
+    }
+
+    /// Line up (C++ move_line_up: -1)
+    pub fn line_up(&mut self) -> bool {
+        self.move_viewpoint_lines(-1)
+    }
+
+    /// Line down (C++ move_line_down: 1)
+    pub fn line_down(&mut self) -> bool {
+        self.move_viewpoint_lines(1)
+    }
+
+    /// Home (C++ move_home: to beginning)
+    pub fn home(&mut self) -> bool {
+        // Return false if already at home (C++ lines 100-101)
+        if self.viewpoint == 0 {
+            return false;
+        }
+        self.viewpoint = 0;
+        false
+    }
     pub fn canvas_ptr(&self) -> usize {
         self.canvas_off
     }
@@ -242,6 +301,83 @@ mod tests {
         sb.print_line(b"4444", 0);
         assert_eq!(sb.viewpoint, vp);
     }
+    #[test]
+    fn page_up_and_down() {
+        let mut sb = Scrollback::new(80, 24, 1000);
+
+        // Fill buffer with some lines
+        for i in 0..100 {
+            let line = format!("Line {}", i);
+            sb.print_line(line.as_bytes(), 0x07);
+        }
+
+        // Freeze and go up a page
+        sb.set_frozen(true);
+        let quit = sb.page_up(); // Should move up 12 lines (24/2)
+        assert!(!quit); // Not at boundary
+
+        let old_vp = sb.viewpoint;
+        sb.page_down(); // Should move down 12 lines
+        assert!(sb.viewpoint > old_vp);
+    }
+
+    #[test]
+    fn line_up_and_down() {
+        let mut sb = Scrollback::new(80, 24, 1000);
+
+        for i in 0..50 {
+            let line = format!("Line {}", i);
+            sb.print_line(line.as_bytes(), 0x07);
+        }
+
+        sb.set_frozen(true);
+        let old_vp = sb.viewpoint;
+
+        // Move up one line
+        sb.line_up();
+        assert_eq!(sb.viewpoint, old_vp - 80);
+
+        // Move down one line
+        sb.line_down();
+        assert_eq!(sb.viewpoint, old_vp);
+    }
+
+    #[test]
+    fn home_scrollback() {
+        let mut sb = Scrollback::new(80, 24, 1000);
+
+        for i in 0..100 {
+            let line = format!("Line {}", i);
+            sb.print_line(line.as_bytes(), 0x07);
+        }
+
+        sb.set_frozen(true);
+        sb.home();
+        assert_eq!(sb.viewpoint, 0);
+
+        // Home at beginning should return false (already there)
+        let at_boundary = sb.home();
+        assert!(!at_boundary);
+    }
+
+    #[test]
+    fn page_down_at_end_returns_quit() {
+        let mut sb = Scrollback::new(80, 24, 1000);
+
+        for i in 0..50 {
+            let line = format!("Line {}", i);
+            sb.print_line(line.as_bytes(), 0x07);
+        }
+
+        // Freeze and ensure we're at the very end (canvas_off)
+        sb.set_frozen(true);
+        sb.viewpoint = sb.canvas_off; // Manually position at end
+
+        // At end, page down should return true (quit scrollback mode)
+        let quit = sb.page_down();
+        assert!(quit);
+    }
+
     #[test]
     fn highlight_clips() {
         let mut sb = Scrollback::new(3, 2, 6);
