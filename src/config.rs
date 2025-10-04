@@ -187,7 +187,7 @@ impl Config {
             }
             "action" if parts.len() >= 3 => {
                 // Parse action: action "pattern" commands
-                let rest = parts[1..].join(" ");
+                let rest = parts[1..].join(" ").trim_end_matches(';').to_string();
                 match Action::parse(&rest, ActionType::Trigger) {
                     Ok(action) => {
                         mud.action_list.push(action);
@@ -198,7 +198,7 @@ impl Config {
             }
             "subst" if parts.len() >= 3 => {
                 // Parse substitution: subst "pattern" replacement
-                let rest = parts[1..].join(" ");
+                let rest = parts[1..].join(" ").trim_end_matches(';').to_string();
                 match Action::parse(&rest, ActionType::Replacement) {
                     Ok(action) => {
                         mud.action_list.push(action);
@@ -465,5 +465,92 @@ mod tests {
         // Other MUDs should follow
         assert!(cfg.mud_list.find("TestMUD").is_some());
         assert!(cfg.mud_list.find("Nodeka").is_some());
+    }
+
+    #[test]
+    fn config_full_automation_features() {
+        // Integration test: Config file with aliases, actions, and macros
+        let mut tmpfile = NamedTempFile::new().unwrap();
+        writeln!(tmpfile, "# Full automation test config").unwrap();
+        writeln!(tmpfile, "MUD TestMUD {{").unwrap();
+        writeln!(tmpfile, "  host 127.0.0.1 4000;").unwrap();
+        writeln!(tmpfile, "  alias n north;").unwrap();
+        writeln!(tmpfile, "  alias s south;").unwrap();
+        writeln!(tmpfile, "  alias say tell bob %1;").unwrap();
+        writeln!(tmpfile, "  action \"^You are hungry\" eat bread;").unwrap();
+        writeln!(tmpfile, "  subst \"stupid\" smart;").unwrap();
+        writeln!(tmpfile, "}}").unwrap();
+        tmpfile.flush().unwrap();
+
+        let mut cfg = Config::new();
+        cfg.load_file(tmpfile.path()).unwrap();
+
+        let mud = cfg.mud_list.find("TestMUD").unwrap();
+
+        // Verify aliases loaded
+        assert_eq!(mud.alias_list.len(), 3);
+        assert!(mud.find_alias("n").is_some());
+        assert!(mud.find_alias("s").is_some());
+        assert!(mud.find_alias("say").is_some());
+
+        // Verify alias expansion works
+        let say_alias = mud.find_alias("say").unwrap();
+        assert_eq!(say_alias.expand("hello"), "tell bob hello");
+
+        // Verify actions loaded
+        assert_eq!(mud.action_list.len(), 2);
+
+        // First action should be trigger
+        assert_eq!(mud.action_list[0].pattern, "^You are hungry");
+        assert_eq!(mud.action_list[0].commands, "eat bread");
+        assert_eq!(
+            mud.action_list[0].action_type,
+            crate::action::ActionType::Trigger
+        );
+
+        // Second action should be replacement
+        assert_eq!(mud.action_list[1].pattern, "stupid");
+        assert_eq!(mud.action_list[1].commands, "smart");
+        assert_eq!(
+            mud.action_list[1].action_type,
+            crate::action::ActionType::Replacement
+        );
+    }
+
+    #[test]
+    fn config_automation_with_inheritance() {
+        // Test that child MUD inherits parent's automation features
+        let mut tmpfile = NamedTempFile::new().unwrap();
+        writeln!(tmpfile, "MUD Parent {{").unwrap();
+        writeln!(tmpfile, "  host parent.com 4000;").unwrap();
+        writeln!(tmpfile, "  alias p parent_alias;").unwrap();
+        writeln!(tmpfile, "  action \"^parent trigger\" parent_action;").unwrap();
+        writeln!(tmpfile, "}}").unwrap();
+        writeln!(tmpfile, "").unwrap();
+        writeln!(tmpfile, "MUD Child {{").unwrap();
+        writeln!(tmpfile, "  host child.com 5000;").unwrap();
+        writeln!(tmpfile, "  inherit Parent;").unwrap();
+        writeln!(tmpfile, "  alias c child_alias;").unwrap();
+        writeln!(tmpfile, "}}").unwrap();
+        tmpfile.flush().unwrap();
+
+        let mut cfg = Config::new();
+        cfg.load_file(tmpfile.path()).unwrap();
+
+        let child = cfg.mud_list.find("Child").unwrap();
+
+        // Child should have its own alias
+        assert!(child.find_alias("c").is_some());
+
+        // Child should inherit parent's alias
+        assert!(child.find_alias("p").is_some());
+        assert_eq!(child.find_alias("p").unwrap().text, "parent_alias");
+
+        // Child has 1 action (doesn't inherit actions - they're per-MUD)
+        assert_eq!(child.action_list.len(), 0);
+
+        // Parent has the action
+        let parent = cfg.mud_list.find("Parent").unwrap();
+        assert_eq!(parent.action_list.len(), 1);
     }
 }

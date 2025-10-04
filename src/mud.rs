@@ -237,4 +237,70 @@ mod tests {
         // Child can't find non-existent alias
         assert!(child.find_alias("x").is_none());
     }
+
+    #[test]
+    fn mud_find_macro() {
+        let mut mud = Mud::new("TestMUD", "127.0.0.1", 4000);
+        mud.macro_list.push(crate::macro_def::Macro::new(1, "north"));
+        mud.macro_list.push(crate::macro_def::Macro::new(2, "south"));
+        mud.macro_list.push(crate::macro_def::Macro::new(3, "look"));
+
+        // Find existing macros
+        assert!(mud.find_macro(1).is_some());
+        assert_eq!(mud.find_macro(1).unwrap().text, "north");
+        assert!(mud.find_macro(2).is_some());
+        assert_eq!(mud.find_macro(2).unwrap().text, "south");
+        assert!(mud.find_macro(3).is_some());
+        assert_eq!(mud.find_macro(3).unwrap().text, "look");
+
+        // Non-existent key
+        assert!(mud.find_macro(99).is_none());
+    }
+
+    #[test]
+    fn mud_macro_inheritance() {
+        let mut parent = Mud::new("Parent", "127.0.0.1", 4000);
+        parent
+            .macro_list
+            .push(crate::macro_def::Macro::new(1, "parent_north"));
+        parent
+            .macro_list
+            .push(crate::macro_def::Macro::new(2, "parent_south"));
+
+        let mut child = Mud::with_inherits("Child", "192.168.1.1", 5000, Some(parent));
+        child
+            .macro_list
+            .push(crate::macro_def::Macro::new(3, "child_look"));
+
+        // Child can find its own macro
+        assert!(child.find_macro(3).is_some());
+        assert_eq!(child.find_macro(3).unwrap().text, "child_look");
+
+        // Child can find parent's macros
+        assert!(child.find_macro(1).is_some());
+        assert_eq!(child.find_macro(1).unwrap().text, "parent_north");
+        assert!(child.find_macro(2).is_some());
+        assert_eq!(child.find_macro(2).unwrap().text, "parent_south");
+
+        // Child can't find non-existent macro
+        assert!(child.find_macro(99).is_none());
+    }
+
+    #[test]
+    fn mud_macro_override() {
+        // Test that child macro overrides parent macro with same key
+        let mut parent = Mud::new("Parent", "127.0.0.1", 4000);
+        parent
+            .macro_list
+            .push(crate::macro_def::Macro::new(1, "parent_command"));
+
+        let mut child = Mud::with_inherits("Child", "192.168.1.1", 5000, Some(parent));
+        child
+            .macro_list
+            .push(crate::macro_def::Macro::new(1, "child_override"));
+
+        // Child's macro should be found, not parent's
+        assert!(child.find_macro(1).is_some());
+        assert_eq!(child.find_macro(1).unwrap().text, "child_override");
+    }
 }

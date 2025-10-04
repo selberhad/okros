@@ -27,4 +27,28 @@ mod tests {
         assert_eq!(m.key, 1);
         assert_eq!(m.text, "north");
     }
+
+    #[test]
+    fn test_macro_multiple_keys() {
+        let m1 = Macro::new(1, "north");
+        let m2 = Macro::new(2, "south");
+        let m3 = Macro::new(3, "look");
+
+        assert_eq!(m1.key, 1);
+        assert_eq!(m2.key, 2);
+        assert_eq!(m3.key, 3);
+    }
+
+    #[test]
+    fn test_macro_empty_text() {
+        let m = Macro::new(5, "");
+        assert_eq!(m.key, 5);
+        assert_eq!(m.text, "");
+    }
+
+    #[test]
+    fn test_macro_multiline_text() {
+        let m = Macro::new(10, "north\nsouth\nlook");
+        assert_eq!(m.text, "north\nsouth\nlook");
+    }
 }
