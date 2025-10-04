@@ -1,13 +1,13 @@
 # Test Coverage Report
 
-**Last Updated**: 2025-10-04 15:57
+**Last Updated**: 2025-10-04 16:03
 **Tool**: cargo-llvm-cov
-**Overall Coverage**: **72.70%** lines | **75.31%** regions | **79.08%** functions
+**Overall Coverage**: **73.12%** lines | **75.53%** regions | **79.19%** functions
 
 ## Summary
 
 ```
-TOTAL                           10726              2648    75.31%         612               128    79.08%        6385              1743    72.70%           0                 0         -
+TOTAL                           10842              2653    75.53%         615               128    79.19%        6446              1733    73.12%           0                 0         -
 ```
 
 ## Coverage by Module
@@ -17,7 +17,7 @@ TOTAL                           10726              2648    75.31%         612   
 | `action.rs` | 68.93% | 68.05% | 71.43% | 🟠 Moderate |
 | `alias.rs` | 94.01% | 94.52% | 100.00% | 🟢 Excellent |
 | `ansi.rs` | 86.99% | 88.94% | 100.00% | 🟡 Good |
-| `command_queue.rs` | 84.35% | 90.43% | 88.46% | 🟡 Good |
+| `command_queue.rs` | 89.16% | 91.30% | 89.66% | 🟡 Good |
 | `config.rs` | 94.67% | 96.30% | 77.42% | 🟢 Excellent |
 | `control.rs` | 72.75% | 74.25% | 87.50% | 🟡 Good |
 | `curses.rs` | 18.56% | 13.55% | 40.00% | 🔴 Needs Work |
@@ -69,7 +69,7 @@ TOTAL                           10726              2648    75.31%         612   
 
 ### 🟡 Good (70-89% lines)
 - `ansi.rs` - 86.99%
-- `command_queue.rs` - 84.35%
+- `command_queue.rs` - 89.16%
 - `control.rs` - 72.75%
 - `input.rs` - 89.69%
 - `mccp.rs` - 71.09%
@@ -97,7 +97,7 @@ TOTAL                           10726              2648    75.31%         612   
 
 | Tier | Target | Current | Status |
 |------|--------|---------|--------|
-| Overall | ≥80% | 72.70% | ⏳ In Progress |
+| Overall | ≥80% | 73.12% | ⏳ In Progress |
 | Critical Paths | ≥95% | Check modules above | ✅ Met |
 | New Modules | ≥80% | - | Policy |
 

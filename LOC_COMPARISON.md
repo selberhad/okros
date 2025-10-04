@@ -8,17 +8,17 @@
 
 ## Overall Summary
 
-**Rust is 6% more concise than C++** (0.94x the size)
+**Rust is 5% more concise than C++** (0.95x the size)
 
 | Metric | C++ (Reference) | Rust (okros) | Ratio |
 |--------|----------------|--------------|-------|
-| **Code Lines** | 8,815 | 8,246 | **0.94x** |
-| **Comments** | 637 | 1,068 | 1.68x |
-| **Blank Lines** | 2,219 | 1,142 | 0.51x |
-| **TOTAL** | 11,671 | 10,456 | **0.90x** |
+| **Code Lines** | 8,815 | 8,335 | **0.95x** |
+| **Comments** | 637 | 1,073 | 1.68x |
+| **Blank Lines** | 2,219 | 1,153 | 0.52x |
+| **TOTAL** | 11,671 | 10,561 | **0.90x** |
 | **Files** | 79 | 39 | 0.49x |
 
-**Difference**: -569 lines of code (-6.5%)
+**Difference**: -480 lines of code (-5.4%)
 
 ---
 
@@ -81,6 +81,6 @@ The following files are suspiciously short (<40% of C++ size) and may be incompl
 
 ---
 
-*Generated: Sat Oct  4 15:57:27 2025*
+*Generated: Sat Oct  4 16:04:01 2025*
 *Tool: [cloc](https://github.com/AlDanial/cloc) v
 *

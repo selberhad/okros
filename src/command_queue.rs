@@ -7,6 +7,14 @@
 
 use chrono::{Datelike, Timelike}; // For day(), month(), hour(), minute(), etc.
 
+/// Session context for variable expansion
+pub struct SessionContext {
+    pub hostname: String,
+    pub port: u16,
+    pub name: String,
+    pub local_port: u16,
+}
+
 /// Expansion flags (C++ Interpreter.h:4-12)
 pub const EXPAND_NONE: u32 = 0x00;
 pub const EXPAND_VARIABLES: u32 = 0x01;
@@ -38,6 +46,18 @@ impl CommandQueue {
 
     /// Add command to queue with expansion (C++ Interpreter::add, lines 237-274)
     pub fn add(&mut self, s: &str, flags: u32, back: bool) {
+        self.add_with_context(s, flags, back, None, None);
+    }
+
+    /// Add command with optional context for variable/alias expansion
+    pub fn add_with_context(
+        &mut self,
+        s: &str,
+        flags: u32,
+        back: bool,
+        session: Option<&SessionContext>,
+        mud: Option<&crate::mud::Mud>,
+    ) {
         // Escape character short circuit (C++ lines 238-244)
         if !s.is_empty() && s.starts_with('\\') {
             let cmd = s[1..].to_string();
@@ -51,14 +71,14 @@ impl CommandQueue {
 
         // Expansion pipeline (C++ lines 247-273)
         if flags & EXPAND_VARIABLES != 0 {
-            let expanded = self.expand_variables(s);
-            self.add(&expanded, flags & !EXPAND_VARIABLES, back);
+            let expanded = self.expand_variables(s, session);
+            self.add_with_context(&expanded, flags & !EXPAND_VARIABLES, back, session, mud);
         } else if flags & EXPAND_ALIASES != 0 {
-            self.expand_aliases(s, flags);
+            self.expand_aliases(s, flags, session, mud);
         } else if flags & EXPAND_SPEEDWALK != 0 {
-            self.expand_speedwalk(s, flags);
+            self.expand_speedwalk(s, flags, session, mud);
         } else if flags & EXPAND_SEMICOLON != 0 {
-            self.expand_semicolon(s, flags);
+            self.expand_semicolon(s, flags, session, mud);
         } else {
             // No more expansion - add to queue
             if back {
@@ -110,7 +130,13 @@ impl CommandQueue {
     }
 
     /// Expand semicolon-separated commands (C++ Interpreter::expandSemicolon, lines 276-319)
-    fn expand_semicolon(&mut self, s: &str, flags: u32) {
+    fn expand_semicolon(
+        &mut self,
+        s: &str,
+        flags: u32,
+        session: Option<&SessionContext>,
+        mud: Option<&crate::mud::Mud>,
+    ) {
         if s.contains(';') {
             let mut current = String::new();
             let mut chars = s.chars().peekable();
@@ -124,7 +150,7 @@ impl CommandQueue {
                     // Split here (C++ lines 289-312)
                     let trimmed = current.trim_end();
                     // Use back=false to maintain order
-                    self.add(trimmed, EXPAND_ALL, false);
+                    self.add_with_context(trimmed, EXPAND_ALL, false, session, mud);
                     current.clear();
                 } else {
                     current.push(ch);
@@ -134,17 +160,23 @@ impl CommandQueue {
             // Add final segment (C++ line 314)
             if !current.is_empty() {
                 let trimmed = current.trim();
-                self.add(trimmed, flags & !EXPAND_SEMICOLON, false);
+                self.add_with_context(trimmed, flags & !EXPAND_SEMICOLON, false, session, mud);
             }
         } else {
             // No semicolons, just add with flag cleared (C++ line 318)
-            self.add(s, flags & !EXPAND_SEMICOLON, false);
+            self.add_with_context(s, flags & !EXPAND_SEMICOLON, false, session, mud);
         }
     }
 
     /// Expand speedwalk notation (C++ Interpreter::expandSpeedwalk, lines 89-150)
     /// Example: "3n2e" -> "n;n;n;e;e"
-    fn expand_speedwalk(&mut self, s: &str, flags: u32) {
+    fn expand_speedwalk(
+        &mut self,
+        s: &str,
+        flags: u32,
+        session: Option<&SessionContext>,
+        mud: Option<&crate::mud::Mud>,
+    ) {
         const LEGAL_STANDARD: &str = "nsewud";
         const LEGAL_EXTENDED: &str = "nsewudhjkl";
         const MAX_SPEEDWALK_REPEAT: usize = 99;
@@ -206,12 +238,12 @@ impl CommandQueue {
         }
 
         // Not a speedwalk - pass through without flag (C++ line 149)
-        self.add(input, flags & !EXPAND_SPEEDWALK, true);
+        self.add_with_context(input, flags & !EXPAND_SPEEDWALK, false, session, mud);
     }
 
     /// Expand variable references (C++ Interpreter::expandVariables, lines 152-227)
     /// Example: "%h" -> hostname, "%p" -> port, etc.
-    fn expand_variables(&self, s: &str) -> String {
+    fn expand_variables(&self, s: &str, session: Option<&SessionContext>) -> String {
         // Quick check - no % means no variables (C++ lines 153-154)
         if !s.contains('%') {
             return s.to_string();
@@ -227,24 +259,40 @@ impl CommandQueue {
                     match next_ch {
                         // Session variables (C++ lines 168-186)
                         'h' => {
-                            // hostname - TODO: need current_session reference
-                            result.push_str("");
+                            // hostname
+                            if let Some(sess) = session {
+                                result.push_str(&sess.hostname);
+                            }
                         }
                         'p' => {
-                            // port - TODO: need current_session reference
-                            result.push_str("0");
+                            // port
+                            if let Some(sess) = session {
+                                result.push_str(&sess.port.to_string());
+                            } else {
+                                result.push_str("0");
+                            }
                         }
                         'n' => {
-                            // MUD name - TODO: need current_session reference
-                            result.push_str("");
+                            // MUD name
+                            if let Some(sess) = session {
+                                result.push_str(&sess.name);
+                            }
                         }
                         'P' => {
-                            // local port - TODO: need current_session reference
-                            result.push_str("0");
+                            // local port
+                            if let Some(sess) = session {
+                                result.push_str(&sess.local_port.to_string());
+                            } else {
+                                result.push_str("0");
+                            }
                         }
                         'f' => {
-                            // FTP port (mud_port + 6) - TODO: need current_session
-                            result.push_str("0");
+                            // FTP port (mud_port + 6)
+                            if let Some(sess) = session {
+                                result.push_str(&(sess.port + 6).to_string());
+                            } else {
+                                result.push_str("0");
+                            }
                         }
 
                         // Time variables using strftime (C++ lines 190-207)
@@ -317,17 +365,23 @@ impl CommandQueue {
     }
 
     /// Expand aliases (C++ Interpreter::expandAliases, lines 322-366)
-    fn expand_aliases(&mut self, s: &str, flags: u32) {
+    fn expand_aliases(
+        &mut self,
+        s: &str,
+        flags: u32,
+        session: Option<&SessionContext>,
+        mud: Option<&crate::mud::Mud>,
+    ) {
         // Empty string special case (C++ lines 326-327)
         if s.is_empty() {
-            self.add("", EXPAND_NONE, true);
+            self.add("", EXPAND_NONE, false);
             return;
         }
 
         // TODO: Call sys/command hook (C++ lines 333-337)
 
-        // Extract alias name (C++ lines 340-347)
-        let (_name, _args_start) = if let Some(first_ch) = s.chars().next() {
+        // Extract alias name and arguments (C++ lines 340-347)
+        let (name, args_start) = if let Some(first_ch) = s.chars().next() {
             if !first_ch.is_alphabetic() {
                 // Non-alphabetic first char - single char alias (C++ lines 341-345)
                 let name = &s[..first_ch.len_utf8()];
@@ -344,11 +398,24 @@ impl CommandQueue {
             ("", 0)
         };
 
-        // TODO: Look up alias in currentSession->mud or globalMUD (C++ lines 353-356)
-        // For now, just pass through without alias expansion
+        // Look up alias in MUD (C++ lines 353-356)
+        if let Some(mud_ref) = mud {
+            if let Some(alias) = mud_ref.find_alias(name) {
+                // Found alias - expand it (C++ lines 358-361)
+                let args = if args_start < s.len() {
+                    s[args_start..].trim_start()
+                } else {
+                    ""
+                };
+                let expanded = alias.expand(args);
+                // Expand everything again (C++ line 361)
+                self.add_with_context(&expanded, EXPAND_ALL, false, session, mud);
+                return;
+            }
+        }
 
         // No alias found - pass through (C++ line 364)
-        self.add(s, flags & !EXPAND_ALIASES, true);
+        self.add_with_context(s, flags & !EXPAND_ALIASES, false, session, mud);
     }
 }
 
@@ -390,7 +457,7 @@ mod tests {
     #[test]
     fn semicolon_expansion() {
         let mut cq = CommandQueue::new();
-        cq.expand_semicolon("north;south;east", EXPAND_SEMICOLON);
+        cq.add("north;south;east", EXPAND_SEMICOLON, false);
 
         let cmds = cq.execute();
         assert_eq!(cmds.len(), 3);
@@ -403,7 +470,7 @@ mod tests {
     #[test]
     fn escaped_semicolon() {
         let mut cq = CommandQueue::new();
-        cq.expand_semicolon("say hello\\;goodbye", EXPAND_SEMICOLON);
+        cq.add("say hello\\;goodbye", EXPAND_SEMICOLON, false);
 
         let cmds = cq.execute();
         assert_eq!(cmds.len(), 1);
@@ -474,7 +541,7 @@ mod tests {
     #[test]
     fn variable_expansion_time() {
         let cq = CommandQueue::new();
-        let result = cq.expand_variables("Time: %H:%m");
+        let result = cq.expand_variables("Time: %H:%m", None);
 
         // Should have format like "Time: 14:30"
         assert!(result.starts_with("Time: "));
@@ -489,7 +556,7 @@ mod tests {
     #[test]
     fn variable_expansion_literal_percent() {
         let cq = CommandQueue::new();
-        let result = cq.expand_variables("100%% complete");
+        let result = cq.expand_variables("100%% complete", None);
 
         assert_eq!(result, "100% complete");
     }
@@ -497,7 +564,7 @@ mod tests {
     #[test]
     fn variable_expansion_no_variables() {
         let cq = CommandQueue::new();
-        let result = cq.expand_variables("no variables here");
+        let result = cq.expand_variables("no variables here", None);
 
         assert_eq!(result, "no variables here");
     }
@@ -505,7 +572,7 @@ mod tests {
     #[test]
     fn variable_expansion_month() {
         let cq = CommandQueue::new();
-        let result = cq.expand_variables("Month: %M");
+        let result = cq.expand_variables("Month: %M", None);
 
         // Should be like "Month: Jan" or "Month: Dec"
         assert!(result.starts_with("Month: "));
@@ -514,6 +581,44 @@ mod tests {
             "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
         ];
         assert!(valid_months.contains(&month));
+    }
+
+    #[test]
+    fn variable_expansion_with_session() {
+        use super::SessionContext;
+
+        let cq = CommandQueue::new();
+        let session = SessionContext {
+            hostname: "mud.example.com".to_string(),
+            port: 4000,
+            name: "TestMUD".to_string(),
+            local_port: 12345,
+        };
+
+        let result = cq.expand_variables("Connecting to %h:%p (%n)", Some(&session));
+        assert_eq!(result, "Connecting to mud.example.com:4000 (TestMUD)");
+
+        let result2 = cq.expand_variables("FTP port: %f", Some(&session));
+        assert_eq!(result2, "FTP port: 4006");
+    }
+
+    #[test]
+    fn alias_expansion_with_mud() {
+        use crate::alias::Alias;
+        use crate::mud::Mud;
+
+        let mut cq = CommandQueue::new();
+        let mut mud = Mud::empty();
+
+        // Add alias: "n" -> "north"
+        mud.alias_list.push(Alias::new("n", "north"));
+
+        // Test alias expansion
+        cq.add_with_context("n", EXPAND_ALIASES, false, None, Some(&mud));
+
+        let cmds = cq.execute();
+        assert_eq!(cmds.len(), 1);
+        assert_eq!(cmds[0], "north");
     }
 
     #[test]
