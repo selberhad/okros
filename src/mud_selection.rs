@@ -46,10 +46,21 @@ impl MudSelection {
     pub fn get_selected_mud_name(&self) -> Option<&str> {
         let idx = self.selection.get_selection();
         if idx >= 0 {
-            self.config.mud_list.get(idx as usize).map(|m| m.name.as_str())
+            self.config
+                .mud_list
+                .get(idx as usize)
+                .map(|m| m.name.as_str())
         } else {
             None
         }
+    }
+
+    /// Get MUD at index for rendering
+    pub fn get_mud_at(&self, index: usize) -> Option<(&str, &str, u16)> {
+        self.config
+            .mud_list
+            .get(index)
+            .map(|m| (m.name.as_str(), m.hostname.as_str(), m.port))
     }
 
     /// Handle keypress event
@@ -96,9 +107,7 @@ mod tests {
         config
             .mud_list
             .insert(Mud::new("TestMUD", "127.0.0.1", 4000));
-        config
-            .mud_list
-            .insert(Mud::new("Nodeka", "nodeka.com", 23));
+        config.mud_list.insert(Mud::new("Nodeka", "nodeka.com", 23));
 
         let sel = MudSelection::new(config, 80, 24);
         assert_eq!(sel.count(), 2);
@@ -135,9 +144,7 @@ mod tests {
         config
             .mud_list
             .insert(Mud::new("TestMUD", "127.0.0.1", 4000));
-        config
-            .mud_list
-            .insert(Mud::new("Nodeka", "nodeka.com", 23));
+        config.mud_list.insert(Mud::new("Nodeka", "nodeka.com", 23));
 
         let sel = MudSelection::new(config, 80, 24);
         assert_eq!(sel.get_selected_mud_name(), Some("TestMUD"));

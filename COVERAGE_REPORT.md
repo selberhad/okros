@@ -1,13 +1,13 @@
 # Test Coverage Report
 
-**Last Updated**: 2025-10-03 22:54
+**Last Updated**: 2025-10-03 23:23
 **Tool**: cargo-llvm-cov
-**Overall Coverage**: **75.62%** lines | **77.45%** regions | **81.96%** functions
+**Overall Coverage**: **73.91%** lines | **76.10%** regions | **80.83%** functions
 
 ## Summary
 
 ```
-TOTAL                            8565              1931    77.45%         499                90    81.96%        5017              1223    75.62%           0                 0         -
+TOTAL                            8717              2083    76.10%         506                97    80.83%        5132              1339    73.91%           0                 0         -
 ```
 
 ## Coverage by Module
@@ -26,7 +26,7 @@ TOTAL                            8565              1931    77.45%         499   
 | `macro_def.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
 | `main.rs` | 0.00% | 0.00% | 0.00% | 🔴 Needs Work |
 | `mccp.rs` | 71.09% | 74.85% | 73.33% | 🟡 Good |
-| `mud_selection.rs` | 95.06% | 96.67% | 100.00% | 🟢 Excellent |
+| `mud_selection.rs` | 87.36% | 90.06% | 84.62% | 🟡 Good |
 | `mud.rs` | 88.21% | 90.65% | 85.19% | 🟡 Good |
 | `offline_mud/game.rs` | 96.58% | 95.88% | 96.55% | 🟢 Excellent |
 | `offline_mud/parser.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
@@ -53,7 +53,6 @@ TOTAL                            8565              1931    77.45%         499   
 - `config.rs` - 94.67%
 - `engine.rs` - 97.06%
 - `macro_def.rs` - 100.00%
-- `mud_selection.rs` - 95.06%
 - `offline_mud/game.rs` - 96.58%
 - `offline_mud/parser.rs` - 100.00%
 - `output_window.rs` - 100.00%
@@ -72,6 +71,7 @@ TOTAL                            8565              1931    77.45%         499   
 - `input_line.rs` - 83.58%
 - `mccp.rs` - 71.09%
 - `mud.rs` - 88.21%
+- `mud_selection.rs` - 87.36%
 - `plugins/perl.rs` - 82.80%
 - `plugins/python.rs` - 88.14%
 - `plugins/stack.rs` - 73.13%
@@ -91,7 +91,7 @@ TOTAL                            8565              1931    77.45%         499   
 
 | Tier | Target | Current | Status |
 |------|--------|---------|--------|
-| Overall | ≥80% | 75.62% | ⏳ In Progress |
+| Overall | ≥80% | 73.91% | ⏳ In Progress |
 | Critical Paths | ≥95% | Check modules above | ✅ Met |
 | New Modules | ≥80% | - | Policy |
 

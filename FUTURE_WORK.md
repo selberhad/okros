@@ -2,7 +2,7 @@
 
 This document tracks post-MVP enhancements and deferred features for okros.
 
-**Current Status**: Implementation ~99% complete (core features done, minor polish remaining)
+**Current Status**: Implementation 100% complete (all core features implemented, ready for v0.1 release)
 **MVP Philosophy**: okros is a transport layer - scripts handle command logic
 
 ---
@@ -55,14 +55,23 @@ This document tracks post-MVP enhancements and deferred features for okros.
 
 ## Optional Enhancements (Post-MVP v0.1)
 
-### 5. DNS Hostname Resolution
-**Priority**: LOW - Nice-to-have, workarounds exist
+### 5. DNS Hostname Resolution — STATUS: COMPLETE ✅
+**Priority**: COMPLETE - Fully implemented
 
-- Currently only IPv4 addresses work (e.g., `#open 127.0.0.1 4000`)
-- Add hostname lookup (e.g., `#open example.com 4000`)
-- Low priority - can be handled by wrapper scripts or Perl/Python pre-processing
+**Implementation complete** (2025-10-03):
+- ✅ **DNS resolution function** (`resolve_hostname()` in main.rs:14-35)
+- ✅ **Alt-O connect menu** - Supports both hostnames and IPv4 addresses
+- ✅ **#open command** - Accepts hostnames (e.g., `#open nodeka.com 23`)
+- ✅ **OKROS_CONNECT env var** - Supports DNS (e.g., `OKROS_CONNECT=nodeka.com:23`)
+- ✅ **Tested with real hostnames** - nodeka.com, localhost, google.com all resolve correctly
 
-**Estimated effort**: 1-2 hours
+**Implementation**:
+- Uses Rust standard library `ToSocketAddrs` for DNS resolution
+- Falls back to direct IPv4 parsing if hostname is already an IP
+- Returns first IPv4 address from DNS results
+- Shows resolved IP in status line (e.g., "nodeka.com:23 -> 108.252.250.33")
+
+**Actual effort**: ~15 minutes (much faster than estimated!)
 
 ### 6. Extended # Commands
 **Priority**: LOW - Minimal set sufficient for MVP
@@ -114,7 +123,7 @@ This document tracks post-MVP enhancements and deferred features for okros.
 - ✅ **Config file parsing** (~/.okros/config) - both old and new formats
 - ✅ **MUD list storage** (MudList class) - in `src/mud.rs`
 - ✅ **Offline MUD** - automatically added as entry #0
-- ⏸️  **Alt-O hotkey binding** - Remaining work
+- ✅ **Alt-O hotkey binding** - COMPLETE (simple text-based modal menu)
 
 **Completed implementation**:
 1. ✅ Port Selection base class (scrollable list widget with navigation)
@@ -123,16 +132,14 @@ This document tracks post-MVP enhancements and deferred features for okros.
 4. ✅ Implement config file parser (new format: `MUD mudname { host hostname port; alias ...; }`)
 5. ✅ Add internal MUD as entry #0 in empty lists
 6. ✅ Comprehensive test coverage (20+ tests for config/selection/integration)
-
-**Remaining work**:
-- Alt-O hotkey integration (main.rs):
-  - Detect Alt-O keypress in event loop ✅ (KeyCode::Alt(b'o') available)
-  - Load config file (~/.okros/config) with MudList
-  - Create MudSelection widget from config
-  - Render widget to screen (needs Screen/Window integration)
-  - Handle modal input loop (arrow keys, enter to select)
-  - Connect to selected MUD via Mud::connect()
-  - **Estimated effort**: 2-3 hours (full UI integration) or 30 minutes (simple CLI prompt)
+7. ✅ **Alt-O hotkey integration** (main.rs:186-254):
+  - ✅ Detect Alt-O keypress in event loop (KeyCode::Alt(b'o'))
+  - ✅ Load config file (~/.okros/config) with Config::load_file()
+  - ✅ Create MudSelection widget from config
+  - ✅ Render simple text-based menu (ANSI colored, clear screen)
+  - ✅ Handle modal input loop (arrows, Enter to connect, Esc to cancel)
+  - ✅ Connect to selected MUD via Socket::connect_ipv4()
+  - **Implementation time**: ~30 minutes (simple text menu approach)
 
 **Features implemented**:
 - Dual format config parser (old + new in same file)
@@ -187,14 +194,14 @@ Features explicitly skipped:
 
 These are intentional trade-offs for the MVP:
 
-1. **IPv4 only** - No DNS hostname resolution (use scripts or IP addresses)
+1. ~~**IPv4 only**~~ - ✅ DNS hostname resolution implemented (2025-10-03)
 2. **Minimal # commands** - Only `#quit`, `#open` (scripts handle rest)
-3. **No config file loading** - MUD connections via CLI or `#open` command
-4. **No connect menu** - Use `--offline` for internal MUD, or `#open` for network
-5. **Linux-only** - ncurses/TTY code is platform-specific
+3. ~~**No config file loading**~~ - ✅ Config file (`~/.okros/config`) implemented with Alt-O menu
+4. ~~**No connect menu**~~ - ✅ Alt-O connect menu implemented (2025-10-03)
+5. **Linux-only** - ncurses/TTY code is platform-specific (macOS support exists, Windows deferred)
 6. **Single session** - No multi-session or grouped sessions (tmux/screen for multiple instances)
 
-**Rationale**: Keep core simple, let ecosystem tools (scripts, tmux, DNS) handle complexity
+**Rationale**: Keep core simple, let ecosystem tools (scripts, tmux) handle complexity
 
 ---
 
@@ -332,4 +339,4 @@ Replace language-specific FFI (pyo3, Perl XS) with universal WASM runtime:
 ---
 
 **Last Updated**: 2025-10-03
-**Status**: Core implementation complete (~99%), connect menu infrastructure + automation features working, Alt-O hotkey integration remaining
+**Status**: Core implementation 100% complete - all MVP features implemented including Alt-O connect menu hotkey

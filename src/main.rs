@@ -9,7 +9,30 @@ use okros::select::{poll_fds, READ, WRITE};
 use okros::session::Session;
 use okros::socket::{ConnState, Socket};
 use std::io::{self, BufRead, Read, Write};
-use std::net::Ipv4Addr;
+use std::net::{Ipv4Addr, SocketAddr, ToSocketAddrs};
+
+/// Resolve hostname to IPv4 address
+/// Supports both hostnames (e.g., "nodeka.com") and IPv4 addresses (e.g., "127.0.0.1")
+fn resolve_hostname(hostname: &str, port: u16) -> Result<Ipv4Addr, String> {
+    // First, try parsing as IPv4 address directly
+    if let Ok(ip) = hostname.parse::<Ipv4Addr>() {
+        return Ok(ip);
+    }
+
+    // If not a direct IP, do DNS resolution
+    let addr_str = format!("{}:{}", hostname, port);
+    match addr_str.to_socket_addrs() {
+        Ok(mut addrs) => {
+            // Find first IPv4 address
+            if let Some(SocketAddr::V4(v4_addr)) = addrs.find(|a| a.is_ipv4()) {
+                Ok(*v4_addr.ip())
+            } else {
+                Err(format!("No IPv4 address found for {}", hostname))
+            }
+        }
+        Err(e) => Err(format!("DNS lookup failed for {}: {}", hostname, e)),
+    }
+}
 
 fn main() {
     // CLI: --headless [--offline] --instance NAME | --attach NAME | --offline
@@ -164,15 +187,22 @@ fn main() {
     }
     // MUD instance (contains socket + aliases/actions/macros)
     let mut mud = okros::mud::Mud::empty();
-    // Optional: try to connect if OKROS_CONNECT=127.0.0.1:PORT is set
+    // Optional: try to connect if OKROS_CONNECT=hostname:PORT is set
     let mut sock: Option<Socket> = None;
     if let Ok(addr) = std::env::var("OKROS_CONNECT") {
-        if let Some((ip_s, port_s)) = addr.split_once(':') {
-            if let (Ok(ip), Ok(port)) = (ip_s.parse::<Ipv4Addr>(), port_s.parse::<u16>()) {
-                let mut s = Socket::new().unwrap();
-                let _ = s.connect_ipv4(ip, port);
-                sock = Some(s);
-                status.set_text(format!("Connecting to {}:{}...", ip, port));
+        if let Some((host, port_s)) = addr.split_once(':') {
+            if let Ok(port) = port_s.parse::<u16>() {
+                match resolve_hostname(host, port) {
+                    Ok(ip) => {
+                        let mut s = Socket::new().unwrap();
+                        let _ = s.connect_ipv4(ip, port);
+                        sock = Some(s);
+                        status.set_text(format!("Connecting to {}:{} -> {}...", host, port, ip));
+                    }
+                    Err(e) => {
+                        status.set_text(format!("OKROS_CONNECT DNS error: {}", e));
+                    }
+                }
             }
         }
     }
@@ -182,12 +212,25 @@ fn main() {
     let mut quit = false;
     let mut last_callout_time = current_time;
 
+    // Modal state for connect menu
+    enum ModalState {
+        Normal,
+        ConnectMenu(okros::mud_selection::MudSelection),
+    }
+    let mut modal = ModalState::Normal;
+
     // Main event loop (matching main.cc:141-170)
     while !quit {
         // 1. Render UI (main.cc:142)
-        render_surface(
-            width, height, &mut prev, &mut cur, &session, &input, &status, &caps,
-        );
+        if let ModalState::ConnectMenu(ref menu) = modal {
+            // Render connect menu modal
+            render_connect_menu(menu, width, height);
+        } else {
+            // Normal UI rendering
+            render_surface(
+                width, height, &mut prev, &mut cur, &session, &input, &status, &caps,
+            );
+        }
 
         // 2. Poll file descriptors (main.cc:147) - stdin + socket with 250ms timeout
         let mut fds = vec![(libc::STDIN_FILENO, READ)];
@@ -207,6 +250,74 @@ fn main() {
                 if let Ok(n) = io::stdin().read(&mut buf) {
                     if n > 0 {
                         for ev in dec.feed(&buf[..n]) {
+                            // Handle modal connect menu first
+                            if let ModalState::ConnectMenu(ref mut menu) = modal {
+                                if menu.keypress(ev) {
+                                    // Enter pressed - connect to selected MUD
+                                    if matches!(ev, KeyEvent::Byte(b'\n')) {
+                                        let idx = menu.get_selection();
+                                        if let Some((name, hostname, port)) =
+                                            menu.get_mud_at(idx as usize)
+                                        {
+                                            // Check if this is the Offline MUD (no hostname)
+                                            if hostname.is_empty() {
+                                                status.set_text(
+                                                    "Offline MUD - use cargo run --offline instead",
+                                                );
+                                                modal = ModalState::Normal;
+                                            } else {
+                                                // Resolve hostname and connect to network MUD
+                                                match resolve_hostname(hostname, port) {
+                                                    Ok(ip) => {
+                                                        let mut s = Socket::new().unwrap();
+                                                        let _ = s.connect_ipv4(ip, port);
+                                                        sock = Some(s);
+                                                        status.set_text(format!(
+                                                            "Connecting to {} ({}:{} -> {})...",
+                                                            name, hostname, port, ip
+                                                        ));
+                                                        modal = ModalState::Normal;
+                                                    }
+                                                    Err(e) => {
+                                                        status
+                                                            .set_text(format!("DNS error: {}", e));
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else if matches!(ev, KeyEvent::Key(KeyCode::Escape)) {
+                                    // Escape pressed - exit connect menu
+                                    modal = ModalState::Normal;
+                                    status.set_text("Connect menu closed.");
+                                }
+                                continue; // Skip normal processing while in modal
+                            }
+
+                            // Alt-O: Open connect menu
+                            if matches!(ev, KeyEvent::Key(KeyCode::Alt(b'o'))) {
+                                // Load config file
+                                let config_path = std::env::var("HOME")
+                                    .map(|h| std::path::PathBuf::from(h).join(".okros/config"))
+                                    .unwrap_or_else(|_| std::path::PathBuf::from(".okros/config"));
+
+                                let mut config = okros::config::Config::new();
+                                if config.load_file(&config_path).is_ok() {
+                                    let menu = okros::mud_selection::MudSelection::new(
+                                        config, width, height,
+                                    );
+                                    if menu.count() > 0 {
+                                        modal = ModalState::ConnectMenu(menu);
+                                        status.set_text("Select MUD (arrows to navigate, Enter to connect, Esc to cancel)");
+                                    } else {
+                                        status.set_text("No MUDs found in config");
+                                    }
+                                } else {
+                                    status.set_text("Config file not found");
+                                }
+                                continue;
+                            }
+
                             match ev {
                                 KeyEvent::Byte(b'\n') => {
                                     let line = input.take_line();
@@ -222,26 +333,29 @@ fn main() {
                                                 args.trim().split_once(' ')
                                             {
                                                 if let Ok(port) = port_str.parse::<u16>() {
-                                                    // Parse hostname (support IPv4 for now)
-                                                    if let Ok(ip) = host_str.parse::<Ipv4Addr>() {
-                                                        let mut s = Socket::new().unwrap();
-                                                        let _ = s.connect_ipv4(ip, port);
-                                                        sock = Some(s);
-                                                        status.set_text(format!(
-                                                            "Connecting to {}:{}...",
-                                                            host_str, port
-                                                        ));
-                                                    } else {
-                                                        status.set_text(format!(
-                                                            "Invalid IP: {}",
-                                                            host_str
-                                                        ));
+                                                    // Resolve hostname (supports both DNS and IPv4)
+                                                    match resolve_hostname(host_str, port) {
+                                                        Ok(ip) => {
+                                                            let mut s = Socket::new().unwrap();
+                                                            let _ = s.connect_ipv4(ip, port);
+                                                            sock = Some(s);
+                                                            status.set_text(format!(
+                                                                "Connecting to {}:{} -> {}...",
+                                                                host_str, port, ip
+                                                            ));
+                                                        }
+                                                        Err(e) => {
+                                                            status.set_text(format!(
+                                                                "DNS error: {}",
+                                                                e
+                                                            ));
+                                                        }
                                                     }
                                                 } else {
-                                                    status.set_text("Usage: #open <ip> <port>");
+                                                    status.set_text("Usage: #open <host> <port>");
                                                 }
                                             } else {
-                                                status.set_text("Usage: #open <ip> <port>");
+                                                status.set_text("Usage: #open <host> <port>");
                                             }
                                         } else if line.starts_with(b"#alias ") {
                                             // #alias <name> <expansion>
@@ -842,6 +956,45 @@ fn run_headless_offline_mode(args: &[String]) {
             Err(e) => eprintln!("control: accept error: {}", e),
         }
     }
+}
+
+fn render_connect_menu(menu: &okros::mud_selection::MudSelection, _width: usize, _height: usize) {
+    use std::io::Write;
+
+    // Clear screen and position cursor at top
+    print!("\x1b[2J\x1b[H");
+
+    // Title
+    println!("\x1b[1;36m=== MUD Connect Menu ===\x1b[0m\n");
+
+    // Instructions
+    println!("\x1b[33mArrows: Navigate | Enter: Connect | Esc: Cancel\x1b[0m\n");
+
+    // Menu items
+    let selection = menu.get_selection();
+    let count = menu.count();
+
+    for i in 0..count.min(20) {
+        // Show max 20 items
+        if i as i32 == selection {
+            print!("\x1b[1;32m> ");
+        } else {
+            print!("  ");
+        }
+
+        // Get MUD info at this index
+        if let Some((name, hostname, port)) = menu.get_mud_at(i) {
+            if hostname.is_empty() {
+                // Offline MUD or MUD without hostname
+                println!("{}\x1b[0m", name);
+            } else {
+                // Network MUD
+                println!("{:<20} {}:{}\x1b[0m", name, hostname, port);
+            }
+        }
+    }
+
+    std::io::stdout().flush().unwrap();
 }
 
 fn render_surface(
