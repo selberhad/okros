@@ -264,6 +264,9 @@ fn main() {
                             // Handle modal connect menu first
                             if let ModalState::ConnectMenu(ref mut menu) = modal {
                                 if menu.keypress(ev) {
+                                    // Keypress handled - redraw menu with updated selection
+                                    menu.redraw();
+
                                     // Enter pressed - connect to selected MUD
                                     if matches!(ev, KeyEvent::Byte(b'\n')) {
                                         let idx = menu.get_selection();
