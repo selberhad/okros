@@ -175,7 +175,16 @@ fn main() {
     // Session viewport size matches OutputWindow (height-1)
     let mut session = Session::new(PassthroughDecomp::new(), width, height - 1, 2000);
 
-    // Status line (0x07 = black background, white foreground) - C++ main.cc StatusLine creation
+    // Input line buffer (0x17 = blue background, white foreground) - C++ main.cc:73 InputLine creation
+    let mut input = okros::input_line::InputLine::new(
+        screen.window_mut() as *mut okros::window::Window,
+        width,
+        0x17,
+    );
+    input.win.parent_y = (height - 1) as isize; // Bottom row
+
+    // Status line (0x07 = black background, white foreground) - C++ main.cc:76 StatusLine creation
+    // IMPORTANT: Created last = top z-order, overlays OutputWindow at top
     let mut status = okros::status_line::StatusLine::new(
         screen.window_mut() as *mut okros::window::Window,
         width,
@@ -183,14 +192,6 @@ fn main() {
     );
     status.win.parent_y = 0; // Top row
     status.set_text("okros v0.1 - Press Alt-O for connect menu, #quit to exit");
-
-    // Input line buffer (0x17 = blue background, white foreground) - C++ main.cc InputLine creation
-    let mut input = okros::input_line::InputLine::new(
-        screen.window_mut() as *mut okros::window::Window,
-        width,
-        0x17,
-    );
-    input.win.parent_y = (height - 1) as isize; // Bottom row
 
     // Simple demo loop: read stdin nonblocking, normalize keys, print them; quit on 'q'
     unsafe {
@@ -755,7 +756,15 @@ fn run_offline_mode() {
     // Session for processing output (matches OutputWindow size)
     let mut session = Session::new(PassthroughDecomp::new(), width, height - 1, 200);
 
-    // Status line
+    // Input line (created before StatusLine for correct z-order)
+    let mut input = okros::input_line::InputLine::new(
+        screen.window_mut() as *mut okros::window::Window,
+        width,
+        0x07,
+    );
+    input.win.parent_y = (height - 1) as isize;
+
+    // Status line (created last = top z-order)
     let mut status = okros::status_line::StatusLine::new(
         screen.window_mut() as *mut okros::window::Window,
         width,
@@ -763,14 +772,6 @@ fn run_offline_mode() {
     );
     status.win.parent_y = 0;
     status.set_text("Internal MUD - type 'help' for commands, 'quit' to exit");
-
-    // Input line
-    let mut input = okros::input_line::InputLine::new(
-        screen.window_mut() as *mut okros::window::Window,
-        width,
-        0x07,
-    );
-    input.win.parent_y = (height - 1) as isize;
 
     // Show initial room
     let look_output = world.execute(parse("look").unwrap());
