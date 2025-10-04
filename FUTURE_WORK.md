@@ -121,8 +121,18 @@ This document tracks post-MVP enhancements and deferred features for okros.
 2. ✅ Port MUDSelection (specialized for MUD connections)
 3. ✅ Implement config file parser (old format: `mudname hostname port [commands]`)
 4. ✅ Implement config file parser (new format: `MUD mudname { host hostname port; alias ...; }`)
-5. ⏸️  Add Alt-O hotkey binding (infrastructure ready, needs main.rs integration)
-6. ✅ Add internal MUD as entry #0 in empty lists
+5. ✅ Add internal MUD as entry #0 in empty lists
+6. ✅ Comprehensive test coverage (20+ tests for config/selection/integration)
+
+**Remaining work**:
+- Alt-O hotkey integration (main.rs):
+  - Detect Alt-O keypress in event loop ✅ (KeyCode::Alt(b'o') available)
+  - Load config file (~/.okros/config) with MudList
+  - Create MudSelection widget from config
+  - Render widget to screen (needs Screen/Window integration)
+  - Handle modal input loop (arrow keys, enter to select)
+  - Connect to selected MUD via Mud::connect()
+  - **Estimated effort**: 2-3 hours (full UI integration) or 30 minutes (simple CLI prompt)
 
 **Features implemented**:
 - Dual format config parser (old + new in same file)
@@ -130,8 +140,9 @@ This document tracks post-MVP enhancements and deferred features for okros.
 - Arrow navigation, page up/down, home/end, letter jump
 - Formatted display with column alignment
 - Automatic Offline MUD injection
+- Full automation loading (aliases/actions/macros from config)
 
-**Tests**: 20 tests passing (3 selection + 13 config + 4 mud_selection)
+**Tests**: 27 tests passing (3 selection + 15 config + 4 mud_selection + 5 integration)
 **Reference**: `mcl-cpp-reference/Selection.cc`, `mcl-cpp-reference/Config.cc` (lines 329-508)
 
 ### 8. Client-Side Command Processing
@@ -321,4 +332,4 @@ Replace language-specific FFI (pyo3, Perl XS) with universal WASM runtime:
 ---
 
 **Last Updated**: 2025-10-03
-**Status**: Core implementation complete (~99%), connect menu + automation features working
+**Status**: Core implementation complete (~99%), connect menu infrastructure + automation features working, Alt-O hotkey integration remaining

@@ -1,83 +1,91 @@
 # ORIENTATION — okros MUD Client
 
-**Quick Start**: You're looking at a Rust port of MCL (MUD Client for Linux), ~95% complete (implementation done, validation pending), built for headless operation and LLM agent integration.
+**Quick Start**: You're looking at a Rust port of MCL (MUD Client for Linux), ~99% complete (core implementation + validation done), built for headless operation and LLM agent integration.
 
 ## What Is This?
 
 **okros** = Rust MUD client reviving MCL's design, optimized for automation
 - **Primary use case**: Transport layer for Perl/Python bots and LLM agents
-- **Philosophy**: Client handles I/O, scripts handle logic (aliases/triggers/automation)
-- **Status**: Implementation complete (all tiers done); validation pending (needs real MUD testing)
+- **Philosophy**: Client handles I/O, scripts handle logic (automation via Perl/Python or built-in features)
+- **Status**: Core implementation complete + validated (all tiers done, tested on Nodeka MUD); Alt-O hotkey integration remaining
 
 ## Current State (Oct 2025)
 
-### ✅ What Works (Implementation Complete)
+### ✅ What Works (Implementation Complete + Validated)
 - **Network**: Socket, telnet, MCCP compression, ANSI parsing (full pipeline)
-- **UI**: ncurses wrapper, screen diff renderer, widgets (status/output/input), scrollback
+- **UI**: ncurses wrapper, screen diff renderer, widgets (status/output/input), scrollback, selection widget
 - **Plugins**: Python (pyo3) and Perl (raw FFI) with feature gates, interpreter hooks
 - **Headless Engine**: SessionEngine + control server (Unix socket, JSON Lines protocol)
 - **Offline Mode**: Internal MUD for testing/demo (5 rooms, 3 items, ANSI colors, `--offline` flag)
 - **Main Event Loop**: poll-based I/O on TTY + socket with 250ms timeout
-- **CLI Args**: `--headless`, `--instance <name>`, `--attach <name>`, `--offline`, `--headless --offline` (combined) implemented
-- **# Commands**: `#quit`, `#open`, `#alias`, `#action`, `#subst`, `#macro` functional
-- **Automation**: Alias expansion (text with %N params), triggers/replacements, keyboard macros
-- **Tests**: 97 total tests passing (89 unit + 8 integration) | 70% coverage
+- **CLI Args**: `--headless`, `--instance <name>`, `--attach <name>`, `--offline`, `--headless --offline` (combined)
+- **# Commands**: `#quit`, `#open`, `#alias`, `#action`, `#subst`, `#macro` all functional
+- **Automation**: ✅ Fully wired into I/O pipeline
+  - Alias expansion (text with %N params) - wired into input pipeline
+  - Triggers/replacements/gags with Perl/Python regex - wired into output pipeline
+  - Keyboard macros - wired into key handling
+  - MUD inheritance (child inherits parent's aliases/macros)
+- **Config System**: Dual format parser (old + new MUD block syntax)
+  - MUD definitions with hostname/port/commands/aliases/actions
+  - MUD inheritance (child inherits parent features)
+  - Automatic Offline MUD injection as entry #0
+- **Connect Menu Infrastructure**: Selection widget, MUDSelection, config loading (Alt-O integration remaining)
+- **Tests**: 134 total tests passing (126 unit + 8 integration) | extensive coverage
 - **✅ MUD VALIDATED**: Full gameplay session on Nodeka (2025-10-03) - See `MUD_LEARNINGS.md`
 
-### ⏸️ What Needs Completion
-- **Alias/Action Integration**: Modules exist, need wiring into I/O pipeline
-- **Perl/Python Regex**: Implement match_prepare/substitute_prepare for actions
-- **Perl Bot Validation**: Test real automation scripts against headless mode
+### ⏸️ What Needs Completion (Minimal Remaining Work)
+- **Alt-O Hotkey**: Connect menu UI integration (infrastructure complete, needs Screen/Window wiring)
+- **Perl Bot Validation**: Test real automation scripts against headless mode (real-world integration)
 
 ### ❌ What's Deferred (By Design)
 - Chat, borg, group features (not needed for MVP)
-- Extended # commands beyond current set
-- DNS hostname resolution (IPv4 addresses work; scripts can resolve)
-- Config file parsing and connect menu (use #open or MCL_CONNECT env var)
+- Extended # commands beyond current set (scripts handle complex commands)
+- DNS hostname resolution for interactive #open (headless mode has DNS via control server)
 
 ## Next Steps (Priority Order)
 
-**MVP is VALIDATED. Focus is now on polishing automation features.**
+**MVP is VALIDATED and FEATURE-COMPLETE. Remaining: UI polish + real-world bot testing.**
 
-### 1. Complete Alias/Action/Macro Integration
-**Goal**: Wire automation features into I/O pipeline
+### 1. Alt-O Hotkey Integration (Optional Polish)
+**Goal**: Wire connect menu to Alt-O keypress
 
-**Tasks**:
-- [ ] Input pipeline: Check aliases before sending to MUD
-- [ ] Input pipeline: Check macros on key press
-- [ ] Output pipeline: Check triggers/replacements on MUD lines
-- [ ] Implement Perl match_prepare/substitute_prepare methods
-- [ ] Implement Python match_prepare/substitute_prepare methods
-- [ ] Test full automation workflow (alias → trigger → action)
+**What's Done**:
+- ✅ Config file parser (old + new formats, inheritance)
+- ✅ MUD list storage (MudList with find/insert/iter)
+- ✅ Selection widget (base scrollable list with navigation)
+- ✅ MudSelection widget (specialized for MUD menu)
+- ✅ Offline MUD auto-injection as entry #0
+- ✅ Comprehensive tests (27 tests for config/selection/integration)
 
-**Estimated effort**: 1-2 days
+**Remaining Work**:
+- [ ] Load ~/.okros/config on Alt-O keypress
+- [ ] Create MudSelection widget from loaded config
+- [ ] Render widget to screen (Screen/Window integration)
+- [ ] Handle modal input loop (arrow keys, enter to select)
+- [ ] Connect to selected MUD via Mud::connect()
 
-### 2. Perl Bot Integration Testing
-**Goal**: Validate real automation scripts
+**Estimated effort**: 2-3 hours (full UI) or 30 minutes (simple CLI prompt)
+**Alternative**: Use `#open` command or `MCL_CONNECT` env var (already working)
+
+### 2. Perl Bot Integration Testing (Real-World Validation)
+**Goal**: Validate production automation scripts
 
 **Tasks**:
 - [ ] Run existing Perl bot against headless mode
-- [ ] Verify script can read buffer and send commands
-- [ ] Test trigger/action execution via Perl
+- [ ] Verify trigger/action execution via Perl match_prepare/substitute_prepare
+- [ ] Test buffer reading + command sending via control protocol
 - [ ] Document best practices for bot developers
 
 **Estimated effort**: 1 day
 
-### 2. Polish & Bug Fixes (As Discovered)
-**Goal**: Fix issues found during validation
+### 3. Polish & Bug Fixes (As Discovered)
+**Goal**: Address issues from real-world usage
 
 **Tasks**:
-- [ ] Address any panics/crashes from real MUD connections
-- [ ] Handle telnet/ANSI edge cases (IAC escaping, SGR variants, etc.)
+- [ ] Fix any crashes/panics from production MUD connections
+- [ ] Handle edge cases (telnet negotiations, ANSI variants)
 - [ ] Improve error messages for better UX
-- [ ] Optional: Add DNS hostname resolution (currently IPv4 only)
-
-### 3. Documentation Finalization
-**Goal**: Ensure docs match reality
-
-**Tasks**:
-- [x] Restructure IMPLEMENTATION_PLAN.md → PORTING_HISTORY.md + FUTURE_WORK.md
-- [x] Update ORIENTATION.md (this file) to reflect MVP status
+- [ ] Optional: DNS resolution for interactive `#open` (headless already has it)
 - [ ] Update README.md if needed
 - [ ] Write user guide for Perl bot integration (control socket protocol)
 

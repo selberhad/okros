@@ -276,15 +276,41 @@ The control server uses JSON Lines (one JSON object per line):
 
 ### Configuration
 
-Create `~/.okros/config`:
+Create `~/.okros/config` with MUD definitions, aliases, and triggers:
 
+**New format (with inheritance)**:
 ```
-MUD example {
-  Host example.com 4000
-  Commands myusername;mypassword
-  Alias go north;east;up
+# Global MUD with common aliases
+MUD base {
+  alias n north;
+  alias s south;
+  alias l look;
+}
+
+# Specific MUD inheriting from base
+MUD nodeka {
+  host nodeka.com 23;
+  inherit base;
+  commands myusername;mypassword;
+  alias qst quest;
+  action "^You are hungry" eat bread;
+  subst "stupid" smart;
 }
 ```
+
+**Old format** (still supported):
+```
+# Format: mudname hostname port [commands]
+nodeka nodeka.com 23 myusername;mypassword
+testmud 127.0.0.1 4000
+```
+
+**Features**:
+- Dual format support (mix old and new in same file)
+- MUD inheritance (child inherits parent's aliases/actions/macros)
+- Automatic Offline MUD injection (entry #0 for testing)
+- Aliases with parameters: `%1`, `%-2` (range from start), `%+3` (range to end)
+- Actions (triggers), substitutions (text replacement), and macros (keyboard shortcuts)
 
 ## Architecture
 
