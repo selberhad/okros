@@ -32,4 +32,5 @@ pub mod input;
 pub mod macro_def;
 pub mod offline_mud;
 pub mod session;
+pub mod session_manager;
 pub mod tty;

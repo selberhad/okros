@@ -1,13 +1,13 @@
 # Test Coverage Report
 
-**Last Updated**: 2025-10-04 15:14
+**Last Updated**: 2025-10-04 15:19
 **Tool**: cargo-llvm-cov
-**Overall Coverage**: **72.94%** lines | **75.28%** regions | **78.66%** functions
+**Overall Coverage**: **72.38%** lines | **74.70%** regions | **78.20%** functions
 
 ## Summary
 
 ```
-TOTAL                            9271              2292    75.28%         539               115    78.66%        5521              1494    72.94%           0                 0         -
+TOTAL                            9464              2394    74.70%         555               121    78.20%        5658              1563    72.38%           0                 0         -
 ```
 
 ## Coverage by Module
@@ -33,12 +33,13 @@ TOTAL                            9271              2292    75.28%         539   
 | `output_window.rs` | 93.88% | 96.00% | 85.71% | 🟢 Excellent |
 | `plugins/perl.rs` | 82.80% | 87.61% | 85.00% | 🟡 Good |
 | `plugins/python.rs` | 88.14% | 89.22% | 90.91% | 🟡 Good |
-| `plugins/stack.rs` | 73.13% | 78.10% | 55.00% | 🟡 Good |
+| `plugins/stack.rs` | 78.11% | 80.95% | 60.00% | 🟡 Good |
 | `screen.rs` | 94.79% | 96.75% | 96.30% | 🟢 Excellent |
 | `scrollback.rs` | 91.71% | 93.13% | 100.00% | 🟢 Excellent |
 | `select.rs` | 97.50% | 96.61% | 100.00% | 🟢 Excellent |
 | `selectable.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
 | `selection.rs` | 77.73% | 82.46% | 77.78% | 🟡 Good |
+| `session_manager.rs` | 42.34% | 42.49% | 50.00% | 🟠 Moderate |
 | `session.rs` | 60.14% | 60.00% | 60.00% | 🟠 Moderate |
 | `socket.rs` | 91.54% | 92.35% | 100.00% | 🟢 Excellent |
 | `status_line.rs` | 91.43% | 94.55% | 83.33% | 🟢 Excellent |
@@ -74,12 +75,13 @@ TOTAL                            9271              2292    75.28%         539   
 - `mud_selection.rs` - 82.18%
 - `plugins/perl.rs` - 82.80%
 - `plugins/python.rs` - 88.14%
-- `plugins/stack.rs` - 73.13%
+- `plugins/stack.rs` - 78.11%
 - `selection.rs` - 77.73%
 
 ### 🟠 Moderate (40-69% lines)
 - `action.rs` - 68.93%
 - `session.rs` - 60.14%
+- `session_manager.rs` - 42.34%
 - `window.rs` - 57.14%
 
 ### 🔴 Needs Work (<40% lines)
@@ -91,7 +93,7 @@ TOTAL                            9271              2292    75.28%         539   
 
 | Tier | Target | Current | Status |
 |------|--------|---------|--------|
-| Overall | ≥80% | 72.94% | ⏳ In Progress |
+| Overall | ≥80% | 72.38% | ⏳ In Progress |
 | Critical Paths | ≥95% | Check modules above | ✅ Met |
 | New Modules | ≥80% | - | Policy |
 
