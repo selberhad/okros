@@ -276,6 +276,152 @@ fn io_err(msg: &str) -> std::io::Error {
     std::io::Error::new(std::io::ErrorKind::Other, msg)
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_default_socket_path() {
+        let path = default_socket_path("test_instance");
+        let path_str = path.to_string_lossy();
+        assert!(path_str.contains("okros"));
+        assert!(path_str.ends_with("test_instance.sock"));
+    }
+
+    #[test]
+    fn test_default_socket_path_uses_xdg_runtime_dir() {
+        std::env::set_var("XDG_RUNTIME_DIR", "/custom/runtime");
+        let path = default_socket_path("test");
+        assert!(path.to_string_lossy().starts_with("/custom/runtime"));
+        std::env::remove_var("XDG_RUNTIME_DIR");
+    }
+
+    #[test]
+    fn test_resolve_ipv4_with_ip_and_port() {
+        let result = resolve_ipv4("127.0.0.1:4000");
+        assert!(result.is_ok());
+        let (ip, port) = result.unwrap();
+        assert_eq!(ip.to_string(), "127.0.0.1");
+        assert_eq!(port, 4000);
+    }
+
+    #[test]
+    fn test_resolve_ipv4_with_hostname() {
+        // localhost should resolve to 127.0.0.1
+        let result = resolve_ipv4("localhost:8080");
+        assert!(result.is_ok());
+        let (_ip, port) = result.unwrap();
+        assert_eq!(port, 8080);
+    }
+
+    #[test]
+    fn test_resolve_ipv4_missing_port() {
+        let result = resolve_ipv4("127.0.0.1");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("host:port"));
+    }
+
+    #[test]
+    fn test_resolve_ipv4_bad_port() {
+        let result = resolve_ipv4("127.0.0.1:not_a_port");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("bad port"));
+    }
+
+    #[test]
+    fn test_resolve_ipv4_invalid_host() {
+        let result = resolve_ipv4("this-host-does-not-exist-12345:4000");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_io_err() {
+        let err = io_err("test error message");
+        assert_eq!(err.kind(), std::io::ErrorKind::Other);
+        assert!(err.to_string().contains("test error message"));
+    }
+
+    #[test]
+    fn test_hex_line_serialization() {
+        let hex_line = HexLine {
+            hex: "48:07 65:07".to_string(),
+            text: "He".to_string(),
+            colors: "07 07".to_string(),
+        };
+        let json = serde_json::to_string(&hex_line).unwrap();
+        assert!(json.contains("\"hex\":\"48:07 65:07\""));
+        assert!(json.contains("\"text\":\"He\""));
+        assert!(json.contains("\"colors\":\"07 07\""));
+    }
+
+    #[test]
+    fn test_event_ok_serialization() {
+        let event = Event::Ok;
+        let json = serde_json::to_string(&event).unwrap();
+        assert!(json.contains("\"event\":\"Ok\""));
+    }
+
+    #[test]
+    fn test_event_error_serialization() {
+        let event = Event::Error {
+            message: "test error".to_string(),
+        };
+        let json = serde_json::to_string(&event).unwrap();
+        assert!(json.contains("\"event\":\"Error\""));
+        assert!(json.contains("\"message\":\"test error\""));
+    }
+
+    #[test]
+    fn test_event_status_serialization() {
+        let event = Event::Status { attached: true };
+        let json = serde_json::to_string(&event).unwrap();
+        assert!(json.contains("\"event\":\"Status\""));
+        assert!(json.contains("\"attached\":true"));
+    }
+
+    #[test]
+    fn test_event_buffer_serialization() {
+        let event = Event::Buffer {
+            lines: vec!["line1".to_string(), "line2".to_string()],
+        };
+        let json = serde_json::to_string(&event).unwrap();
+        assert!(json.contains("\"event\":\"Buffer\""));
+        assert!(json.contains("\"lines\""));
+    }
+
+    #[test]
+    fn test_command_deserialization_basic() {
+        let json = r#"{"cmd":"status"}"#;
+        let cmd: Command = serde_json::from_str(json).unwrap();
+        assert_eq!(cmd.cmd, "status");
+        assert!(cmd.data.is_none());
+    }
+
+    #[test]
+    fn test_command_deserialization_with_data() {
+        let json = r#"{"cmd":"send","data":"test message"}"#;
+        let cmd: Command = serde_json::from_str(json).unwrap();
+        assert_eq!(cmd.cmd, "send");
+        assert_eq!(cmd.data.unwrap(), "test message");
+    }
+
+    #[test]
+    fn test_command_deserialization_with_options() {
+        let json = r#"{"cmd":"peek","lines":20,"from":100}"#;
+        let cmd: Command = serde_json::from_str(json).unwrap();
+        assert_eq!(cmd.cmd, "peek");
+        assert_eq!(cmd.lines.unwrap(), 20);
+        assert_eq!(cmd.from.unwrap(), 100);
+    }
+
+    #[test]
+    fn test_command_deserialization_invalid_json() {
+        let json = r#"not valid json"#;
+        let result: serde_json::Result<Command> = serde_json::from_str(json);
+        assert!(result.is_err());
+    }
+}
+
 fn spawn_net_loop(state: Arc<ControlState>) {
     thread::spawn(move || loop {
         let fd_ev = {

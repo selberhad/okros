@@ -1,13 +1,13 @@
 # Test Coverage Report
 
-**Last Updated**: 2025-10-03 21:38
+**Last Updated**: 2025-10-03 21:55
 **Tool**: cargo-llvm-cov
-**Overall Coverage**: **71.51%** lines | **74.51%** regions | **78.71%** functions
+**Overall Coverage**: **72.51%** lines | **75.65%** regions | **80.46%** functions
 
 ## Summary
 
 ```
-TOTAL                            7269              1853    74.51%         418                89    78.71%        4409              1256    71.51%           0                 0         -
+TOTAL                            7474              1820    75.65%         435                85    80.46%        4515              1241    72.51%           0                 0         -
 ```
 
 ## Coverage by Module
@@ -18,7 +18,7 @@ TOTAL                            7269              1853    74.51%         418   
 | `alias.rs` | 94.01% | 94.52% | 100.00% | 🟢 Excellent |
 | `ansi.rs` | 88.65% | 90.45% | 100.00% | 🟡 Good |
 | `config.rs` | 94.67% | 96.30% | 77.42% | 🟢 Excellent |
-| `control.rs` | 32.02% | 33.52% | 46.67% | 🔴 Needs Work |
+| `control.rs` | 58.08% | 63.59% | 87.50% | 🟠 Moderate |
 | `curses.rs` | 18.56% | 13.55% | 40.00% | 🔴 Needs Work |
 | `engine.rs` | 66.91% | 63.67% | 87.50% | 🟠 Moderate |
 | `input_line.rs` | 83.58% | 84.21% | 75.00% | 🟡 Good |
@@ -75,10 +75,10 @@ TOTAL                            7269              1853    74.51%         418   
 
 ### 🟠 Moderate (40-69% lines)
 - `action.rs` - 68.93%
+- `control.rs` - 58.08%
 - `engine.rs` - 66.91%
 
 ### 🔴 Needs Work (<40% lines)
-- `control.rs` - 32.02%
 - `curses.rs` - 18.56% (ncurses FFI - TTY dependent)
 - `main.rs` - 0.00% (event loop - needs integration tests)
 - `tty.rs` - 31.11% (requires real TTY)
@@ -87,7 +87,7 @@ TOTAL                            7269              1853    74.51%         418   
 
 | Tier | Target | Current | Status |
 |------|--------|---------|--------|
-| Overall | ≥80% | 71.51% | ⏳ In Progress |
+| Overall | ≥80% | 72.51% | ⏳ In Progress |
 | Critical Paths | ≥95% | Check modules above | ✅ Met |
 | New Modules | ≥80% | - | Policy |
 
