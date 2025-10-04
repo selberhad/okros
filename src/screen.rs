@@ -98,8 +98,8 @@ pub fn diff_to_ansi(prev: &[Attrib], next: &[Attrib], opt: &DiffOptions) -> Stri
     let mut out = String::new();
     out.push_str(vt_home());
     let mut saved_color: i32 = -1;
-    let mut last_x = 1usize;
-    let mut last_y = 1usize;
+    let mut last_x = 0usize; // 0-based like C++
+    let mut last_y = 0usize; // 0-based like C++
     let mut acs = false;
     for y in 0..opt.height {
         for x in 0..opt.width {
@@ -116,13 +116,14 @@ pub fn diff_to_ansi(prev: &[Attrib], next: &[Attrib], opt: &DiffOptions) -> Stri
                 out.push_str(&get_color_code(color, opt.set_bg_always));
                 saved_color = color as i32;
             }
-            if !(last_y == y + 1 && last_x == x + 1 && saved_color == color as i32) {
+            // Position cursor (C++ Screen.cc:256-271)
+            if x != last_x || y != last_y {
                 out.push_str(&vt_goto(y + 1, x + 1));
             }
-            last_y = y + 1;
-            last_x = x + 2;
-            if last_x > opt.width {
-                last_x = 1;
+            last_y = y;
+            last_x = x + 1;
+            if last_x >= opt.width {
+                last_x = 0;
                 last_y += 1;
             }
             if ch >= 0xEC && ch < 0xEC + 8 {

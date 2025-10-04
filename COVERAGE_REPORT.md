@@ -1,13 +1,13 @@
 # Test Coverage Report
 
-**Last Updated**: 2025-10-03 23:23
+**Last Updated**: 2025-10-03 23:38
 **Tool**: cargo-llvm-cov
-**Overall Coverage**: **73.91%** lines | **76.10%** regions | **80.83%** functions
+**Overall Coverage**: **74.01%** lines | **76.13%** regions | **80.83%** functions
 
 ## Summary
 
 ```
-TOTAL                            8717              2083    76.10%         506                97    80.83%        5132              1339    73.91%           0                 0         -
+TOTAL                            8713              2080    76.13%         506                97    80.83%        5125              1332    74.01%           0                 0         -
 ```
 
 ## Coverage by Module
@@ -34,7 +34,7 @@ TOTAL                            8717              2083    76.10%         506   
 | `plugins/perl.rs` | 82.80% | 87.61% | 85.00% | 🟡 Good |
 | `plugins/python.rs` | 88.14% | 89.22% | 90.91% | 🟡 Good |
 | `plugins/stack.rs` | 73.13% | 78.10% | 55.00% | 🟡 Good |
-| `screen.rs` | 95.78% | 97.79% | 96.15% | 🟢 Excellent |
+| `screen.rs` | 95.78% | 97.78% | 96.15% | 🟢 Excellent |
 | `scrollback.rs` | 91.71% | 93.13% | 100.00% | 🟢 Excellent |
 | `select.rs` | 97.50% | 96.61% | 100.00% | 🟢 Excellent |
 | `selectable.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
@@ -91,7 +91,7 @@ TOTAL                            8717              2083    76.10%         506   
 
 | Tier | Target | Current | Status |
 |------|--------|---------|--------|
-| Overall | ≥80% | 73.91% | ⏳ In Progress |
+| Overall | ≥80% | 74.01% | ⏳ In Progress |
 | Critical Paths | ≥95% | Check modules above | ✅ Met |
 | New Modules | ≥80% | - | Policy |
 

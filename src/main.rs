@@ -83,43 +83,21 @@ fn main() {
         run_offline_mode();
         return;
     }
-    println!("MCL Rust Port scaffold initialized.");
 
-    #[cfg(feature = "python")]
-    println!("Feature enabled: python (pyo3)");
-
-    #[cfg(feature = "perl")]
-    println!("Feature enabled: perl (FFI)");
+    // Interactive TTY mode - suppress stdout before entering UI
+    // (messages would corrupt the screen)
 
     // Initialize embedded interpreters (matching main.cc:64, 101-105)
     #[cfg(feature = "python")]
     let mut python_interp = {
         use okros::plugins::python::PythonInterpreter;
-        match PythonInterpreter::new() {
-            Ok(interp) => {
-                println!("Python interpreter initialized");
-                Some(interp)
-            }
-            Err(e) => {
-                eprintln!("Failed to initialize Python: {}", e);
-                None
-            }
-        }
+        PythonInterpreter::new().ok()
     };
 
     #[cfg(feature = "perl")]
     let mut perl_interp = {
         use okros::plugins::perl::PerlPlugin;
-        match PerlPlugin::new() {
-            Ok(interp) => {
-                println!("Perl interpreter initialized");
-                Some(interp)
-            }
-            Err(e) => {
-                eprintln!("Failed to initialize Perl: {}", e);
-                None
-            }
-        }
+        PerlPlugin::new().ok()
     };
 
     // Set initial interpreter variables (main.cc:101-105)
@@ -150,7 +128,7 @@ fn main() {
         let _ = interp.run_quietly("sys/init", "", &mut out, true);
     }
 
-    // Minimal demo: set raw mode, optional keypad app mode, then run a tiny event loop
+    // Interactive TTY mode: set raw mode, clear screen, hide cursor
     let mut tty = match okros::tty::Tty::new() {
         Ok(t) => t,
         Err(e) => {
@@ -161,25 +139,37 @@ fn main() {
     let _ = tty.enable_raw();
     let _ = tty.keypad_application_mode(true);
 
-    // Compose a small UI: status (top), output (middle), input (bottom)
-    let width = 40usize;
-    let height = 8usize; // small demo surface
+    // Clear screen and hide cursor
+    print!("\x1b[2J\x1b[H\x1b[?25l");
+    std::io::stdout().flush().unwrap();
+
+    // Get terminal size (C++ Screen.cc:16-34)
+    let (width, height) = unsafe {
+        let mut ws: libc::winsize = std::mem::zeroed();
+        if libc::ioctl(libc::STDIN_FILENO, libc::TIOCGWINSZ, &mut ws) < 0 {
+            eprintln!("Failed to get terminal size, using 80x24");
+            (80usize, 24usize)
+        } else {
+            (ws.ws_col as usize, ws.ws_row as usize)
+        }
+    };
     let caps = get_acs_caps();
-    let mut prev = vec![0u16; width * height];
-    let mut cur = prev.clone();
+    // Initialize prev to non-zero to force full render on first frame
+    let mut prev = vec![0xFFFFu16; width * height];
+    let mut cur = vec![0u16; width * height];
 
     // Session for processing incoming bytes (MCCP->Telnet->ANSI->Scrollback)
     let mut session = Session::new(
         PassthroughDecomp::new(),
         width,
         height.saturating_sub(2),
-        200,
+        2000,
     );
-    // Input line buffer
-    let mut input = okros::input_line::InputLine::new(width, 0x07);
-    // Status line
+    // Input line buffer (0x17 = blue background, white foreground)
+    let mut input = okros::input_line::InputLine::new(width, 0x17);
+    // Status line (0x07 = black background, white foreground)
     let mut status = okros::status_line::StatusLine::new(width, 0x07);
-    status.set_text("MCL-Rust demo: type, Enter to echo; q quits");
+    status.set_text("okros v0.1 - Press Alt-O for connect menu, #quit to exit");
 
     // Simple demo loop: read stdin nonblocking, normalize keys, print them; quit on 'q'
     unsafe {
@@ -696,8 +686,10 @@ fn main() {
         }
     }
 
-    // Restore keypad mode will be handled by Drop, but be explicit
+    // Restore keypad mode, show cursor, clear screen
     let _ = tty.keypad_application_mode(false);
+    print!("\x1b[?25h\x1b[2J\x1b[H");
+    std::io::stdout().flush().unwrap();
 }
 
 fn run_offline_mode() {
@@ -1030,7 +1022,7 @@ fn render_surface(
         &DiffOptions {
             width,
             height,
-            cursor_x: 0,
+            cursor_x: input.cursor,
             cursor_y: input_row,
             smacs: caps.smacs.as_deref(),
             rmacs: caps.rmacs.as_deref(),
