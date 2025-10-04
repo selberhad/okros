@@ -1,80 +1,130 @@
-use crate::scrollback::Attrib;
+// InputLine - Bottom input prompt window
+//
+// Ported from: mcl-cpp-reference/InputLine.cc (MainInputLine subset)
+//
+// C++ pattern: MainInputLine : public InputLine : public Window
+// Rust pattern: InputLine owns Window
 
+use crate::window::Window;
+
+/// InputLine displays user input at bottom of screen
 pub struct InputLine {
-    pub width: usize,
+    pub win: Box<Window>,
     buf: Vec<u8>,
     pub cursor: usize,
-    pub color: u8,
+    color: u8,
 }
 
 impl InputLine {
-    pub fn new(width: usize, color: u8) -> Self {
+    /// Create InputLine as child of parent
+    pub fn new(parent: *mut Window, width: usize, color: u8) -> Self {
+        let mut win = Window::new(parent, width, 1); // height = 1 row
+        win.color = color;
+        win.clear();
+
         Self {
-            width,
+            win,
             buf: Vec::new(),
             cursor: 0,
             color,
         }
     }
+
     pub fn insert(&mut self, b: u8) {
-        if self.buf.len() < self.width {
+        if self.buf.len() < self.win.width {
             self.buf.insert(self.cursor, b);
             self.cursor += 1;
+            self.redraw();
+            self.win.dirty = true;
         }
     }
+
     pub fn backspace(&mut self) {
         if self.cursor > 0 {
             self.cursor -= 1;
             self.buf.remove(self.cursor);
+            self.redraw();
+            self.win.dirty = true;
         }
     }
+
     pub fn move_left(&mut self) {
         if self.cursor > 0 {
             self.cursor -= 1;
+            self.win.dirty = true; // Cursor moved, need to redraw
         }
     }
+
     pub fn move_right(&mut self) {
         if self.cursor < self.buf.len() {
             self.cursor += 1;
+            self.win.dirty = true; // Cursor moved, need to redraw
         }
     }
+
     pub fn home(&mut self) {
         self.cursor = 0;
+        self.win.dirty = true;
     }
+
     pub fn end(&mut self) {
         self.cursor = self.buf.len();
+        self.win.dirty = true;
     }
+
     pub fn clear(&mut self) {
         self.buf.clear();
         self.cursor = 0;
+        self.redraw();
+        self.win.dirty = true;
     }
-    pub fn render(&self) -> Vec<Attrib> {
-        let mut v = vec![((self.color as u16) << 8) | (b' ' as u16); self.width];
-        for (i, b) in self.buf.iter().enumerate().take(self.width) {
-            v[i] = ((self.color as u16) << 8) | (*b as u16);
+
+    /// Redraw window: fill canvas with input text
+    pub fn redraw(&mut self) {
+        let width = self.win.width;
+
+        // Fill with spaces in input color
+        let blank = ((self.color as u16) << 8) | (b' ' as u16);
+        for a in &mut self.win.canvas {
+            *a = blank;
         }
-        v
+
+        // Write input buffer text
+        for (i, b) in self.buf.iter().enumerate().take(width) {
+            self.win.canvas[i] = ((self.color as u16) << 8) | (*b as u16);
+        }
+
+        // Update cursor position in window
+        self.win.cursor_x = self.cursor;
+        self.win.cursor_y = 0;
     }
+
     pub fn take_line(&mut self) -> Vec<u8> {
         let s = self.buf.clone();
         self.clear();
         s
+    }
+
+    /// Get mutable window pointer for tree operations
+    pub fn window_mut_ptr(&mut self) -> *mut Window {
+        self.win.as_mut()
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::ptr;
+
     #[test]
     fn edit_and_render() {
-        let mut il = InputLine::new(10, 0x07);
+        let mut il = InputLine::new(ptr::null_mut(), 10, 0x07);
         il.insert(b'a');
         il.insert(b'b');
         il.insert(b'c');
         il.move_left();
         il.backspace(); // remove 'b'
-        let v = il.render();
-        let text: Vec<u8> = v.iter().map(|a| (a & 0xFF) as u8).collect();
+        let text: Vec<u8> = il.win.canvas.iter().map(|a| (a & 0xFF) as u8).collect();
         assert_eq!(&text[0..2], b"ac");
         assert_eq!(il.cursor, 1);
         let line = il.take_line();

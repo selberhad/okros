@@ -1,13 +1,13 @@
 # Test Coverage Report
 
-**Last Updated**: 2025-10-04 00:10
+**Last Updated**: 2025-10-04 00:19
 **Tool**: cargo-llvm-cov
-**Overall Coverage**: **73.02%** lines | **75.34%** regions | **79.85%** functions
+**Overall Coverage**: **73.50%** lines | **75.85%** regions | **79.70%** functions
 
 ## Summary
 
 ```
-TOTAL                            9011              2222    75.34%         526               106    79.85%        5360              1446    73.02%           0                 0         -
+TOTAL                            8988              2171    75.85%         527               107    79.70%        5354              1419    73.50%           0                 0         -
 ```
 
 ## Coverage by Module
@@ -21,7 +21,7 @@ TOTAL                            9011              2222    75.34%         526   
 | `control.rs` | 72.75% | 74.25% | 87.50% | 🟡 Good |
 | `curses.rs` | 18.56% | 13.55% | 40.00% | 🔴 Needs Work |
 | `engine.rs` | 97.06% | 97.00% | 100.00% | 🟢 Excellent |
-| `input_line.rs` | 83.58% | 84.21% | 75.00% | 🟡 Good |
+| `input_line.rs` | 80.46% | 83.05% | 69.23% | 🟡 Good |
 | `input.rs` | 89.69% | 87.03% | 100.00% | 🟡 Good |
 | `macro_def.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
 | `main.rs` | 0.00% | 0.00% | 0.00% | 🔴 Needs Work |
@@ -41,7 +41,7 @@ TOTAL                            9011              2222    75.34%         526   
 | `selection.rs` | 71.14% | 76.58% | 75.00% | 🟡 Good |
 | `session.rs` | 85.92% | 88.62% | 87.50% | 🟡 Good |
 | `socket.rs` | 91.54% | 92.35% | 100.00% | 🟢 Excellent |
-| `status_line.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
+| `status_line.rs` | 91.43% | 94.55% | 83.33% | 🟢 Excellent |
 | `telnet.rs` | 97.67% | 99.02% | 100.00% | 🟢 Excellent |
 | `tty.rs` | 31.11% | 25.84% | 55.56% | 🔴 Needs Work |
 | `window.rs` | 57.14% | 56.09% | 66.67% | 🟠 Moderate |
@@ -61,14 +61,14 @@ TOTAL                            9011              2222    75.34%         526   
 - `select.rs` - 97.50%
 - `selectable.rs` - 100.00%
 - `socket.rs` - 91.54%
-- `status_line.rs` - 100.00%
+- `status_line.rs` - 91.43%
 - `telnet.rs` - 97.67%
 
 ### 🟡 Good (70-89% lines)
 - `ansi.rs` - 88.65%
 - `control.rs` - 72.75%
 - `input.rs` - 89.69%
-- `input_line.rs` - 83.58%
+- `input_line.rs` - 80.46%
 - `mccp.rs` - 71.09%
 - `mud.rs` - 88.32%
 - `mud_selection.rs` - 87.36%
@@ -91,7 +91,7 @@ TOTAL                            9011              2222    75.34%         526   
 
 | Tier | Target | Current | Status |
 |------|--------|---------|--------|
-| Overall | ≥80% | 73.02% | ⏳ In Progress |
+| Overall | ≥80% | 73.50% | ⏳ In Progress |
 | Critical Paths | ≥95% | Check modules above | ✅ Met |
 | New Modules | ≥80% | - | Policy |
 

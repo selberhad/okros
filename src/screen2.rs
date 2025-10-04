@@ -55,13 +55,13 @@ impl Screen {
     /// Refresh screen: Window::refresh() then refreshTTY() (C++ Screen.cc:105-110)
     pub fn refresh(&mut self, caps: &AcsCaps) -> bool {
         // Call Window::refresh() to composite tree (C++ Screen.cc:84)
-        self.window.refresh();
-
-        // Always render to terminal (status/input change every frame)
-        // C++ Screen.cc:109
-        self.refresh_tty(caps);
-
-        true
+        // refreshTTY only if something changed (C++ Screen.cc:187)
+        if self.window.refresh() {
+            self.refresh_tty(caps);
+            true
+        } else {
+            false
+        }
     }
 
     /// Render composited canvas to terminal via ANSI (C++ Screen.cc:183-299)

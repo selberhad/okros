@@ -4,7 +4,7 @@ use okros::curses::get_acs_caps;
 use okros::engine::SessionEngine;
 use okros::input::{KeyCode, KeyDecoder, KeyEvent};
 use okros::mccp::PassthroughDecomp;
-use okros::screen::{self, DiffOptions};
+// screen module imported via screen2::Screen
 use okros::select::{poll_fds, READ, WRITE};
 use okros::session::Session;
 use okros::socket::{ConnState, Socket};
@@ -177,11 +177,22 @@ fn main() {
         2000,
     );
 
-    // Input line buffer (0x17 = blue background, white foreground)
-    let mut input = okros::input_line::InputLine::new(width, 0x17);
-    // Status line (0x07 = black background, white foreground)
-    let mut status = okros::status_line::StatusLine::new(width, 0x07);
+    // Status line (0x07 = black background, white foreground) - C++ main.cc StatusLine creation
+    let mut status = okros::status_line::StatusLine::new(
+        screen.window_mut() as *mut okros::window::Window,
+        width,
+        0x07,
+    );
+    status.win.parent_y = 0; // Top row
     status.set_text("okros v0.1 - Press Alt-O for connect menu, #quit to exit");
+
+    // Input line buffer (0x17 = blue background, white foreground) - C++ main.cc InputLine creation
+    let mut input = okros::input_line::InputLine::new(
+        screen.window_mut() as *mut okros::window::Window,
+        width,
+        0x17,
+    );
+    input.win.parent_y = (height - 1) as isize; // Bottom row
 
     // Simple demo loop: read stdin nonblocking, normalize keys, print them; quit on 'q'
     unsafe {
@@ -228,24 +239,8 @@ fn main() {
             // Render connect menu modal
             render_connect_menu(menu, width, height);
         } else {
-            // Copy status line to Screen canvas (row 0)
-            let status_data = status.render();
-            screen.window.canvas[0..width].copy_from_slice(&status_data);
-
-            // Copy input line to Screen canvas (bottom row)
-            let input_data = input.render();
-            let input_row = height - 1;
-            screen.window.canvas[input_row * width..(input_row + 1) * width]
-                .copy_from_slice(&input_data);
-
-            // Update cursor position for input line
-            screen.window.cursor_x = input.cursor;
-            screen.window.cursor_y = input_row;
-
-            // Mark Screen dirty so refreshTTY() runs
-            screen.window.dirty = true;
-
-            // Refresh Screen (calls Window::refresh() then refreshTTY) - C++ main.cc:142
+            // Refresh Screen (calls Window::refresh() to composite tree, then refreshTTY) - C++ main.cc:142
+            // Window::refresh() automatically composites StatusLine, OutputWindow, and InputLine via tree walk
             screen.refresh(&caps);
         }
 
@@ -745,8 +740,19 @@ fn run_offline_mode() {
     let width = 80usize;
     let height = 24usize;
     let caps = get_acs_caps();
-    let mut prev = vec![0u16; width * height];
-    let mut cur = prev.clone();
+
+    // Create Screen (root Window)
+    let mut screen = okros::screen2::Screen::new(width, height);
+
+    // Create OutputWindow as child of Screen
+    let mut output = okros::output_window::OutputWindow::new(
+        screen.window_mut() as *mut okros::window::Window,
+        width,
+        height.saturating_sub(2),
+        200,
+        0x07,
+    );
+    output.win.parent_y = 1;
 
     // Session for processing output
     let mut session = Session::new(
@@ -755,11 +761,23 @@ fn run_offline_mode() {
         height.saturating_sub(2),
         200,
     );
-    // Input line
-    let mut input = okros::input_line::InputLine::new(width, 0x07);
+
     // Status line
-    let mut status = okros::status_line::StatusLine::new(width, 0x07);
+    let mut status = okros::status_line::StatusLine::new(
+        screen.window_mut() as *mut okros::window::Window,
+        width,
+        0x07,
+    );
+    status.win.parent_y = 0;
     status.set_text("Internal MUD - type 'help' for commands, 'quit' to exit");
+
+    // Input line
+    let mut input = okros::input_line::InputLine::new(
+        screen.window_mut() as *mut okros::window::Window,
+        width,
+        0x07,
+    );
+    input.win.parent_y = (height - 1) as isize;
 
     // Show initial room
     let look_output = world.execute(parse("look").unwrap());
@@ -776,10 +794,13 @@ fn run_offline_mode() {
 
     // Main event loop for offline mode
     while !quit {
-        // Render UI
-        render_surface(
-            width, height, &mut prev, &mut cur, &session, &input, &status, &caps,
-        );
+        // Copy session scrollback to OutputWindow
+        let viewport = session.scrollback.viewport_slice();
+        output.win.blit(viewport);
+        output.win.dirty = true;
+
+        // Render UI (Window hierarchy)
+        screen.refresh(&caps);
 
         // Poll stdin with 250ms timeout
         let fds = vec![(libc::STDIN_FILENO, READ)];
@@ -1019,50 +1040,4 @@ fn render_connect_menu(menu: &okros::mud_selection::MudSelection, _width: usize,
     }
 
     std::io::stdout().flush().unwrap();
-}
-
-fn render_surface(
-    width: usize,
-    height: usize,
-    prev: &mut Vec<u16>,
-    cur: &mut Vec<u16>,
-    session: &Session<PassthroughDecomp>,
-    input: &okros::input_line::InputLine,
-    status: &okros::status_line::StatusLine,
-    caps: &okros::curses::AcsCaps,
-) {
-    // Compose status + session viewport + input into `cur`
-    let mut surface = vec![0u16; width * height];
-    // Status at row 0
-    surface[0..width].copy_from_slice(&status.render());
-    // Output rows (1..height-1)
-    let view = session.scrollback.viewport_slice();
-    let out_h = height.saturating_sub(2);
-    for row in 0..out_h {
-        let dst = (1 + row) * width;
-        let src = row * width;
-        surface[dst..dst + width].copy_from_slice(&view[src..src + width]);
-    }
-    // Input at bottom row
-    let input_row = height - 1;
-    surface[input_row * width..input_row * width + width].copy_from_slice(&input.render());
-
-    cur.copy_from_slice(&surface);
-    let ansi = screen::diff_to_ansi(
-        prev,
-        cur,
-        &DiffOptions {
-            width,
-            height,
-            cursor_x: input.cursor,
-            cursor_y: input_row,
-            smacs: caps.smacs.as_deref(),
-            rmacs: caps.rmacs.as_deref(),
-            set_bg_always: true,
-        },
-    );
-    let mut out = io::stdout();
-    let _ = out.write_all(ansi.as_bytes());
-    let _ = out.flush();
-    prev.copy_from_slice(cur);
 }
