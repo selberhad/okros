@@ -266,6 +266,10 @@ fn main() {
                                 if menu.keypress(ev) {
                                     // Keypress handled - redraw menu with updated selection
                                     menu.redraw();
+                                    // IMPORTANT: redraw() sets dirty=false, but we need it dirty for screen.refresh()
+                                    unsafe {
+                                        (*menu.window_mut_ptr()).dirty = true;
+                                    }
 
                                     // Enter pressed - connect to selected MUD
                                     if matches!(ev, KeyEvent::Byte(b'\n')) {
