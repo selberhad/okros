@@ -93,52 +93,40 @@ impl Scrollback {
     pub fn canvas_ptr(&self) -> usize {
         self.canvas_off
     }
+    /// Print line with single color
+    /// Wraps long lines across multiple rows (C++ Window.cc:239-244 behavior)
     pub fn print_line(&mut self, bytes: &[u8], color: u8) {
-        let screen_span = self.width * self.height;
-        let max_canvas = self.width * (self.lines - self.height);
-        if self.canvas_off >= max_canvas {
-            const COPY: usize = 250;
-            let copy = COPY.min(self.lines - self.height);
-            let shift = copy * self.width;
-            self.buf.copy_within(shift.., 0);
-            self.canvas_off -= shift;
-            if self.viewpoint >= shift {
-                self.viewpoint -= shift
-            } else {
-                self.viewpoint = 0
-            }
-            self.top_line += copy;
-            let tail = self.buf.len() - shift;
-            for a in &mut self.buf[tail..] {
-                *a = 0;
-            }
-        }
-        let start = if self.rows_filled < self.height {
-            let s = self.viewpoint + self.rows_filled * self.width;
-            self.rows_filled += 1;
-            s
-        } else {
-            self.canvas_off += self.width;
-            if !self.frozen {
-                if self.viewpoint + screen_span < self.canvas_off {
-                    self.viewpoint = self.canvas_off - screen_span;
-                }
-            }
-            self.viewpoint + (self.height - 1) * self.width
-        };
-        for a in &mut self.buf[start..start + self.width] {
-            *a = ((color as u16) << 8) | b' ' as u16;
-        }
-        for (i, b) in bytes.iter().take(self.width).enumerate() {
-            self.buf[start + i] = ((color as u16) << 8) | (*b as u16);
-        }
-        self.total_lines_written += 1; // Increment monotonic counter
+        // Convert to pairs format and use the wrapped version
+        let pairs: Vec<(u8, u8)> = bytes.iter().map(|&b| (b, color)).collect();
+        self.print_line_colored(&pairs);
     }
 
     /// Print line with per-character colors (like C++ SET_COLOR stream)
+    /// NOTE: C++ Window.cc:239-244 implements word wrapping for long lines
+    /// This function now wraps lines that exceed terminal width across multiple rows
     pub fn print_line_colored(&mut self, pairs: &[(u8, u8)]) {
+        if pairs.is_empty() {
+            // Empty line - just add one blank row
+            self.print_wrapped_line(&[]);
+            return;
+        }
+
+        // Split long line into chunks of width, wrapping across multiple rows (C++ behavior)
+        let mut offset = 0;
+        while offset < pairs.len() {
+            let end = (offset + self.width).min(pairs.len());
+            let chunk = &pairs[offset..end];
+            self.print_wrapped_line(chunk);
+            offset = end;
+        }
+    }
+
+    /// Print a single row (width or less), handling scrollback buffer management
+    fn print_wrapped_line(&mut self, pairs: &[(u8, u8)]) {
         let screen_span = self.width * self.height;
         let max_canvas = self.width * (self.lines - self.height);
+
+        // Check if we need to scroll the buffer
         if self.canvas_off >= max_canvas {
             const COPY: usize = 250;
             let copy = COPY.min(self.lines - self.height);
@@ -156,6 +144,8 @@ impl Scrollback {
                 *a = 0;
             }
         }
+
+        // Calculate where to write this row
         let start = if self.rows_filled < self.height {
             let s = self.viewpoint + self.rows_filled * self.width;
             self.rows_filled += 1;
@@ -175,8 +165,11 @@ impl Scrollback {
             *a = (0x07u16 << 8) | b' ' as u16;
         }
 
-        // Write characters with their individual colors
-        for (i, (ch, color)) in pairs.iter().take(self.width).enumerate() {
+        // Write characters with their individual colors (no truncation - already chunked)
+        for (i, (ch, color)) in pairs.iter().enumerate() {
+            if i >= self.width {
+                break; // Safety check - should never happen
+            }
             self.buf[start + i] = ((*color as u16) << 8) | (*ch as u16);
         }
 

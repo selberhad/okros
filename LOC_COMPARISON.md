@@ -12,13 +12,13 @@
 
 | Metric | C++ (Reference) | Rust (okros) | Ratio |
 |--------|----------------|--------------|-------|
-| **Code Lines** | 8,815 | 9,059 | **1.03x** |
-| **Comments** | 637 | 1,245 | 1.95x |
-| **Blank Lines** | 2,219 | 1,321 | 0.60x |
-| **TOTAL** | 11,671 | 11,625 | **1.00x** |
+| **Code Lines** | 8,815 | 9,038 | **1.03x** |
+| **Comments** | 637 | 1,255 | 1.97x |
+| **Blank Lines** | 2,219 | 1,325 | 0.60x |
+| **TOTAL** | 11,671 | 11,618 | **1.00x** |
 | **Files** | 79 | 41 | 0.52x |
 
-**Difference**: +244 lines of code (+2.8%)
+**Difference**: +223 lines of code (+2.5%)
 
 ---
 
@@ -79,6 +79,6 @@ The following files are suspiciously short (<40% of C++ size) and may be incompl
 
 ---
 
-*Generated: Sat Oct  4 17:08:58 2025*
+*Generated: Sat Oct  4 19:31:12 2025*
 *Tool: [cloc](https://github.com/AlDanial/cloc) v
 *
