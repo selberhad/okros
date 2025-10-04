@@ -1,6 +1,5 @@
 use crate::action::{Action, ActionType};
 use crate::alias::Alias;
-use crate::macro_def::Macro;
 use crate::mud::{Mud, MudList};
 use std::fs::File;
 use std::io::{BufRead, BufReader};

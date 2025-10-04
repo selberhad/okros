@@ -4,7 +4,6 @@
 //! MCL uses ncurses minimally - only for terminal setup and capability queries
 
 use std::ffi::{CStr, CString};
-use std::ptr;
 
 // =============================================================================
 // FFI declarations

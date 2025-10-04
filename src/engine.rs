@@ -1,5 +1,4 @@
 use crate::mccp::Decompressor;
-use crate::scrollback::Attrib;
 use crate::session::Session;
 use std::cell::RefCell;
 

@@ -1,7 +1,7 @@
 use std::io;
 use std::mem;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-use std::os::fd::{AsRawFd, RawFd};
+use std::os::fd::RawFd;
 
 use libc::{self, c_int};
 
