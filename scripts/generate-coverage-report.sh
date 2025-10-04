@@ -25,7 +25,16 @@ fi
 
 # Generate coverage data silently
 echo "Generating coverage data..."
-cargo llvm-cov --summary-only > /tmp/coverage-summary.txt 2>&1
+
+# Try to run with TTY if available (for tty.rs/curses.rs tests)
+if [[ "$OSTYPE" == "darwin"* ]] && command -v script >/dev/null 2>&1; then
+    # macOS: Run cargo llvm-cov under script to provide pseudo-TTY
+    # This allows TTY-dependent tests to run and contribute to coverage
+    script -q /dev/null cargo llvm-cov --summary-only > /tmp/coverage-summary.txt 2>&1 || \
+        cargo llvm-cov --summary-only > /tmp/coverage-summary.txt 2>&1
+else
+    cargo llvm-cov --summary-only > /tmp/coverage-summary.txt 2>&1
+fi
 
 # Extract summary line (TOTAL row)
 SUMMARY=$(grep "^TOTAL" /tmp/coverage-summary.txt)
