@@ -159,23 +159,21 @@ fn main() {
     let mut screen = okros::screen2::Screen::new(width, height);
 
     // Create OutputWindow as child of Screen - C++ main.cc:69
+    // C++ OutputWindow.cc:9-10: Window(_parent, wh_full, _parent->height-1)
     let mut output = okros::output_window::OutputWindow::new(
         screen.window_mut() as *mut okros::window::Window,
         width,
-        height.saturating_sub(2), // Leave room for status + input
+        height - 1, // C++: _parent->height-1 (StatusLine overlaps at top)
         2000,
         0x07,
     );
-    // Position OutputWindow at row 1 (below status line)
-    output.win.parent_y = 1;
+    // Position OutputWindow at row 0 - C++ defaults parent_y to 0
+    // StatusLine will overlap at top (higher z-order)
+    output.win.parent_y = 0;
 
     // Session for processing incoming bytes (MCCP->Telnet->ANSI->Scrollback)
-    let mut session = Session::new(
-        PassthroughDecomp::new(),
-        width,
-        height.saturating_sub(2),
-        2000,
-    );
+    // Session viewport size matches OutputWindow (height-1)
+    let mut session = Session::new(PassthroughDecomp::new(), width, height - 1, 2000);
 
     // Status line (0x07 = black background, white foreground) - C++ main.cc StatusLine creation
     let mut status = okros::status_line::StatusLine::new(
@@ -744,23 +742,18 @@ fn run_offline_mode() {
     // Create Screen (root Window)
     let mut screen = okros::screen2::Screen::new(width, height);
 
-    // Create OutputWindow as child of Screen
+    // Create OutputWindow as child of Screen - C++ OutputWindow.cc:9-10
     let mut output = okros::output_window::OutputWindow::new(
         screen.window_mut() as *mut okros::window::Window,
         width,
-        height.saturating_sub(2),
+        height - 1, // C++: _parent->height-1
         200,
         0x07,
     );
-    output.win.parent_y = 1;
+    output.win.parent_y = 0; // C++ defaults to 0
 
-    // Session for processing output
-    let mut session = Session::new(
-        PassthroughDecomp::new(),
-        width,
-        height.saturating_sub(2),
-        200,
-    );
+    // Session for processing output (matches OutputWindow size)
+    let mut session = Session::new(PassthroughDecomp::new(), width, height - 1, 200);
 
     // Status line
     let mut status = okros::status_line::StatusLine::new(
