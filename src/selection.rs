@@ -4,11 +4,12 @@
 
 use crate::input::{KeyCode, KeyEvent};
 use crate::window::Window;
+use std::ptr;
 
 /// Base class for scrollable selection lists
 /// Subclass and override get_data(), do_select(), do_choose() for custom behavior
 pub struct Selection {
-    window: Window,
+    window: Box<Window>,
     items: Vec<String>,
     colors: Vec<u8>,
     selection: i32, // Currently selected index (-1 = none)
@@ -18,7 +19,7 @@ impl Selection {
     /// Create new selection widget
     pub fn new(width: usize, height: usize, x: usize, y: usize) -> Self {
         Self {
-            window: Window::new(width, height),
+            window: Window::new(ptr::null_mut(), width, height),
             items: Vec::new(),
             colors: Vec::new(),
             selection: -1,

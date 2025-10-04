@@ -1,13 +1,13 @@
 # Test Coverage Report
 
-**Last Updated**: 2025-10-03 23:41
+**Last Updated**: 2025-10-03 23:48
 **Tool**: cargo-llvm-cov
-**Overall Coverage**: **73.97%** lines | **76.09%** regions | **80.87%** functions
+**Overall Coverage**: **72.89%** lines | **75.26%** regions | **79.81%** functions
 
 ## Summary
 
 ```
-TOTAL                            8728              2087    76.09%         507                97    80.87%        5136              1337    73.97%           0                 0         -
+TOTAL                            8889              2199    75.26%         515               104    79.81%        5261              1426    72.89%           0                 0         -
 ```
 
 ## Coverage by Module
@@ -38,13 +38,13 @@ TOTAL                            8728              2087    76.09%         507   
 | `scrollback.rs` | 91.71% | 93.13% | 100.00% | 🟢 Excellent |
 | `select.rs` | 97.50% | 96.61% | 100.00% | 🟢 Excellent |
 | `selectable.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
-| `selection.rs` | 71.14% | 76.47% | 75.00% | 🟡 Good |
+| `selection.rs` | 71.14% | 76.58% | 75.00% | 🟡 Good |
 | `session.rs` | 85.92% | 88.62% | 87.50% | 🟡 Good |
 | `socket.rs` | 91.54% | 92.35% | 100.00% | 🟢 Excellent |
 | `status_line.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
 | `telnet.rs` | 97.67% | 99.02% | 100.00% | 🟢 Excellent |
 | `tty.rs` | 31.11% | 25.84% | 55.56% | 🔴 Needs Work |
-| `window.rs` | 88.24% | 84.51% | 85.71% | 🟡 Good |
+| `window.rs` | 45.71% | 46.52% | 46.67% | 🟠 Moderate |
 
 ## Coverage Tiers
 
@@ -77,10 +77,10 @@ TOTAL                            8728              2087    76.09%         507   
 - `plugins/stack.rs` - 73.13%
 - `selection.rs` - 71.14%
 - `session.rs` - 85.92%
-- `window.rs` - 88.24%
 
 ### 🟠 Moderate (40-69% lines)
 - `action.rs` - 68.93%
+- `window.rs` - 45.71%
 
 ### 🔴 Needs Work (<40% lines)
 - `curses.rs` - 18.56% (ncurses FFI - TTY dependent)
@@ -91,7 +91,7 @@ TOTAL                            8728              2087    76.09%         507   
 
 | Tier | Target | Current | Status |
 |------|--------|---------|--------|
-| Overall | ≥80% | 73.97% | ⏳ In Progress |
+| Overall | ≥80% | 72.89% | ⏳ In Progress |
 | Critical Paths | ≥95% | Check modules above | ✅ Met |
 | New Modules | ≥80% | - | Policy |
 

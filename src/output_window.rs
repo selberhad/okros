@@ -1,16 +1,18 @@
 use crate::scrollback::{Attrib, Scrollback};
 use crate::window::Window;
+use std::ptr;
 
 pub struct OutputWindow {
-    pub win: Window,
+    pub win: Box<Window>,
     pub sb: Scrollback,
     color: u8,
 }
 
 impl OutputWindow {
     pub fn new(width: usize, height: usize, lines: usize, color: u8) -> Self {
-        let mut win = Window::new(width, height);
-        win.clear(color);
+        let mut win = Window::new(ptr::null_mut(), width, height);
+        win.color = color;
+        win.clear();
         Self {
             win,
             sb: Scrollback::new(width, height, lines),
