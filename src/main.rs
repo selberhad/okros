@@ -242,6 +242,9 @@ fn main() {
             screen.window.cursor_x = input.cursor;
             screen.window.cursor_y = input_row;
 
+            // Mark Screen dirty so refreshTTY() runs
+            screen.window.dirty = true;
+
             // Refresh Screen (calls Window::refresh() then refreshTTY) - C++ main.cc:142
             screen.refresh(&caps);
         }
