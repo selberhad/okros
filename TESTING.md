@@ -49,13 +49,28 @@ Three tests in `src/curses.rs` require a real TTY with terminfo database access:
 - **No TTY**: Tests skip gracefully with message `"SKIP: ... requires a TTY"`
 - **With TTY**: Tests run and validate ncurses functionality
 
-**To run with pseudo-TTY** (works on macOS with `script` command):
+**To run with fake TTY** (recommended - works with coverage):
 ```bash
-# Run tests with pseudo-TTY (serial execution required for ncurses singleton)
-env TERM=xterm-256color script -q /dev/null cargo test --lib curses:: -- --test-threads=1 --nocapture
+# Build the faketty shim (one-time setup)
+gcc -shared -fPIC -o tools/faketty.dylib tools/faketty.c
+
+# Run tests with fake TTY (serial execution required for ncurses singleton)
+DYLD_INSERT_LIBRARIES=./tools/faketty.dylib TERM=xterm-256color \
+  cargo test --lib curses:: -- --test-threads=1 --nocapture
 ```
 
-**Coverage Limitation**: While pseudo-TTY allows tests to run, it breaks llvm-cov instrumentation. Tests pass but don't contribute to coverage metrics. This is a known limitation of combining `script` + llvm-cov.
+This uses DYLD_INTERPOSE to override `isatty()` and related functions, tricking ncurses into thinking it has a real TTY. Unlike `script`, this works in the same process and **does not break llvm-cov coverage**!
+
+See [`tools/README.md`](tools/README.md) for technical details.
+
+**Alternative: pseudo-TTY via `script`** (works but breaks coverage):
+```bash
+# Fallback if faketty.dylib doesn't work
+env TERM=xterm-256color script -q /dev/null \
+  cargo test --lib curses:: -- --test-threads=1 --nocapture
+```
+
+**Coverage Limitation (script only)**: The `script` command creates a child process, which breaks llvm-cov instrumentation. Tests pass but don't contribute to coverage metrics.
 
 Expected output when tests run:
 ```

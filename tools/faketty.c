@@ -20,17 +20,9 @@ extern int __real_isatty(int fd);
 extern int __real_tcgetattr(int fd, struct termios *termios_p);
 extern int __real_tcsetattr(int fd, int optional_actions, const struct termios *termios_p);
 
-/* Constructor - runs when library is loaded */
-__attribute__((constructor))
-static void faketty_init(void) {
-    write(2, "FAKETTY: Library loaded!\n", 25);
-}
-
 /* Our fake isatty - always returns 1 */
 int fake_isatty(int fd) {
-    char msg[] = "FAKETTY: isatty() called!\n";
-    write(2, msg, sizeof(msg) - 1);
-    return 1;
+    return 1;  // Silently claim we have a TTY
 }
 
 /* macOS DYLD_INTERPOSE macro */

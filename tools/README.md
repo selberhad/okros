@@ -15,7 +15,14 @@ Uses macOS's `DYLD_INTERPOSE` mechanism to override `isatty()` and related funct
 ### Building
 
 ```bash
+# Quick build
 gcc -shared -fPIC -o faketty.dylib faketty.c
+
+# Or use Make
+cd tools
+make              # Build faketty.dylib
+make test         # Build and test
+make clean        # Remove compiled binaries
 ```
 
 ### Usage
