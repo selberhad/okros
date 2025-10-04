@@ -6,13 +6,13 @@
 
 | Metric | C++ (Reference) | Rust (okros) | Ratio |
 |--------|----------------|--------------|-------|
-| **Code Lines** | 8,815 | 6,584 | **0.75x** |
-| **Comments** | 637 | 638 | 1.00x |
-| **Blank Lines** | 2,219 | 769 | 0.35x |
-| **TOTAL** | 11,671 | 7,991 | **0.68x** |
+| **Code Lines** | 8,815 | 6,605 | **0.75x** |
+| **Comments** | 637 | 640 | 1.00x |
+| **Blank Lines** | 2,219 | 776 | 0.35x |
+| **TOTAL** | 11,671 | 8,021 | **0.69x** |
 | **Files** | 79 | 35 | 0.44x |
 
-**Difference**: -2,231 lines of code (-25.3%)
+**Difference**: -2,210 lines of code (-25.1%)
 
 ## Why Rust is More Concise
 
@@ -89,23 +89,23 @@ Supporting Scripts:
   Other:       1,668 lines
 ```
 
-### Rust Implementation (6,584 LOC)
+### Rust Implementation (6,605 LOC)
 ```
-Pure Rust:     6,584 lines (35 files)
+Pure Rust:     6,605 lines (35 files)
 
 Optional Features:
-  - Perl plugin:   ~450 LOC
+  - Perl plugin:   ~470 LOC (includes perl_call_sv regex)
   - Python plugin: ~340 LOC
   - Internal MUD:  ~485 LOC (offline testing)
-  - All included in 6,584 total
+  - All included in 6,605 total
 ```
 
 ## Coverage vs Size
 
 **High coverage with readable code:**
-- 162 tests covering 6,584 LOC
-- 75% overall coverage (with python/perl features)
-- Critical paths (alias, session, telnet): 90%+ coverage
+- 162 tests covering 6,605 LOC
+- 76% overall coverage (with python/perl features)
+- Critical paths (alias, session, telnet, plugins): 90%+ coverage
 
 **C++ had:**
 - No automated tests
@@ -131,12 +131,12 @@ Optional Features:
 
 The Rust port achieved:
 
-✅ **25% code reduction** (8,815 → 6,584 lines)
+✅ **25% code reduction** (8,815 → 6,605 lines)
 ✅ **56% fewer files** (79 → 35 files)
 ✅ **Behavioral equivalence** (golden tests confirm)
 ✅ **Modern features** (RAII, pattern matching, stdlib)
-✅ **Better testing** (162 automated tests, 75% coverage)
-✅ **Feature complete** (MVP validated against real MUD)
+✅ **Better testing** (162 automated tests, 76% coverage)
+✅ **Feature complete** (MVP validated, Perl regex working)
 
 **Rust's modern design enables a more concise, maintainable codebase while preserving all functionality.**
 
