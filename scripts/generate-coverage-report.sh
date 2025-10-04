@@ -26,15 +26,12 @@ fi
 # Generate coverage data silently
 echo "Generating coverage data..."
 
-# Try to run with TTY if available (for tty.rs/curses.rs tests)
-if [[ "$OSTYPE" == "darwin"* ]] && command -v script >/dev/null 2>&1; then
-    # macOS: Run cargo llvm-cov under script to provide pseudo-TTY
-    # This allows TTY-dependent tests to run and contribute to coverage
-    script -q /dev/null cargo llvm-cov --summary-only > /tmp/coverage-summary.txt 2>&1 || \
-        cargo llvm-cov --summary-only > /tmp/coverage-summary.txt 2>&1
-else
-    cargo llvm-cov --summary-only > /tmp/coverage-summary.txt 2>&1
-fi
+# Run coverage without TTY (curses/tty tests will skip, but coverage data is accurate)
+# NOTE: Pseudo-TTY via `script` breaks llvm-cov instrumentation, so we skip it for coverage
+cargo llvm-cov --features python,perl --summary-only > /tmp/coverage-raw.txt 2>&1
+
+# Strip ANSI color codes from output (script command adds them)
+sed 's/\x1b\[[0-9;]*m//g' /tmp/coverage-raw.txt > /tmp/coverage-summary.txt
 
 # Extract summary line (TOTAL row)
 SUMMARY=$(grep "^TOTAL" /tmp/coverage-summary.txt)

@@ -49,10 +49,13 @@ Three tests in `src/curses.rs` require a real TTY with terminfo database access:
 - **No TTY**: Tests skip gracefully with message `"SKIP: ... requires a TTY"`
 - **With TTY**: Tests run and validate ncurses functionality
 
-**To run interactively** (from a real terminal, not CI):
+**To run with pseudo-TTY** (works on macOS with `script` command):
 ```bash
-cargo test --lib curses::tests -- --nocapture
+# Run tests with pseudo-TTY (serial execution required for ncurses singleton)
+env TERM=xterm-256color script -q /dev/null cargo test --lib curses:: -- --test-threads=1 --nocapture
 ```
+
+**Coverage Limitation**: While pseudo-TTY allows tests to run, it breaks llvm-cov instrumentation. Tests pass but don't contribute to coverage metrics. This is a known limitation of combining `script` + llvm-cov.
 
 Expected output when tests run:
 ```
