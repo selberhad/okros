@@ -41,3 +41,6 @@ test2
 target/llvm-cov/
 *.profraw
 *.profdata
+tools/test_isatty
+tools/*.dylib
+tools/*.so
