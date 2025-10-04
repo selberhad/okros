@@ -1,93 +1,133 @@
 # ORIENTATION — okros MUD Client
 
-**Quick Start**: You're looking at a Rust port of MCL (MUD Client for Linux), ~99% complete (core implementation + validation done), built for headless operation and LLM agent integration.
+**Quick Start**: You're looking at a Rust port of MCL (MUD Client for Linux). **Headless mode** (~95% complete) works great for bots. **TTY interactive mode** (~30% complete) needs significant restoration work.
 
 ## What Is This?
 
 **okros** = Rust MUD client reviving MCL's design, optimized for automation
 - **Primary use case**: Transport layer for Perl/Python bots and LLM agents
 - **Philosophy**: Client handles I/O, scripts handle logic (automation via Perl/Python or built-in features)
-- **Status**: Core implementation complete + validated (all tiers done, tested on Nodeka MUD); Alt-O hotkey integration remaining
+- **Actual Status**: ~50% complete overall - see `PORT_GAPS.md` for comprehensive analysis
 
 ## Current State (Oct 2025)
 
-### ✅ What Works (Implementation Complete + Validated)
+**⚠️ CRITICAL: Port fell short of claims - see `PORT_GAPS.md` for detailed analysis**
+
+### ✅ Headless Mode (~95% Complete)
 - **Network**: Socket, telnet, MCCP compression, ANSI parsing (full pipeline)
-- **UI**: ncurses wrapper, screen diff renderer, widgets (status/output/input), scrollback, selection widget
-- **Plugins**: Python (pyo3) and Perl (raw FFI) with feature gates, interpreter hooks
-- **Headless Engine**: SessionEngine + control server (Unix socket, JSON Lines protocol)
-- **Offline Mode**: Internal MUD for testing/demo (5 rooms, 3 items, ANSI colors, `--offline` flag)
-- **Main Event Loop**: poll-based I/O on TTY + socket with 250ms timeout
-- **CLI Args**: `--headless`, `--instance <name>`, `--attach <name>`, `--offline`, `--headless --offline` (combined)
-- **# Commands**: `#quit`, `#open`, `#alias`, `#action`, `#subst`, `#macro` all functional
-- **Automation**: ✅ Fully wired into I/O pipeline
-  - Alias expansion (text with %N params) - wired into input pipeline
-  - Triggers/replacements/gags with Perl/Python regex - wired into output pipeline
-  - Keyboard macros - wired into key handling
-  - MUD inheritance (child inherits parent's aliases/macros)
-- **Config System**: Dual format parser (old + new MUD block syntax)
-  - MUD definitions with hostname/port/commands/aliases/actions
-  - MUD inheritance (child inherits parent features)
-  - Automatic Offline MUD injection as entry #0
-- **Connect Menu Infrastructure**: Selection widget, MUDSelection, config loading (Alt-O integration remaining)
-- **Tests**: 134 total tests passing (126 unit + 8 integration) | extensive coverage
-- **✅ MUD VALIDATED**: Full gameplay session on Nodeka (2025-10-03) - See `MUD_LEARNINGS.md`
+- **Data Pipeline**: MCCP → telnet → ANSI → scrollback working
+- **Control Server**: Unix socket JSON Lines protocol functional
+- **Automation**: Triggers/actions work in headless mode
+- **Offline Mode**: Internal MUD for testing (5 rooms, ANSI colors)
+- **Plugins**: Python (pyo3) and Perl (raw FFI) with feature gates
+- **Tests**: 134 tests passing
+- **Validated**: Full gameplay session on Nodeka via headless mode
 
-### ⏸️ What Needs Completion (Minimal Remaining Work)
-- **Alt-O Hotkey**: Connect menu UI integration (infrastructure complete, needs Screen/Window wiring)
-- **Perl Bot Validation**: Test real automation scripts against headless mode (real-world integration)
+### ❌ TTY Interactive Mode (~30% Complete - BROKEN)
 
-### ❌ What's Deferred (By Design)
-- Chat, borg, group features (not needed for MVP)
-- Extended # commands beyond current set (scripts handle complex commands)
-- DNS hostname resolution for interactive #open (headless mode has DNS via control server)
+**57+ critical features missing** - documented in `PORT_GAPS.md`:
 
-## Next Steps (Priority Order)
+**Session management (82% missing)**:
+- ❌ No connection state tracking
+- ❌ No interpreter hooks (sys/connect, sys/loselink, sys/prompt, sys/output)
+- ❌ Prompt handling broken
+- ❌ Per-line trigger checking missing
+- ❌ Macro expansion not called
 
-**MVP is VALIDATED and FEATURE-COMPLETE. Remaining: UI polish + real-world bot testing.**
+**InputLine (75% missing)**:
+- ❌ No command history (up/down arrows don't work)
+- ❌ No command execution (Enter may not work)
+- ❌ No interpreter integration
+- ❌ Missing keyboard shortcuts (Ctrl-W, Delete, etc.)
 
-### 1. Alt-O Hotkey Integration (Optional Polish)
-**Goal**: Wire connect menu to Alt-O keypress
+**Window system (60% missing)**:
+- ❌ No keypress dispatch
+- ❌ No focus management
+- ❌ No print()/printf() methods
+- ❌ No scrolling
 
-**What's Done**:
-- ✅ Config file parser (old + new formats, inheritance)
-- ✅ MUD list storage (MudList with find/insert/iter)
-- ✅ Selection widget (base scrollable list with navigation)
-- ✅ MudSelection widget (specialized for MUD menu)
-- ✅ Offline MUD auto-injection as entry #0
-- ✅ Comprehensive tests (27 tests for config/selection/integration)
+**OutputWindow (74% missing)**:
+- ❌ Can't scroll back through history
+- ❌ No search
+- ❌ Display-only
 
-**Remaining Work**:
-- [ ] Load ~/.okros/config on Alt-O keypress
-- [ ] Create MudSelection widget from loaded config
-- [ ] Render widget to screen (Screen/Window integration)
-- [ ] Handle modal input loop (arrow keys, enter to select)
-- [ ] Connect to selected MUD via Mud::connect()
+**Command execution (100% missing)**:
+- ❌ No command queue
+- ❌ No speedwalk expansion
+- ❌ No semicolon splitting
+- ❌ No variable expansion
+- ❌ plugins/stack.rs is NOT a port of Interpreter.cc
 
-**Estimated effort**: 2-3 hours (full UI) or 30 minutes (simple CLI prompt)
-**Alternative**: Use `#open` command or `OKROS_CONNECT` env var (already working)
+**InputBox (100% missing)**:
+- ❌ Not ported at all
+- ❌ No modal dialogs
 
-### 2. Perl Bot Integration Testing (Real-World Validation)
-**Goal**: Validate production automation scripts
+See `PORT_GAPS.md` for complete analysis with line-by-line comparison.
 
-**Tasks**:
-- [ ] Run existing Perl bot against headless mode
-- [ ] Verify trigger/action execution via Perl match_prepare/substitute_prepare
-- [ ] Test buffer reading + command sending via control protocol
-- [ ] Document best practices for bot developers
+### 🔴 Intentionally Deferred (By Design)
+- Chat.cc - Inter-client chat (niche feature)
+- Borg.cc - Network monitoring (privacy concern)
+- Group.cc - Multi-client coordination (post-MVP)
 
-**Estimated effort**: 1 day
+## Next Steps: Systematic Restoration
 
-### 3. Polish & Bug Fixes (As Discovered)
-**Goal**: Address issues from real-world usage
+**Goal**: Fill the gaps to reach actual 98% completion (~4-6 weeks)
 
-**Tasks**:
-- [ ] Fix any crashes/panics from production MUD connections
-- [ ] Handle edge cases (telnet negotiations, ANSI variants)
-- [ ] Improve error messages for better UX
-- [ ] Optional: DNS resolution for interactive `#open` (headless already has it)
-- [ ] Update README.md if needed
-- [ ] Write user guide for Perl bot integration (control socket protocol)
+**See `PORT_GAPS.md` for comprehensive action plan with 3 phases.**
+
+### Phase 1: Fix Critical TTY Mode Bugs (1-2 weeks)
+
+**Priority order for P0 gaps:**
+
+1. **Session.cc restoration** (3-4 days)
+   - Add connection state machine
+   - Implement interpreter hooks (sys/connect, sys/prompt, sys/output, sys/loselink)
+   - Add triggerCheck() integration per line
+   - Add prompt buffering across reads
+   - Add macro expansion call
+
+2. **InputLine.cc restoration** (2-3 days)
+   - Implement History class
+   - Add Enter → execute() → interpreter.add()
+   - Add sys/userinput hook
+   - Add up/down arrow history
+   - Add Ctrl-W, Delete, shortcuts
+
+3. **Command execution engine** (2-3 days)
+   - Find/create Interpreter equivalent
+   - Implement command queue
+   - Add semicolon splitting
+   - Add speedwalk expansion
+   - Wire to InputLine.execute()
+
+4. **Window event dispatch** (1-2 days)
+   - Implement keypress() virtual dispatch
+   - Add focus management
+   - Add print()/printf() methods
+
+5. **OutputWindow scrolling** (1 day)
+   - Add scroll() method
+   - Add Page Up/Down handlers
+   - Wire to ScrollbackController
+
+6. **InputBox modal dialogs** (1 day)
+   - Port InputBox base class
+   - Add xy_center positioning
+   - Add Escape handling
+
+### Methodology
+
+**Follow Execution Mode** (not Discovery):
+1. Read C++ implementation **line-by-line**
+2. Port logic **1:1 to Rust** (not rewrite!)
+3. Test against C++ MCL behavior
+4. Check off items in PORT_GAPS.md
+
+**No new toys needed** - all risky patterns already validated in toys 1-12.
+
+### Phase 2 & 3
+
+See `PORT_GAPS.md` for complete roadmap (variable expansion, history save/load, search, etc.)
 
 ## Quick Reference
 
@@ -135,10 +175,12 @@ quit                   # Exit
 ## Key Files
 
 **Documentation** (Read These First):
-- `ORIENTATION.md` ← You are here
+- `ORIENTATION.md` ← You are here (current state overview)
+- **`PORT_GAPS.md`** ← **START HERE for restoration work** (comprehensive gap analysis)
+- `PORTING_HISTORY.md` - Historical record of C++ → Rust porting (overly optimistic)
+- `LOC_COMPARISON.md` - Auto-generated line count comparison (flags short files)
 - `README.md` - User-facing overview
-- `PORTING_HISTORY.md` - Historical record of C++ → Rust porting
-- `FUTURE_WORK.md` - Remaining tasks and future enhancements
+- `FUTURE_WORK.md` - Post-restoration enhancements
 - `CLAUDE.md` - Project-specific dev guidelines
 - `DDD.md` - Doc-Driven Development methodology
 
@@ -171,26 +213,28 @@ quit                   # Exit
 ## Questions?
 
 **"Where do I start?"**
-→ Testing! All implementation is done. Run `cargo run` and try `#open <mud-ip> <port>`
+→ Read `PORT_GAPS.md` for comprehensive gap analysis and restoration plan
 
-**"How do I test my changes?"**
-→ `cargo test` (57 unit + 2 integration tests) + manual MUD connection
+**"What actually works?"**
+→ Headless mode works great (~95% complete). TTY interactive mode is broken (~30% complete).
 
-**"Is the event loop done?"**
-→ YES! See `src/main.rs:147-290` (poll-based I/O, full pipeline wired)
+**"Why the discrepancy?"**
+→ Port optimized for headless mode (new feature), abandoned TTY mode (original core feature). Claimed "98% complete" based on headless validation only.
 
-**"Are plugins working?"**
-→ YES! Build with `--features python` or `--features perl`, hooks implemented
+**"How much work to fix TTY mode?"**
+→ ~4-6 weeks of systematic restoration following PORT_GAPS.md Phase 1-3 action plan
 
-**"How do I test headless mode?"**
-→ `cargo run --headless --instance test`, then connect to `/tmp/okros/test.sock`
+**"Do we need more toys?"**
+→ NO - all 12 toys complete, all risky patterns validated. Remaining work is straightforward porting.
 
-**"What's left to do?"**
-→ Validation: Connect to real MUD, test with Perl bot, find/fix edge case bugs
+**"What's the actual completion?"**
+→ ~50% overall (28.2% of critical file LOC, 57+ features missing). See PORT_GAPS.md conclusion.
 
-**"What's the MVP definition?"**
-→ Client connects to MUD, sends/receives text, Perl bot can automate via headless mode
-→ **Status**: Implementation complete, awaiting validation ✅
+**"Can I use this now?"**
+→ YES for headless automation. NO for interactive TTY use (many features broken).
+
+**"What went wrong?"**
+→ Focused on new headless feature, skipped TTY restoration, claimed completion prematurely. See PORT_GAPS.md root cause analysis.
 
 ---
 
