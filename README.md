@@ -2,24 +2,34 @@
 
 [![Built with DocDD](https://img.shields.io/badge/built_with-DocDD-blue)](https://selberhad.github.io/docdd-book/)
 
-_This project is both a working MUD client and a DocDD case study. We ported ~11k LOC of C++ to Rust in ~1 day (~12 hours of focused work) using Discovery Mode (12 toys to validate FFI/unsafe patterns) + Execution Mode (tier-by-tier production port). Check `/toys/` for intermediate artifacts and [PORT_LEARNINGS.md](PORT_LEARNINGS.md) for the full story. The codebase doubles as a reference implementation._
+_This project is both a working MUD client and a DocDD case study. We ported C++ MCL to Rust using Discovery Mode (12 toys to validate FFI/unsafe patterns) + Execution Mode (tier-by-tier production port). Check `/toys/` for intermediate artifacts and [PORT_LEARNINGS.md](PORT_LEARNINGS.md) for the full story. The codebase doubles as a reference implementation._
 
 **okros** (from _ochre_, rusty mud) is a modern MUD client written in Rust, reviving the design principles of MCL (MUD Client for Linux). Built for headless/detachable operation, it's perfect for automation, LLM agents, and cloud deployments.
 
-> **Current Status**: MVP complete and validated! Successfully tested with Nodeka MUD (nodeka.com:23) - first AI/LLM to play autonomously. See [ORIENTATION.md](ORIENTATION.md) for detailed status and [MUD_LEARNINGS.md](MUD_LEARNINGS.md) for validation results.
+> **Current Status**:
+> - ✅ **Headless mode** (~95% complete) - Works great for bots and automation
+> - ⚠️ **TTY interactive mode** (~30% complete) - Needs restoration work
+> - Successfully validated with Nodeka MUD (first AI/LLM to play autonomously)
+> - See [ORIENTATION.md](ORIENTATION.md) for detailed status and [PORT_GAPS.md](PORT_GAPS.md) for restoration roadmap
 
 ## Features
 
 ### Core Functionality
 
+**✅ Working (Headless Mode)**:
 - **ANSI Color Support** - Full 16-color ANSI rendering with attributes (bold, etc.)
 - **Telnet Protocol** - IAC command handling, GA/EOR prompt detection
 - **MCCP Compression** - Built-in MCCP v1/v2 support (optional `mccp` feature)
 - **Scrollback Buffer** - Configurable ring buffer for session history
-- **Input Editing** - Full line editing with history, cursor movement, and search
 - **Aliases** - Text expansion with parameters (`%1`, `%-2`, `%+3` for ranges)
 - **Triggers/Actions** - Pattern matching with regex (via Perl/Python), replacements, gags
-- **Macros** - Keyboard shortcuts bound to commands
+
+**⚠️ Incomplete (TTY Interactive Mode)**:
+- **Input Editing** - Basic editing only; missing history, advanced shortcuts (see [PORT_GAPS.md](PORT_GAPS.md))
+- **Macros** - Infrastructure exists but not fully wired
+- **Scrolling** - Display-only; can't scroll back through history
+- **Session Management** - Connection state tracking missing
+- **Command Execution** - Queue and expansion features incomplete
 
 ### Headless & Detachable Mode (LLM-Friendly)
 
@@ -123,11 +133,12 @@ okros
 ```
 
 **Key bindings:**
-- `PageUp/PageDown` - Scroll through history
-- `Arrow Up` - Command history
-- `Alt-Q` - Quit (not yet implemented)
-- `Ctrl-C` - Cancel current line
-- `Home/End` - Navigate scrollback buffer
+- `Arrow Left/Right` - Navigate cursor
+- `Home/End` - Jump to beginning/end of line
+- `Backspace` - Delete character
+- ⚠️ `PageUp/PageDown` - Scroll history (not yet implemented)
+- ⚠️ `Arrow Up/Down` - Command history (not yet implemented)
+- ⚠️ `Ctrl-W` - Delete word (not yet implemented)
 
 **Internal commands:**
 - `#open <host> <port>` - Connect to MUD server (IPv4 only currently)
@@ -321,31 +332,36 @@ okros is a 1:1 Rust port of MCL using a "safety third" approach - liberal use of
 
 ### Code Size
 
-**Rust is 37% smaller than C++** while maintaining full behavioral equivalence:
+**Rust is 20% more concise than C++** (based on actual ported code):
 
-| Metric | C++ MCL | Rust okros | Reduction |
-|--------|---------|------------|-----------|
-| Lines of Code | 8,815 | 5,550 | **-37%** |
-| Files | 79 | 33 | **-58%** |
+| Metric | C++ MCL | Rust okros | Ratio |
+|--------|---------|------------|-------|
+| Lines of Code | 8,815 | 7,073 | **0.80x** |
+| Files | 79 | 36 | **0.46x** |
 
-*Note: +1,702 LOC from rustfmt formatting (better readability)*
+**Note**: ~50% overall completion. Headless mode (~95%) works well. TTY interactive mode (~30%) needs restoration.
 
-See [LOC_COMPARISON.md](LOC_COMPARISON.md) for detailed analysis.
+See [LOC_COMPARISON.md](LOC_COMPARISON.md) for automated analysis and [PORT_GAPS.md](PORT_GAPS.md) for missing features.
 
 ## Development Status
 
-**Implementation**: ✅ MVP Complete (all core tiers done + automation features)
-**Testing**: 138 tests passing | 65% coverage
-**Validation**: ✅ Full gameplay validated with Nodeka MUD (nodeka.com:23)
+**Headless Mode**: ✅ ~95% Complete (fully functional for automation)
+**TTY Interactive Mode**: ⚠️ ~30% Complete (needs restoration - [PORT_GAPS.md](PORT_GAPS.md))
+**Overall**: ~50% Complete
+**Testing**: 134 tests passing
+**Validation**: ✅ Headless mode validated with Nodeka MUD (nodeka.com:23)
 
 Recent work:
 - ✅ **First AI/LLM to play Nodeka MUD autonomously** (2025-10-03)
-- ✅ Alias/trigger/macro system ported from C++ MCL
+- ✅ Headless mode fully functional with control server
 - ✅ Per-character color storage (fixed black-on-black menus)
-- ✅ Headless mode validated with real MUD
-- ✅ Character creation, questing, combat all working
+- ✅ Gap analysis complete - 57+ missing features identified
+- 🔧 TTY restoration in progress (4-6 week estimate)
 
-See [ORIENTATION.md](ORIENTATION.md) for current status, [PORTING_HISTORY.md](PORTING_HISTORY.md) for implementation history, [MUD_LEARNINGS.md](MUD_LEARNINGS.md) for debugging findings, and [FUTURE_WORK.md](FUTURE_WORK.md) for remaining tasks.
+**What works**: Headless automation, LLM agents, data pipeline
+**What's broken**: TTY command history, scrolling, session management, many keyboard shortcuts
+
+See [ORIENTATION.md](ORIENTATION.md) for current status, [PORT_GAPS.md](PORT_GAPS.md) for restoration roadmap, [MUD_LEARNINGS.md](MUD_LEARNINGS.md) for validation findings, and [PORTING_HISTORY.md](PORTING_HISTORY.md) for implementation history.
 
 ## Comparison with Original MCL
 
@@ -428,15 +444,17 @@ make install-hooks     # Installs pre-push hook
 
 ## Contributing
 
-Contributions welcome! Key areas:
+Contributions welcome! **Priority areas for TTY mode restoration**:
 
-- Completing alias/action/macro integration (wiring into I/O pipeline)
-- Implementing Perl/Python regex methods for triggers
-- Testing with real Perl/Python automation scripts
-- Documentation and examples
-- Cross-platform support (Windows, macOS)
+- **Session management** - Connection state, interpreter hooks, prompt handling ([PORT_GAPS.md](PORT_GAPS.md))
+- **InputLine restoration** - Command history, execution, keyboard shortcuts
+- **Window system** - Keypress dispatch, focus management, scrolling
+- **Command execution** - Queue, speedwalk, semicolon splitting, variables
+- **InputBox** - Modal dialog system (not ported yet)
 
-See [DEVELOPMENT.md](DEVELOPMENT.md) for setup and [CLAUDE.md](CLAUDE.md) for porting guidelines.
+**Already working**: Headless mode, Python/Perl plugins, automation
+
+See [PORT_GAPS.md](PORT_GAPS.md) for detailed gap analysis with 3-phase restoration plan, [DEVELOPMENT.md](DEVELOPMENT.md) for setup, and [CLAUDE.md](CLAUDE.md) for porting guidelines.
 
 ## Acknowledgments
 
