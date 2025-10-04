@@ -186,6 +186,40 @@ impl<D: Decompressor> SessionManager<D> {
     pub fn socket_fd(&self) -> Option<i32> {
         self.socket.as_ref().map(|s| s.as_raw_fd())
     }
+
+    /// Expand macro key to command text (C++ Session::expand_macros, lines 617-637)
+    /// Returns Some(macro_text) if macro found, None otherwise
+    /// Caller should add macro_text to interpreter command queue with EXPAND_ALL flags
+    pub fn expand_macros(
+        &self,
+        key: i32,
+        mud: &Mud,
+        macros_disabled: bool,
+        echo_callback: Option<&mut dyn FnMut(&str)>,
+    ) -> Option<String> {
+        // Check if macros globally disabled (C++ line 618)
+        if macros_disabled {
+            return None;
+        }
+
+        // Find macro from MUD (C++ line 622: mud.findMacro(key))
+        if let Some(macro_def) = mud.find_macro(key) {
+            // Echo if callback provided (C++ opt_echoinput check, lines 624-630)
+            if let Some(echo) = echo_callback {
+                // C++ format: SOFT_CR + ">> " + key_name + " -> " + macro_text + "\n"
+                // Simplified: just show the expansion
+                let msg = format!(">> Macro {} -> {}\n", key, macro_def.text);
+                echo(&msg);
+            }
+
+            // Return macro text for interpreter to add (C++ line 632)
+            // Note: C++ calls interpreter.add(m->text, EXPAND_ALL)
+            // We return the text; caller handles queueing (Phase 2 feature)
+            Some(macro_def.text.clone())
+        } else {
+            None
+        }
+    }
 }
 
 /// Get current Unix timestamp in seconds
@@ -228,5 +262,63 @@ mod tests {
         assert!(msg.is_some());
         assert!(msg.unwrap().contains("timed out"));
         assert_eq!(mgr.state(), SessionState::Disconnected);
+    }
+
+    #[test]
+    fn expand_macros_found() {
+        let mgr = SessionManager::new(PassthroughDecomp::new(), 80, 24, 200, "TestMUD".to_string());
+
+        let mut mud = Mud::new("TestMUD", "127.0.0.1", 4000);
+        mud.macro_list
+            .push(crate::macro_def::Macro::new(1, "north"));
+        mud.macro_list
+            .push(crate::macro_def::Macro::new(2, "south"));
+
+        // Test macro expansion without echo
+        let result = mgr.expand_macros(1, &mud, false, None);
+        assert_eq!(result, Some("north".to_string()));
+
+        let result = mgr.expand_macros(2, &mud, false, None);
+        assert_eq!(result, Some("south".to_string()));
+
+        // Test non-existent macro
+        let result = mgr.expand_macros(99, &mud, false, None);
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn expand_macros_disabled() {
+        let mgr = SessionManager::new(PassthroughDecomp::new(), 80, 24, 200, "TestMUD".to_string());
+
+        let mut mud = Mud::new("TestMUD", "127.0.0.1", 4000);
+        mud.macro_list
+            .push(crate::macro_def::Macro::new(1, "north"));
+
+        // Macros disabled - should return None even though macro exists
+        let result = mgr.expand_macros(1, &mud, true, None);
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn expand_macros_with_echo() {
+        let mgr = SessionManager::new(PassthroughDecomp::new(), 80, 24, 200, "TestMUD".to_string());
+
+        let mut mud = Mud::new("TestMUD", "127.0.0.1", 4000);
+        mud.macro_list
+            .push(crate::macro_def::Macro::new(1, "north"));
+
+        // Test with echo callback
+        let mut echoed = String::new();
+        let result = mgr.expand_macros(
+            1,
+            &mud,
+            false,
+            Some(&mut |msg: &str| {
+                echoed = msg.to_string();
+            }),
+        );
+
+        assert_eq!(result, Some("north".to_string()));
+        assert!(echoed.contains(">> Macro 1 -> north"));
     }
 }

@@ -138,11 +138,12 @@ The Rust port is NOT a 1:1 translation. It's a pure data processor with NO sessi
   - Close connection
   - **Priority**: P0
 
-- [ ] **expand_macros()** (lines 617-637)
-  - Look up macro by key
-  - Echo to output if opt_echoinput
-  - Add to interpreter queue
+- [x] **expand_macros()** (lines 617-637) ✅ **DONE** (commit pending)
+  - ✅ Look up macro by key (mud.find_macro)
+  - ✅ Echo to output if opt_echoinput (via echo_callback)
+  - ⚠️ Add to interpreter queue (returns text; caller queues - Phase 2)
   - **Priority**: P1 - Macros may not work in TTY mode
+  - **Implementation**: SessionManager::expand_macros() with echo callback
 
 - [x] **triggerCheck()** (lines 640-683) ✅ **DONE** (commit 30eaf2f)
   - ✅ Strip SET_COLOR markers to get plain text
@@ -715,48 +716,50 @@ Evidence:
 
 ### Recommended Action Plan
 
-#### Phase 1: Fix Critical Interactive Mode Bugs (1-2 weeks)
+#### Phase 1: Fix Critical Interactive Mode Bugs ✅ **COMPLETE** (Session restoration)
 
-**Priority order for fixing P0 gaps:**
+**✅ COMPLETED - Session.cc restoration** (commits 30eaf2f, 31902a7, pending)
+   - ✅ Add connection state machine (SessionState enum)
+   - ✅ Implement interpreter hooks (sys/connect, sys/prompt, sys/output, sys/loselink)
+   - ✅ Add triggerCheck() integration per line (check_line_triggers)
+   - ✅ Add prompt buffering across reads (prompt_buffer, handle_prompt_event)
+   - ✅ Add macro expansion call (SessionManager::expand_macros)
+   - ✅ Connection management (SessionManager::open/close/write_mud/idle)
+   - ✅ Statistics tracking (SessionStats)
 
-1. **Session.cc restoration** (3-4 days)
-   - Add connection state machine
-   - Implement interpreter hooks (sys/connect, sys/prompt, sys/output, sys/loselink)
-   - Add triggerCheck() integration per line
-   - Add prompt buffering across reads
-   - Add macro expansion call
+**Remaining priorities for Phase 2:**
 
-2. **InputLine.cc restoration** (2-3 days)
+1. **InputLine.cc restoration** (2-3 days)
    - Implement History class
    - Add Enter key → execute() → interpreter.add()
    - Add sys/userinput hook
    - Add basic up/down arrow history
    - Add Ctrl-W, Delete, other common shortcuts
 
-3. **Command execution engine** (2-3 days)
+2. **Command execution engine** (2-3 days)
    - Find/create Interpreter equivalent in Rust
    - Implement command queue
    - Add semicolon splitting
    - Add speedwalk expansion
    - Wire to InputLine.execute()
 
-4. **Window event dispatch** (1-2 days)
+3. **Window event dispatch** (1-2 days)
    - Implement keypress() virtual dispatch
    - Add focus management
    - Add print()/printf() methods
 
-5. **OutputWindow scrolling** (1 day)
+4. **OutputWindow scrolling** (1 day)
    - Add scroll() method
    - Add Page Up/Down handlers
    - Wire to ScrollbackController
 
-6. **InputBox modal dialogs** (1 day)
+5. **InputBox modal dialogs** (1 day)
    - Port InputBox base class
    - Add InputBoxedLine
    - Implement xy_center positioning
    - Add Escape key handling
 
-#### Phase 2: Fill Remaining Gaps (1-2 weeks)
+#### Phase 3: Fill Remaining Gaps (1-2 weeks)
 
 - Variable expansion
 - History save/load

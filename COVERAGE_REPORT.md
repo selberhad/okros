@@ -1,13 +1,13 @@
 # Test Coverage Report
 
-**Last Updated**: 2025-10-04 15:19
+**Last Updated**: 2025-10-04 15:25
 **Tool**: cargo-llvm-cov
-**Overall Coverage**: **72.38%** lines | **74.70%** regions | **78.20%** functions
+**Overall Coverage**: **72.65%** lines | **74.98%** regions | **78.39%** functions
 
 ## Summary
 
 ```
-TOTAL                            9464              2394    74.70%         555               121    78.20%        5658              1563    72.38%           0                 0         -
+TOTAL                            9567              2394    74.98%         560               121    78.39%        5714              1563    72.65%           0                 0         -
 ```
 
 ## Coverage by Module
@@ -39,7 +39,7 @@ TOTAL                            9464              2394    74.70%         555   
 | `select.rs` | 97.50% | 96.61% | 100.00% | 🟢 Excellent |
 | `selectable.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
 | `selection.rs` | 77.73% | 82.46% | 77.78% | 🟡 Good |
-| `session_manager.rs` | 42.34% | 42.49% | 50.00% | 🟠 Moderate |
+| `session_manager.rs` | 59.07% | 62.50% | 61.90% | 🟠 Moderate |
 | `session.rs` | 60.14% | 60.00% | 60.00% | 🟠 Moderate |
 | `socket.rs` | 91.54% | 92.35% | 100.00% | 🟢 Excellent |
 | `status_line.rs` | 91.43% | 94.55% | 83.33% | 🟢 Excellent |
@@ -81,7 +81,7 @@ TOTAL                            9464              2394    74.70%         555   
 ### 🟠 Moderate (40-69% lines)
 - `action.rs` - 68.93%
 - `session.rs` - 60.14%
-- `session_manager.rs` - 42.34%
+- `session_manager.rs` - 59.07%
 - `window.rs` - 57.14%
 
 ### 🔴 Needs Work (<40% lines)
@@ -93,7 +93,7 @@ TOTAL                            9464              2394    74.70%         555   
 
 | Tier | Target | Current | Status |
 |------|--------|---------|--------|
-| Overall | ≥80% | 72.38% | ⏳ In Progress |
+| Overall | ≥80% | 72.65% | ⏳ In Progress |
 | Critical Paths | ≥95% | Check modules above | ✅ Met |
 | New Modules | ≥80% | - | Policy |
 
