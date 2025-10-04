@@ -1,6 +1,6 @@
 # ORIENTATION — okros MUD Client
 
-**Quick Start**: You're looking at a Rust port of MCL (MUD Client for Linux). **Headless mode** (~95% complete) works great for bots. **TTY interactive mode** (~99% complete) - Feature-complete with all interactive features working.
+**Quick Start**: You're looking at a Rust port of MCL (MUD Client for Linux). **Headless mode** (~95% complete) works great for bots. **TTY interactive mode** (~99% complete) - Feature-complete with all interactive features working. **Known bug**: Vertical truncation of large text blocks (ASCII art displays incompletely).
 
 ## What Is This?
 
@@ -97,9 +97,15 @@ See `PORT_GAPS.md` for complete analysis.
 
 **Overall**: ~99% complete, feature-complete for production use
 
-**Remaining work**: None - all core and advanced features complete!
+**Known Issues**:
+- 🐛 **Vertical truncation bug**: Large blocks of text (ASCII art, combat spam) display incompletely - bottom 5-10 lines missing
+  - Not a horizontal wrapping issue (width is fine)
+  - Lines appear to be lost vertically (entire rows missing from display)
+  - Under investigation - may be auto-scroll, ANSI parser, or display rendering issue
 
-**Test Coverage**: 203 tests, 73.53% coverage
+**Remaining work**: Fix vertical truncation bug, then all core features complete!
+
+**Test Coverage**: 203 tests, 71.90% coverage
 **LOC**: 8,571 Rust vs 8,815 C++ (97% size, -2.8%)
 
 **See `PORT_GAPS.md` for detailed completion analysis.**
