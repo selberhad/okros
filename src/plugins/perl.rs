@@ -100,9 +100,21 @@ extern "C" {
         subaddr: unsafe extern "C" fn(*mut PerlInterpreter, *mut CV),
         filename: *const libc::c_char,
     ) -> *mut CV;
+
+    // Call subroutine
+    #[link_name = "Perl_call_sv"]
+    fn perl_call_sv(interp: *mut PerlInterpreter, sv: *mut SV, flags: libc::c_int) -> libc::c_int;
 }
 
 const GV_ADD: libc::c_int = 0x01;
+
+// Perl call_sv flags (from perl.h)
+const G_VOID: libc::c_int = 1; // void context
+const G_SCALAR: libc::c_int = 2; // scalar context
+const G_ARRAY: libc::c_int = 3; // array context
+const G_DISCARD: libc::c_int = 4; // discard return value
+const G_EVAL: libc::c_int = 8; // evaluate in eval {} context
+const G_NOARGS: libc::c_int = 64; // no arguments
 
 // =============================================================================
 // XS initialization callback (matches C++ xs_init)
@@ -341,10 +353,11 @@ impl Interpreter for PerlPlugin {
     fn match_prepare(&mut self, pattern: &str, commands: &str) -> Option<Box<dyn std::any::Any>> {
         unsafe {
             // Create Perl sub: sub { if (/$pattern/) { $_ = "$commands"; } else { $_ = ""; } }
+            // Only escape quotes in commands, pattern is regex (backslashes are meaningful)
             let code = format!(
                 "sub {{ if (/{pat}/) {{ $_ = \"{cmd}\"; }} else {{ $_ = \"\"; }} }}",
-                pat = pattern.replace("\\", "\\\\").replace("\"", "\\\""),
-                cmd = commands.replace("\\", "\\\\").replace("\"", "\\\"")
+                pat = pattern.replace("\"", "\\\""),
+                cmd = commands.replace("\"", "\\\"")
             );
 
             if let Ok(c_code) = CString::new(code) {
@@ -367,10 +380,11 @@ impl Interpreter for PerlPlugin {
     ) -> Option<Box<dyn std::any::Any>> {
         unsafe {
             // Create Perl sub: sub { unless (s/$pattern/$replacement/g) { $_ = ""; } }
+            // Only escape quotes, not backslashes (pattern/replacement may have regex escapes)
             let code = format!(
                 "sub {{ unless (s/{pat}/{rep}/g) {{ $_ = \"\"; }} }}",
-                pat = pattern.replace("\\", "\\\\").replace("\"", "\\\""),
-                rep = replacement.replace("\\", "\\\\").replace("\"", "\\\"")
+                pat = pattern.replace("\"", "\\\""),
+                rep = replacement.replace("\"", "\\\"")
             );
 
             if let Ok(c_code) = CString::new(code) {
@@ -387,32 +401,35 @@ impl Interpreter for PerlPlugin {
     /// Sets $_ to text, calls compiled sub, returns result from $_
     fn match_exec(&mut self, compiled: &dyn std::any::Any, text: &str) -> Option<String> {
         unsafe {
-            // Extract SV pointer from Any
+            // Extract SV pointer from Any (stored by match_prepare/substitute_prepare)
             if let Some(&sv_ptr) = compiled.downcast_ref::<usize>() {
-                // Set $_ to the input text
+                let sub_sv = sv_ptr as *mut SV;
+
+                // Set $_ to the input text (C++ does: sv_setpv(default_var, str))
                 if let Ok(c_text) = CString::new(text) {
                     if let Ok(c_default) = CString::new("_") {
                         let default_sv = perl_get_sv(self.interp, c_default.as_ptr(), GV_ADD);
                         if !default_sv.is_null() {
                             sv_setpv(self.interp, default_sv, c_text.as_ptr());
 
-                            // Call the compiled sub (sv_ptr points to it)
-                            // Note: This is simplified - C++ uses perl_call_sv with flags
-                            // For MVP, we'll just return the $_ value after "calling" the sub
-                            // TODO: Proper perl_call_sv implementation
+                            // Call the compiled sub (C++ does: perl_call_sv((SV*)perlsub, G_EVAL|G_VOID|G_NOARGS|G_DISCARD))
+                            perl_call_sv(
+                                self.interp,
+                                sub_sv,
+                                G_EVAL | G_VOID | G_NOARGS | G_DISCARD,
+                            );
 
-                            // For now, just eval the sub in scalar context
-                            // This is a simplified approach
-                            let eval_code = format!("{{ my $sub = {}; $sub->(); $_ }}", sv_ptr);
-                            if let Ok(c_eval) = CString::new(eval_code) {
-                                let result_sv = perl_eval_pv(self.interp, c_eval.as_ptr(), 0);
-                                if !result_sv.is_null() {
-                                    let mut len: libc::size_t = 0;
-                                    let ptr = sv_2pv(self.interp, result_sv, &mut len);
-                                    if !ptr.is_null() && len > 0 {
-                                        let cstr = CStr::from_ptr(ptr);
-                                        return Some(cstr.to_string_lossy().into_owned());
-                                    }
+                            // Read $_ back (sub modifies it)
+                            let mut len: libc::size_t = 0;
+                            let ptr = sv_2pv(self.interp, default_sv, &mut len);
+
+                            // If $_ is empty, match failed (return None)
+                            // C++ does: if (!*s) return false; else return true;
+                            if !ptr.is_null() && len > 0 {
+                                let cstr = CStr::from_ptr(ptr);
+                                let result = cstr.to_string_lossy().into_owned();
+                                if !result.is_empty() {
+                                    return Some(result);
                                 }
                             }
                         }
@@ -497,7 +514,20 @@ mod tests {
         let _ok = interp.run_quietly("maybe_undefined", "arg", &mut quiet_result, true);
         // Just verify it doesn't panic - Perl error handling is complex
 
-        // TODO: Add match_prepare/match_exec tests once perl_call_sv is properly implemented
-        // (See TODO in match_exec implementation - current eval-based approach incomplete)
+        // Test 9: Match prepare and exec (regex matching via perl_call_sv)
+        let compiled = interp.match_prepare(r"\d+", "found numbers!").unwrap();
+        let result = interp.match_exec(compiled.as_ref(), "I have 42 apples");
+        assert_eq!(result, Some("found numbers!".to_string()));
+
+        let result = interp.match_exec(compiled.as_ref(), "no numbers here");
+        assert_eq!(result, None);
+
+        // Test 10: Substitute prepare and exec (regex substitution)
+        let sub_compiled = interp.substitute_prepare(r"\d+", "NUM").unwrap();
+        let result = interp.match_exec(sub_compiled.as_ref(), "I have 42 apples");
+        assert_eq!(result, Some("I have NUM apples".to_string()));
+
+        let result = interp.match_exec(sub_compiled.as_ref(), "no numbers here");
+        assert_eq!(result, None); // No substitution, returns None
     }
 }
