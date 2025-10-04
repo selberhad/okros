@@ -115,14 +115,38 @@ impl Selection {
             *a = blank;
         }
 
-        // Calculate top line for scrolling (C++ Selection.cc:47-48)
-        let count = self.items.len() as i32;
-        let height = self.win.height as i32;
-        let mut top = 0.max(self.selection - height / 2);
-        top = 0.max(count - height).min(top);
+        // Draw border (C++ Selection uses Bordered style which creates Border window)
+        // Top border
+        let width = self.win.width;
+        let height = self.win.height;
+        self.win.canvas[0] = (bg_blue_fg_white << 8) | (b'+' as u16);
+        for x in 1..width - 1 {
+            self.win.canvas[x] = (bg_blue_fg_white << 8) | (b'-' as u16);
+        }
+        self.win.canvas[width - 1] = (bg_blue_fg_white << 8) | (b'+' as u16);
 
-        // Draw items (C++ Selection.cc:50-63)
-        for y in 0..height {
+        // Left and right borders
+        for y in 1..height - 1 {
+            self.win.canvas[y * width] = (bg_blue_fg_white << 8) | (b'|' as u16);
+            self.win.canvas[y * width + width - 1] = (bg_blue_fg_white << 8) | (b'|' as u16);
+        }
+
+        // Bottom border
+        self.win.canvas[(height - 1) * width] = (bg_blue_fg_white << 8) | (b'+' as u16);
+        for x in 1..width - 1 {
+            self.win.canvas[(height - 1) * width + x] = (bg_blue_fg_white << 8) | (b'-' as u16);
+        }
+        self.win.canvas[(height - 1) * width + width - 1] = (bg_blue_fg_white << 8) | (b'+' as u16);
+
+        // Calculate top line for scrolling (C++ Selection.cc:47-48)
+        // Content area is inside border, so height-2 rows available
+        let count = self.items.len() as i32;
+        let content_height = (height - 2) as i32;
+        let mut top = 0.max(self.selection - content_height / 2);
+        top = 0.max(count - content_height).min(top);
+
+        // Draw items inside border (C++ Selection.cc:50-63)
+        for y in 0..content_height {
             let idx = (y + top) as usize;
             if idx >= self.items.len() {
                 break;
@@ -142,17 +166,19 @@ impl Selection {
                 }
             };
 
-            // Write line to canvas (C++ Selection.cc:62)
+            // Write line to canvas inside border (offset by 1 for border)
             // Copy data to avoid borrow conflict
             let data_bytes: Vec<u8> = self.get_data(idx).unwrap_or("").as_bytes().to_vec();
-            let width = self.win.width;
-            for x in 0..width {
+            let content_y = (y + 1) as usize; // +1 for top border
+            let content_width = width - 2; // -2 for left/right borders
+            for x in 0..content_width {
                 let ch = if x < data_bytes.len() {
                     data_bytes[x]
                 } else {
                     b' '
                 };
-                self.win.canvas[y as usize * width + x] = (color << 8) | (ch as u16);
+                self.win.canvas[content_y * width + x + 1] = (color << 8) | (ch as u16);
+                // +1 for left border
             }
         }
 

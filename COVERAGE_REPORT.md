@@ -1,13 +1,13 @@
 # Test Coverage Report
 
-**Last Updated**: 2025-10-04 02:32
+**Last Updated**: 2025-10-04 02:35
 **Tool**: cargo-llvm-cov
-**Overall Coverage**: **73.93%** lines | **76.22%** regions | **79.62%** functions
+**Overall Coverage**: **74.02%** lines | **76.31%** regions | **79.62%** functions
 
 ## Summary
 
 ```
-TOTAL                            9075              2158    76.22%         530               108    79.62%        5390              1405    73.93%           0                 0         -
+TOTAL                            9108              2158    76.31%         530               108    79.62%        5407              1405    74.02%           0                 0         -
 ```
 
 ## Coverage by Module
@@ -38,7 +38,7 @@ TOTAL                            9075              2158    76.22%         530   
 | `scrollback.rs` | 91.71% | 93.13% | 100.00% | 🟢 Excellent |
 | `select.rs` | 97.50% | 96.61% | 100.00% | 🟢 Excellent |
 | `selectable.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
-| `selection.rs` | 75.77% | 80.58% | 77.78% | 🟡 Good |
+| `selection.rs` | 77.73% | 82.46% | 77.78% | 🟡 Good |
 | `session.rs` | 85.92% | 88.62% | 87.50% | 🟡 Good |
 | `socket.rs` | 91.54% | 92.35% | 100.00% | 🟢 Excellent |
 | `status_line.rs` | 91.43% | 94.55% | 83.33% | 🟢 Excellent |
@@ -75,7 +75,7 @@ TOTAL                            9075              2158    76.22%         530   
 - `plugins/perl.rs` - 82.80%
 - `plugins/python.rs` - 88.14%
 - `plugins/stack.rs` - 73.13%
-- `selection.rs` - 75.77%
+- `selection.rs` - 77.73%
 - `session.rs` - 85.92%
 
 ### 🟠 Moderate (40-69% lines)
@@ -91,7 +91,7 @@ TOTAL                            9075              2158    76.22%         530   
 
 | Tier | Target | Current | Status |
 |------|--------|---------|--------|
-| Overall | ≥80% | 73.93% | ⏳ In Progress |
+| Overall | ≥80% | 74.02% | ⏳ In Progress |
 | Critical Paths | ≥95% | Check modules above | ✅ Met |
 | New Modules | ≥80% | - | Policy |
 
