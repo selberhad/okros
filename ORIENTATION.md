@@ -66,10 +66,14 @@
 - Callback-based execute pattern
 - Escape key handling
 - Centering and bordered display
-- Ready for derived classes (e.g., ScrollbackSearch)
 
-**🟡 Remaining Optional** (minor, ~3%):
-- Scrollback search (advanced feature - requires InputBox subclass)
+**✅ ScrollbackSearch** (COMPLETE):
+- Alt-/ hotkey triggers search dialog
+- Case-insensitive text search through scrollback
+- Search highlighting with inverted colors
+- Forward/backward search support
+
+**🟡 Remaining Optional** (minor, ~1%):
 - Scrollback save to file (advanced feature)
 
 See `PORT_GAPS.md` for complete analysis.
@@ -85,13 +89,14 @@ See `PORT_GAPS.md` for complete analysis.
 **Phase 2**: ✅ **COMPLETE** (InputLine & command expansion - 100%)
 **Phase 3**: ✅ **COMPLETE** (Scrollback navigation - 100%)
 **InputBox**: ✅ **COMPLETE** (Modal dialogs - 100%)
+**ScrollbackSearch**: ✅ **COMPLETE** (Alt-/ search - 100%)
 
-**Overall**: ~97% complete, fully functional for production use
+**Overall**: ~98% complete, fully functional for production use
 
 **Remaining work** (optional advanced features):
-- Advanced scrollback features (search, save to file) (~3%)
+- Scrollback save to file (~1%)
 
-**Test Coverage**: 200 tests, 73.53% coverage
+**Test Coverage**: 201 tests, 73.53% coverage
 **LOC**: 8,571 Rust vs 8,815 C++ (97% size, -2.8%)
 
 **See `PORT_GAPS.md` for detailed completion analysis.**

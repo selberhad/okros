@@ -229,24 +229,30 @@ fn main() {
     let mut quit = false;
     let mut last_callout_time = current_time;
 
-    // Modal state for connect menu
+    // Modal state for connect menu and search
     enum ModalState {
         Normal,
         ConnectMenu(okros::mud_selection::MudSelection),
+        SearchDialog(okros::input_box::InputBox),
     }
     let mut modal = ModalState::Normal;
 
     // Main event loop (matching main.cc:141-170)
     while !quit {
         // Manually redraw modal windows if dirty (composition vs inheritance workaround)
-        if let ModalState::ConnectMenu(ref mut menu) = modal {
-            unsafe {
+        match modal {
+            ModalState::ConnectMenu(ref mut menu) => unsafe {
                 if (*menu.window_mut_ptr()).dirty {
                     menu.redraw();
                     // redraw() sets dirty=false, but we need Window::refresh() to composite it
                     (*menu.window_mut_ptr()).dirty = true;
                 }
+            },
+            ModalState::SearchDialog(ref mut dialog) => {
+                dialog.redraw();
+                dialog.window().dirty = true;
             }
+            ModalState::Normal => {}
         }
 
         // Refresh Screen (calls Window::refresh() to composite tree, then refreshTTY) - C++ main.cc:142
@@ -271,50 +277,65 @@ fn main() {
                 if let Ok(n) = io::stdin().read(&mut buf) {
                     if n > 0 {
                         for ev in dec.feed(&buf[..n]) {
-                            // Handle modal connect menu first
-                            if let ModalState::ConnectMenu(ref mut menu) = modal {
-                                if menu.keypress(ev) {
-                                    // Keypress handled - dirty flag set, Window::refresh() will call redraw()
+                            // Handle modal dialogs first
+                            match &mut modal {
+                                ModalState::ConnectMenu(ref mut menu) => {
+                                    if menu.keypress(ev) {
+                                        // Keypress handled - dirty flag set, Window::refresh() will call redraw()
 
-                                    // Enter pressed - connect to selected MUD
-                                    if matches!(ev, KeyEvent::Byte(b'\n')) {
-                                        let idx = menu.get_selection();
-                                        if let Some((name, hostname, port)) =
-                                            menu.get_mud_at(idx as usize)
-                                        {
-                                            // Check if this is the Offline MUD (no hostname)
-                                            if hostname.is_empty() {
-                                                status.set_text(
-                                                    "Offline MUD - use cargo run --offline instead",
-                                                );
-                                                modal = ModalState::Normal;
-                                            } else {
-                                                // Resolve hostname and connect to network MUD
-                                                match resolve_hostname(hostname, port) {
-                                                    Ok(ip) => {
-                                                        let mut s = Socket::new().unwrap();
-                                                        let _ = s.connect_ipv4(ip, port);
-                                                        sock = Some(s);
-                                                        status.set_text(format!(
-                                                            "Connecting to {} ({}:{} -> {})...",
-                                                            name, hostname, port, ip
-                                                        ));
-                                                        modal = ModalState::Normal;
-                                                    }
-                                                    Err(e) => {
-                                                        status
-                                                            .set_text(format!("DNS error: {}", e));
+                                        // Enter pressed - connect to selected MUD
+                                        if matches!(ev, KeyEvent::Byte(b'\n')) {
+                                            let idx = menu.get_selection();
+                                            if let Some((name, hostname, port)) =
+                                                menu.get_mud_at(idx as usize)
+                                            {
+                                                // Check if this is the Offline MUD (no hostname)
+                                                if hostname.is_empty() {
+                                                    status.set_text(
+                                                        "Offline MUD - use cargo run --offline instead",
+                                                    );
+                                                    modal = ModalState::Normal;
+                                                } else {
+                                                    // Resolve hostname and connect to network MUD
+                                                    match resolve_hostname(hostname, port) {
+                                                        Ok(ip) => {
+                                                            let mut s = Socket::new().unwrap();
+                                                            let _ = s.connect_ipv4(ip, port);
+                                                            sock = Some(s);
+                                                            status.set_text(format!(
+                                                                "Connecting to {} ({}:{} -> {})...",
+                                                                name, hostname, port, ip
+                                                            ));
+                                                            modal = ModalState::Normal;
+                                                        }
+                                                        Err(e) => {
+                                                            status.set_text(format!(
+                                                                "DNS error: {}",
+                                                                e
+                                                            ));
+                                                        }
                                                     }
                                                 }
                                             }
                                         }
+                                    } else if matches!(ev, KeyEvent::Key(KeyCode::Escape)) {
+                                        // Escape pressed - exit connect menu
+                                        modal = ModalState::Normal;
+                                        status.set_text("Connect menu closed.");
                                     }
-                                } else if matches!(ev, KeyEvent::Key(KeyCode::Escape)) {
-                                    // Escape pressed - exit connect menu
-                                    modal = ModalState::Normal;
-                                    status.set_text("Connect menu closed.");
+                                    continue; // Skip normal processing while in modal
                                 }
-                                continue; // Skip normal processing while in modal
+                                ModalState::SearchDialog(ref mut dialog) => {
+                                    if dialog.keypress(ev) {
+                                        // Keypress handled (Escape or Enter)
+                                        modal = ModalState::Normal;
+                                        status.set_text("");
+                                    }
+                                    continue; // Skip normal processing while in modal
+                                }
+                                ModalState::Normal => {
+                                    // Normal processing below
+                                }
                             }
 
                             // Alt-O: Open connect menu
@@ -340,6 +361,20 @@ fn main() {
                                 } else {
                                     status.set_text("Config file not found");
                                 }
+                                continue;
+                            }
+
+                            // Alt-/: Search scrollback (C++ Hotkey.cc:77-78)
+                            if matches!(ev, KeyEvent::Key(KeyCode::Alt(b'/'))) {
+                                use okros::scrollback_search::create_scrollback_search;
+                                // Create search dialog (searches backwards by default)
+                                let search_dialog = create_scrollback_search(
+                                    screen.window_mut() as *mut okros::window::Window,
+                                    &mut output as *mut okros::output_window::OutputWindow,
+                                    false, // forward = false (search backwards)
+                                );
+                                modal = ModalState::SearchDialog(search_dialog);
+                                status.set_text("Enter search text (Esc to cancel)");
                                 continue;
                             }
 

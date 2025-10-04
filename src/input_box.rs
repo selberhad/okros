@@ -11,7 +11,9 @@ use crate::input_line::InputLine;
 use crate::window::Window;
 
 /// Callback type for InputBox execute
-pub type ExecuteCallback = Box<dyn FnMut(&str) + Send>;
+/// NOTE: Send bound removed to allow capturing raw pointers (e.g., *mut OutputWindow)
+/// This is safe because the callback only runs on the main UI thread
+pub type ExecuteCallback = Box<dyn FnMut(&str)>;
 
 /// InputBox - Simple dialog box which prompts for input (C++ InputBox.h:3-24)
 pub struct InputBox {

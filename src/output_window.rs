@@ -1,6 +1,14 @@
 use crate::scrollback::{Attrib, Scrollback};
 use crate::window::Window;
 
+/// Search highlight information (C++ OutputWindow.cc:37-42)
+#[derive(Default)]
+struct Highlight {
+    line: i32,  // Line number to highlight (-1 = none)
+    x: usize,   // X offset to start highlight
+    len: usize, // Length of highlight
+}
+
 /// OutputWindow - Window that displays scrollback buffer
 /// Ported from: mcl-cpp-reference/OutputWindow.cc
 ///
@@ -10,6 +18,7 @@ pub struct OutputWindow {
     pub win: Box<Window>,
     pub sb: Scrollback,
     color: u8,
+    highlight: Highlight,
 }
 
 impl OutputWindow {
@@ -23,6 +32,11 @@ impl OutputWindow {
             win,
             sb: Scrollback::new(width, height, lines),
             color,
+            highlight: Highlight {
+                line: -1, // -1 = no highlight
+                x: 0,
+                len: 0,
+            },
         }
     }
 
@@ -33,8 +47,41 @@ impl OutputWindow {
     }
 
     /// Redraw window: blit scrollback viewport to canvas (C++ Window::redraw pattern)
+    /// Updated to handle search highlighting (C++ OutputWindow::draw_on_parent lines 239-274)
     pub fn redraw(&mut self) {
         let view = self.sb.viewport_slice();
+
+        // Check if we need to highlight search result (C++ lines 246-248)
+        if self.highlight.line >= 0 {
+            let viewpoint_line = (self.sb.viewpoint / self.sb.width) + self.sb.top_line;
+            let highlight_line = self.highlight.line as usize;
+
+            // Is highlighted line visible in viewport? (C++ lines 246-248)
+            if highlight_line >= viewpoint_line && highlight_line < viewpoint_line + self.sb.height
+            {
+                let line_in_view = highlight_line - viewpoint_line;
+                let start_offset = line_in_view * self.sb.width + self.highlight.x;
+                let end_offset = start_offset + self.highlight.len;
+
+                // Create modified view with inverted colors for highlight (C++ lines 251-264)
+                let mut modified_view = view.to_vec();
+
+                if end_offset <= modified_view.len() {
+                    for attrib in &mut modified_view[start_offset..end_offset] {
+                        // Invert colors: swap foreground and background (C++ lines 259-263)
+                        let color = ((*attrib & 0xFF00) >> 8) as u8;
+                        let bg = (color & 0x0F) << 4;
+                        let fg = (color & 0xF0) >> 4;
+                        *attrib = (*attrib & 0x00FF) | (((bg | fg) as u16) << 8);
+                    }
+
+                    self.win.blit(&modified_view);
+                    return;
+                }
+            }
+        }
+
+        // Normal blit without highlighting
         self.win.blit(view);
     }
 
@@ -93,6 +140,119 @@ impl OutputWindow {
         let quit = self.sb.home();
         self.redraw();
         quit
+    }
+
+    /// Search for text in scrollback (C++ OutputWindow::search, lines 174-236)
+    /// Returns Some(message) to display in status bar
+    pub fn search(&mut self, text: &str, forward: bool) -> Option<String> {
+        if text.is_empty() {
+            return Some("Search string is empty".to_string());
+        }
+
+        let search_bytes = text.to_lowercase().into_bytes();
+        let len = search_bytes.len();
+
+        // Start search from current viewpoint (C++ line 176)
+        // C++ uses cursor_y-1, but we'll search from the middle of the viewport
+        let start_line = self.sb.viewpoint / self.sb.width + (self.sb.height / 2);
+
+        // Search through all lines in scrollback
+        let total_lines = if self.sb.canvas_off > 0 {
+            self.sb.canvas_off / self.sb.width
+        } else {
+            0
+        };
+
+        let mut current_line = start_line;
+        let mut found = false;
+        let mut found_x = 0;
+        let mut found_line = 0;
+
+        // C++ does unbounded loop with manual break (lines 181-221)
+        for _ in 0..total_lines {
+            if current_line >= total_lines {
+                break;
+            }
+
+            let line_offset = current_line * self.sb.width;
+            if line_offset >= self.sb.buf.len() {
+                break;
+            }
+
+            // Search current line (C++ lines 184-200)
+            // Search from beginning to width-len
+            if self.sb.width >= len {
+                for x in 0..=(self.sb.width - len) {
+                    let mut matches = true;
+
+                    // Compare characters case-insensitively (C++ lines 189-195)
+                    for (i, search_ch) in search_bytes.iter().enumerate() {
+                        let buf_offset = line_offset + x + i;
+                        if buf_offset >= self.sb.buf.len() {
+                            matches = false;
+                            break;
+                        }
+                        let buf_ch = (self.sb.buf[buf_offset] & 0xFF) as u8;
+                        if buf_ch.to_ascii_lowercase() != *search_ch {
+                            matches = false;
+                            break;
+                        }
+                    }
+
+                    if matches {
+                        found = true;
+                        found_x = x;
+                        found_line = current_line;
+                        break;
+                    }
+                }
+            }
+
+            if found {
+                break;
+            }
+
+            // Move to next line (C++ lines 206-220)
+            if forward {
+                current_line += 1;
+            } else {
+                if current_line == 0 {
+                    break;
+                }
+                current_line -= 1;
+            }
+        }
+
+        if !found {
+            // Clear highlight
+            self.highlight.line = -1;
+            Some(format!("Search string '{}' not found", text))
+        } else {
+            // Set highlight (C++ lines 227-229)
+            self.highlight.line = (found_line + self.sb.top_line) as i32;
+            self.highlight.x = found_x;
+            self.highlight.len = len;
+
+            // Adjust viewpoint to show the found line (C++ lines 231-233)
+            // Show on the second line rather than under status bar
+            let target_viewpoint = if found_line > 0 {
+                (found_line - 1) * self.sb.width
+            } else {
+                0
+            };
+
+            // Clamp to valid range
+            self.sb.viewpoint = target_viewpoint.min(self.sb.canvas_off);
+
+            self.redraw();
+            Some(format!("Found string '{}'", text))
+        }
+    }
+
+    /// Clear search highlight
+    pub fn clear_highlight(&mut self) {
+        self.highlight.line = -1;
+        self.redraw();
     }
 }
 

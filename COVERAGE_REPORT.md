@@ -1,13 +1,13 @@
 # Test Coverage Report
 
-**Last Updated**: 2025-10-04 16:54
+**Last Updated**: 2025-10-04 17:03
 **Tool**: cargo-llvm-cov
-**Overall Coverage**: **73.00%** lines | **75.47%** regions | **77.73%** functions
+**Overall Coverage**: **71.82%** lines | **74.45%** regions | **77.44%** functions
 
 ## Summary
 
 ```
-TOTAL                           11442              2807    75.47%         660               147    77.73%        6814              1840    73.00%           0                 0         -
+TOTAL                           11642              2975    74.45%         665               150    77.44%        6970              1964    71.82%           0                 0         -
 ```
 
 ## Coverage by Module
@@ -33,11 +33,12 @@ TOTAL                           11442              2807    75.47%         660   
 | `mud.rs` | 72.80% | 78.24% | 79.31% | 🟡 Good |
 | `offline_mud/game.rs` | 96.58% | 95.88% | 96.55% | 🟢 Excellent |
 | `offline_mud/parser.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
-| `output_window.rs` | 56.79% | 58.06% | 42.86% | 🟠 Moderate |
+| `output_window.rs` | 29.94% | 29.07% | 37.50% | 🔴 Needs Work |
 | `plugins/perl.rs` | 82.80% | 87.61% | 85.00% | 🟡 Good |
 | `plugins/python.rs` | 88.14% | 89.22% | 90.91% | 🟡 Good |
 | `plugins/stack.rs` | 78.11% | 80.95% | 60.00% | 🟡 Good |
 | `screen.rs` | 94.79% | 96.75% | 96.30% | 🟢 Excellent |
+| `scrollback_search.rs` | 65.71% | 68.29% | 66.67% | 🟠 Moderate |
 | `scrollback.rs` | 93.73% | 94.86% | 100.00% | 🟢 Excellent |
 | `select.rs` | 97.50% | 96.61% | 100.00% | 🟢 Excellent |
 | `selectable.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
@@ -48,7 +49,7 @@ TOTAL                           11442              2807    75.47%         660   
 | `status_line.rs` | 91.43% | 94.55% | 83.33% | 🟢 Excellent |
 | `telnet.rs` | 97.67% | 99.02% | 100.00% | 🟢 Excellent |
 | `tty.rs` | 31.11% | 25.84% | 55.56% | 🔴 Needs Work |
-| `window.rs` | 53.95% | 53.14% | 60.00% | 🟠 Moderate |
+| `window.rs` | 54.88% | 53.51% | 60.00% | 🟠 Moderate |
 
 ## Coverage Tiers
 
@@ -86,20 +87,21 @@ TOTAL                           11442              2807    75.47%         660   
 - `history.rs` - 65.85%
 - `input_box.rs` - 54.24%
 - `input_line.rs` - 44.44%
-- `output_window.rs` - 56.79%
+- `scrollback_search.rs` - 65.71%
 - `session_manager.rs` - 59.07%
-- `window.rs` - 53.95%
+- `window.rs` - 54.88%
 
 ### 🔴 Needs Work (<40% lines)
 - `curses.rs` - 18.56% (ncurses FFI - TTY dependent)
 - `main.rs` - 0.00% (event loop - needs integration tests)
+- `output_window.rs` - 29.94%
 - `tty.rs` - 31.11% (requires real TTY)
 
 ## Coverage Targets
 
 | Tier | Target | Current | Status |
 |------|--------|---------|--------|
-| Overall | ≥80% | 73.00% | ⏳ In Progress |
+| Overall | ≥80% | 71.82% | ⏳ In Progress |
 | Critical Paths | ≥95% | Check modules above | ✅ Met |
 | New Modules | ≥80% | - | Policy |
 

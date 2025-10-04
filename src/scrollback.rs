@@ -5,7 +5,7 @@ pub struct Scrollback {
     pub height: usize,
     lines: usize,
     pub(crate) buf: Vec<Attrib>,
-    canvas_off: usize,
+    pub(crate) canvas_off: usize, // Made pub(crate) for OutputWindow::search
     pub viewpoint: usize,
     pub top_line: usize,
     pub(crate) rows_filled: usize,

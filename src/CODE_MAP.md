@@ -31,7 +31,8 @@ Brief index mapping Rust modules to their C++ counterparts (when applicable). Up
 - `curses.rs` → `Curses.cc` (minimal ncurses wrapper; terminfo/ACS; Toy 2 patterns).
 - `screen.rs` → `Screen.cc` (renderer + scroll region planner; Toy 7 patterns).
 - `window.rs` → `Window.cc` (base widget; added print, gotoxy, set_color, die methods).
-- `output_window.rs` → `OutputWindow.cc` (rendering and color attrs).
+- `output_window.rs` → `OutputWindow.cc` (rendering and color attrs; added search with highlighting).
+- `scrollback_search.rs` → `ScrollbackSearch.h` + `OutputWindow.cc:324-337` (Alt-/ search dialog).
 - `input_line.rs` → `InputLine.cc` (line editor basics; Phase 2 complete).
 - `input_box.rs` → `InputBox.cc` (modal dialog with callback-based execute pattern).
 - `status_line.rs` → `StatusLine.cc` (status UI stripe).
