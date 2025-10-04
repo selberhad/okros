@@ -241,8 +241,10 @@ mod tests {
     #[test]
     fn mud_find_macro() {
         let mut mud = Mud::new("TestMUD", "127.0.0.1", 4000);
-        mud.macro_list.push(crate::macro_def::Macro::new(1, "north"));
-        mud.macro_list.push(crate::macro_def::Macro::new(2, "south"));
+        mud.macro_list
+            .push(crate::macro_def::Macro::new(1, "north"));
+        mud.macro_list
+            .push(crate::macro_def::Macro::new(2, "south"));
         mud.macro_list.push(crate::macro_def::Macro::new(3, "look"));
 
         // Find existing macros

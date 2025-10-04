@@ -154,9 +154,20 @@ fn main() {
         }
     };
     let caps = get_acs_caps();
-    // Initialize prev to non-zero to force full render on first frame
-    let mut prev = vec![0xFFFFu16; width * height];
-    let mut cur = vec![0u16; width * height];
+
+    // Create Screen (root Window) - C++ main.cc:52
+    let mut screen = okros::screen2::Screen::new(width, height);
+
+    // Create OutputWindow as child of Screen - C++ main.cc:69
+    let mut output = okros::output_window::OutputWindow::new(
+        screen.window_mut() as *mut okros::window::Window,
+        width,
+        height.saturating_sub(2), // Leave room for status + input
+        2000,
+        0x07,
+    );
+    // Position OutputWindow at row 1 (below status line)
+    output.win.parent_y = 1;
 
     // Session for processing incoming bytes (MCCP->Telnet->ANSI->Scrollback)
     let mut session = Session::new(
@@ -165,6 +176,7 @@ fn main() {
         height.saturating_sub(2),
         2000,
     );
+
     // Input line buffer (0x17 = blue background, white foreground)
     let mut input = okros::input_line::InputLine::new(width, 0x17);
     // Status line (0x07 = black background, white foreground)
@@ -216,10 +228,22 @@ fn main() {
             // Render connect menu modal
             render_connect_menu(menu, width, height);
         } else {
-            // Normal UI rendering
-            render_surface(
-                width, height, &mut prev, &mut cur, &session, &input, &status, &caps,
-            );
+            // Copy status line to Screen canvas (row 0)
+            let status_data = status.render();
+            screen.window.canvas[0..width].copy_from_slice(&status_data);
+
+            // Copy input line to Screen canvas (bottom row)
+            let input_data = input.render();
+            let input_row = height - 1;
+            screen.window.canvas[input_row * width..(input_row + 1) * width]
+                .copy_from_slice(&input_data);
+
+            // Update cursor position for input line
+            screen.window.cursor_x = input.cursor;
+            screen.window.cursor_y = input_row;
+
+            // Refresh Screen (calls Window::refresh() then refreshTTY) - C++ main.cc:142
+            screen.refresh(&caps);
         }
 
         // 2. Poll file descriptors (main.cc:147) - stdin + socket with 250ms timeout
@@ -556,6 +580,11 @@ fn main() {
                         };
                         if n > 0 {
                             session.feed(&buf[..n as usize]);
+
+                            // Copy session scrollback to OutputWindow
+                            let viewport = session.scrollback.viewport_slice();
+                            output.win.blit(viewport);
+                            output.win.dirty = true;
 
                             // Check triggers/actions on current incomplete line
                             // TODO: This should check completed lines from scrollback,
