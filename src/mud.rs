@@ -102,6 +102,73 @@ impl Mud {
         None
     }
 
+    /// Check all actions for trigger matches (C++ Session.cc:640 triggerCheck)
+    /// Returns vector of command strings to execute for matching triggers
+    pub fn check_action_match(
+        &self,
+        text: &str,
+        interp: &mut dyn crate::plugins::stack::Interpreter,
+    ) -> Vec<String> {
+        use crate::action::ActionType;
+
+        let mut commands = Vec::new();
+
+        // Check own actions first
+        for action in &self.action_list {
+            if action.action_type == ActionType::Trigger {
+                if let Some(cmd) = action.check_match(text, interp) {
+                    commands.push(cmd);
+                }
+            }
+        }
+
+        // Check parent MUD actions
+        if let Some(ref parent) = self.inherits {
+            commands.extend(parent.check_action_match(text, interp));
+        }
+
+        commands
+    }
+
+    /// Check all actions for text replacements (C++ Session.cc:640 triggerCheck)
+    /// Returns modified text if any replacements matched, None otherwise
+    pub fn check_replacement(
+        &self,
+        text: &str,
+        interp: &mut dyn crate::plugins::stack::Interpreter,
+    ) -> Option<String> {
+        use crate::action::ActionType;
+
+        let mut current = text.to_string();
+        let mut modified = false;
+
+        // Check own replacements first
+        for action in &self.action_list {
+            if action.action_type == ActionType::Replacement
+                || action.action_type == ActionType::Gag
+            {
+                if let Some(replaced) = action.check_replacement(&current, interp) {
+                    current = replaced;
+                    modified = true;
+                }
+            }
+        }
+
+        // Check parent MUD replacements
+        if let Some(ref parent) = self.inherits {
+            if let Some(replaced) = parent.check_replacement(&current, interp) {
+                current = replaced;
+                modified = true;
+            }
+        }
+
+        if modified {
+            Some(current)
+        } else {
+            None
+        }
+    }
+
     /// Connect to this MUD's hostname/port
     pub fn connect(&mut self) -> io::Result<()> {
         if self.hostname.is_empty() || self.port == 0 {
