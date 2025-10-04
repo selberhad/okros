@@ -5,6 +5,7 @@ pub mod config;
 pub mod control;
 pub mod engine;
 pub mod history;
+pub mod input_box;
 pub mod input_line;
 pub mod mccp;
 pub mod mud;

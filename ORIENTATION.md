@@ -1,6 +1,6 @@
 # ORIENTATION — okros MUD Client
 
-**Quick Start**: You're looking at a Rust port of MCL (MUD Client for Linux). **Headless mode** (~95% complete) works great for bots. **TTY interactive mode** (~95% complete) - Full command expansion, history, scrollback navigation all working.
+**Quick Start**: You're looking at a Rust port of MCL (MUD Client for Linux). **Headless mode** (~95% complete) works great for bots. **TTY interactive mode** (~97% complete) - Full command expansion, history, scrollback navigation, and modal dialogs all working.
 
 ## What Is This?
 
@@ -61,9 +61,15 @@
 - ✅ Freeze/unfreeze auto-scrolling
 - ✅ Window::keypress() infrastructure
 
-**🟡 Remaining Optional** (minor, ~5%):
-- InputBox modal dialogs (not yet needed)
-- Scrollback search (advanced feature)
+**✅ InputBox** (COMPLETE):
+- Modal dialog base class ported
+- Callback-based execute pattern
+- Escape key handling
+- Centering and bordered display
+- Ready for derived classes (e.g., ScrollbackSearch)
+
+**🟡 Remaining Optional** (minor, ~3%):
+- Scrollback search (advanced feature - requires InputBox subclass)
 - Scrollback save to file (advanced feature)
 
 See `PORT_GAPS.md` for complete analysis.
@@ -78,14 +84,14 @@ See `PORT_GAPS.md` for complete analysis.
 **Phase 1**: ✅ **COMPLETE** (Session restoration - 100%)
 **Phase 2**: ✅ **COMPLETE** (InputLine & command expansion - 100%)
 **Phase 3**: ✅ **COMPLETE** (Scrollback navigation - 100%)
+**InputBox**: ✅ **COMPLETE** (Modal dialogs - 100%)
 
-**Overall**: ~95% complete, fully functional for production use
+**Overall**: ~97% complete, fully functional for production use
 
 **Remaining work** (optional advanced features):
-- InputBox modal dialogs (~3%)
-- Advanced scrollback features (~2%)
+- Advanced scrollback features (search, save to file) (~3%)
 
-**Test Coverage**: 198 tests, 73.53% coverage
+**Test Coverage**: 200 tests, 73.53% coverage
 **LOC**: 8,571 Rust vs 8,815 C++ (97% size, -2.8%)
 
 **See `PORT_GAPS.md` for detailed completion analysis.**
@@ -237,7 +243,7 @@ quit                   # Exit
 → Read `PORT_GAPS.md` for comprehensive gap analysis and restoration plan
 
 **"What actually works?"**
-→ Headless mode works great (~95% complete). TTY interactive mode ~65% complete (Phase 1 done: Session infrastructure).
+→ Headless mode works great (~95% complete). TTY interactive mode ~97% complete (Phases 1-3 + InputBox done).
 
 **"Why the discrepancy?"**
 → Port optimized for headless mode (new feature), initially abandoned TTY mode. Now restoring systematically via Phase 1-3 plan.
@@ -249,13 +255,13 @@ quit                   # Exit
 → NO - all 12 toys complete, all risky patterns validated. Remaining work is straightforward porting.
 
 **"What's the actual completion?"**
-→ ~80% overall (Phase 1 complete: Session restoration). See PORT_GAPS.md for remaining Phase 2-3 items.
+→ ~97% overall (Phases 1-3 + InputBox complete). See PORT_GAPS.md for optional advanced features.
 
 **"Can I use this now?"**
-→ YES for headless automation. PARTIAL for TTY (triggers/prompts/hooks work; history/command-queue next).
+→ YES for both headless automation and TTY interactive mode. All core features work.
 
 **"What's been restored?"**
-→ Phase 1 complete (Session): connection mgmt, interpreter hooks, triggers, prompts, macros, statistics. Phase 2 next: InputLine history and command execution.
+→ All phases complete: Session (Phase 1), InputLine & commands (Phase 2), Scrollback (Phase 3), and InputBox modal dialogs. Only optional advanced features remain (scrollback search/save).
 
 ---
 

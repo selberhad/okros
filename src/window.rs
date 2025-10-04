@@ -263,6 +263,62 @@ impl Window {
             self.dirty = true;
         }
     }
+
+    /// Set cursor position (C++ Window.h:74 - gotoxy)
+    pub fn gotoxy(&mut self, x: usize, y: usize) {
+        self.cursor_x = x;
+        self.cursor_y = y;
+    }
+
+    /// Set color (C++ Window.h:69 - set_color)
+    pub fn set_color(&mut self, color: u8) {
+        self.color = color;
+    }
+
+    /// Print text at cursor position (C++ Window.cc:169-247)
+    /// Simplified version for basic text output
+    pub fn print(&mut self, text: &str) {
+        self.dirty = true;
+
+        for ch in text.bytes() {
+            if ch == b'\n' {
+                self.cursor_x = 0;
+                self.cursor_y += 1;
+            } else if ch == b'\r' {
+                self.cursor_x = 0;
+            } else {
+                // Bounds check
+                if self.cursor_y >= self.height {
+                    break;
+                }
+                if self.cursor_x >= self.width {
+                    // Word wrap
+                    self.cursor_x = 0;
+                    self.cursor_y += 1;
+                    if self.cursor_y >= self.height {
+                        break;
+                    }
+                }
+
+                let off = self.cursor_y * self.width + self.cursor_x;
+                self.canvas[off] = ((self.color as u16) << 8) | (ch as u16);
+                self.cursor_x += 1;
+            }
+        }
+    }
+
+    /// Destroy window and notify parent (C++ Window.cc:526-531)
+    /// NOTE: In C++, this is `delete this`. In Rust, we need the caller to handle Box cleanup
+    /// This method removes the window from parent's child list
+    pub fn die(&mut self) {
+        if !self.parent.is_null() {
+            unsafe {
+                (*self.parent).remove(self as *mut Window);
+            }
+        }
+        // NOTE: Caller must drop the Box to complete destruction
+        // C++ also calls parent->deathNotify(this) - we'll add that when needed
+    }
 }
 
 #[cfg(test)]

@@ -8,17 +8,17 @@
 
 ## Overall Summary
 
-**Rust is 3% more concise than C++** (0.97x the size)
+**Rust is 1% more concise than C++** (0.99x the size)
 
 | Metric | C++ (Reference) | Rust (okros) | Ratio |
 |--------|----------------|--------------|-------|
-| **Code Lines** | 8,815 | 8,571 | **0.97x** |
-| **Comments** | 637 | 1,113 | 1.75x |
-| **Blank Lines** | 2,219 | 1,217 | 0.55x |
-| **TOTAL** | 11,671 | 10,901 | **0.93x** |
-| **Files** | 79 | 39 | 0.49x |
+| **Code Lines** | 8,815 | 8,757 | **0.99x** |
+| **Comments** | 637 | 1,175 | 1.84x |
+| **Blank Lines** | 2,219 | 1,258 | 0.57x |
+| **TOTAL** | 11,671 | 11,190 | **0.96x** |
+| **Files** | 79 | 40 | 0.51x |
 
-**Difference**: -244 lines of code (-2.8%)
+**Difference**: -58 lines of code (-0.7%)
 
 ---
 
@@ -36,7 +36,7 @@
 | Group.cc | 144 | SKIPPED/DEFERRED | - | - | ⏭️ |
 | Hotkey.cc | 93 | macro_def.rs | 54 | 0.58 | ✅ |
 | InputBox.cc | 50 | SKIPPED/DEFERRED | - | - | ⏭️ |
-| InputLine.cc | 522 | input_line.rs | 461 | 0.88 | ✅ |
+| InputLine.cc | 522 | input_line.rs | 466 | 0.89 | ✅ |
 | Interpreter.cc | 834 | plugins/stack.rs | 258 | 0.31 | ✅ ⚠️ SHORT |
 | MUD.cc | 135 | mud.rs | 375 | 2.78 | ✅ |
 | Option.cc | 136 | SKIPPED/DEFERRED | - | - | ⏭️ |
@@ -52,7 +52,7 @@
 | StatusLine.cc | 60 | status_line.rs | 73 | 1.22 | ✅ |
 | String.cc | 19 | SKIPPED/DEFERRED | - | - | ⏭️ |
 | TTY.cc | 297 | tty.rs | 172 | 0.58 | ✅ |
-| Window.cc | 721 | window.rs | 293 | 0.41 | ✅ |
+| Window.cc | 721 | window.rs | 349 | 0.48 | ✅ |
 | main.cc | 250 | main.rs | 988 | 3.95 | ✅ |
 | misc.cc | 209 | SKIPPED/DEFERRED | - | - | ⏭️ |
 | plugins/PerlEmbeddedInterpreter.cc | 260 | plugins/perl.rs | 533 | 2.05 | ✅ |
@@ -80,6 +80,6 @@ The following files are suspiciously short (<40% of C++ size) and may be incompl
 
 ---
 
-*Generated: Sat Oct  4 16:12:22 2025*
+*Generated: Sat Oct  4 16:54:40 2025*
 *Tool: [cloc](https://github.com/AlDanial/cloc) v
 *

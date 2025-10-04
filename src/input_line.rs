@@ -95,6 +95,11 @@ impl InputLine {
         self.set("");
     }
 
+    /// Get current input as string
+    pub fn get_input(&self) -> String {
+        String::from_utf8_lossy(&self.input_buf[..self.max_pos]).to_string()
+    }
+
     /// Handle keypress (C++ InputLine::keypress, lines 232-431)
     /// Returns true if key was handled
     pub fn keypress(

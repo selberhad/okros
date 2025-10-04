@@ -1,13 +1,13 @@
 # Test Coverage Report
 
-**Last Updated**: 2025-10-04 16:12
+**Last Updated**: 2025-10-04 16:54
 **Tool**: cargo-llvm-cov
-**Overall Coverage**: **73.53%** lines | **75.98%** regions | **78.82%** functions
+**Overall Coverage**: **73.00%** lines | **75.47%** regions | **77.73%** functions
 
 ## Summary
 
 ```
-TOTAL                           11222              2695    75.98%         642               136    78.82%        6656              1762    73.53%           0                 0         -
+TOTAL                           11442              2807    75.47%         660               147    77.73%        6814              1840    73.00%           0                 0         -
 ```
 
 ## Coverage by Module
@@ -23,7 +23,8 @@ TOTAL                           11222              2695    75.98%         642   
 | `curses.rs` | 18.56% | 13.55% | 40.00% | 🔴 Needs Work |
 | `engine.rs` | 97.06% | 97.00% | 100.00% | 🟢 Excellent |
 | `history.rs` | 65.85% | 65.81% | 77.27% | 🟠 Moderate |
-| `input_line.rs` | 44.94% | 50.76% | 50.00% | 🟠 Moderate |
+| `input_box.rs` | 54.24% | 52.54% | 38.46% | 🟠 Moderate |
+| `input_line.rs` | 44.44% | 50.13% | 47.06% | 🟠 Moderate |
 | `input.rs` | 89.69% | 87.03% | 100.00% | 🟡 Good |
 | `macro_def.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
 | `main.rs` | 0.00% | 0.00% | 0.00% | 🔴 Needs Work |
@@ -47,7 +48,7 @@ TOTAL                           11222              2695    75.98%         642   
 | `status_line.rs` | 91.43% | 94.55% | 83.33% | 🟢 Excellent |
 | `telnet.rs` | 97.67% | 99.02% | 100.00% | 🟢 Excellent |
 | `tty.rs` | 31.11% | 25.84% | 55.56% | 🔴 Needs Work |
-| `window.rs` | 56.18% | 55.36% | 62.50% | 🟠 Moderate |
+| `window.rs` | 53.95% | 53.14% | 60.00% | 🟠 Moderate |
 
 ## Coverage Tiers
 
@@ -83,10 +84,11 @@ TOTAL                           11222              2695    75.98%         642   
 ### 🟠 Moderate (40-69% lines)
 - `action.rs` - 68.93%
 - `history.rs` - 65.85%
-- `input_line.rs` - 44.94%
+- `input_box.rs` - 54.24%
+- `input_line.rs` - 44.44%
 - `output_window.rs` - 56.79%
 - `session_manager.rs` - 59.07%
-- `window.rs` - 56.18%
+- `window.rs` - 53.95%
 
 ### 🔴 Needs Work (<40% lines)
 - `curses.rs` - 18.56% (ncurses FFI - TTY dependent)
@@ -97,7 +99,7 @@ TOTAL                           11222              2695    75.98%         642   
 
 | Tier | Target | Current | Status |
 |------|--------|---------|--------|
-| Overall | ≥80% | 73.53% | ⏳ In Progress |
+| Overall | ≥80% | 73.00% | ⏳ In Progress |
 | Critical Paths | ≥95% | Check modules above | ✅ Met |
 | New Modules | ≥80% | - | Policy |
 
