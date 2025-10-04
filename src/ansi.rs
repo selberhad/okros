@@ -65,6 +65,14 @@ impl AnsiConverter {
                 } else {
                     self.buf.push(b);
                     i += 1;
+
+                    // C++ Session.cc:444-446 - Lose patience if code doesn't terminate within 16 chars
+                    if self.buf.len() > 16 {
+                        self.in_csi = false;
+                        self.buf.clear();
+                        continue;
+                    }
+
                     // CSI sequences end with any alphabetic character (A-Z, a-z)
                     if b.is_ascii_alphabetic() {
                         // Only process 'm' (color codes), ignore others (cursor positioning, etc)

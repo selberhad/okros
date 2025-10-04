@@ -1,13 +1,13 @@
 # Test Coverage Report
 
-**Last Updated**: 2025-10-04 02:28
+**Last Updated**: 2025-10-04 02:32
 **Tool**: cargo-llvm-cov
-**Overall Coverage**: **73.96%** lines | **76.25%** regions | **79.62%** functions
+**Overall Coverage**: **73.93%** lines | **76.22%** regions | **79.62%** functions
 
 ## Summary
 
 ```
-TOTAL                            9069              2154    76.25%         530               108    79.62%        5385              1402    73.96%           0                 0         -
+TOTAL                            9075              2158    76.22%         530               108    79.62%        5390              1405    73.93%           0                 0         -
 ```
 
 ## Coverage by Module
@@ -16,7 +16,7 @@ TOTAL                            9069              2154    76.25%         530   
 |--------|--------------|-----------------|-----------|--------|
 | `action.rs` | 68.93% | 68.05% | 71.43% | 🟠 Moderate |
 | `alias.rs` | 94.01% | 94.52% | 100.00% | 🟢 Excellent |
-| `ansi.rs` | 88.65% | 90.45% | 100.00% | 🟡 Good |
+| `ansi.rs` | 86.99% | 88.94% | 100.00% | 🟡 Good |
 | `config.rs` | 94.67% | 96.30% | 77.42% | 🟢 Excellent |
 | `control.rs` | 72.75% | 74.25% | 87.50% | 🟡 Good |
 | `curses.rs` | 18.56% | 13.55% | 40.00% | 🔴 Needs Work |
@@ -65,7 +65,7 @@ TOTAL                            9069              2154    76.25%         530   
 - `telnet.rs` - 97.67%
 
 ### 🟡 Good (70-89% lines)
-- `ansi.rs` - 88.65%
+- `ansi.rs` - 86.99%
 - `control.rs` - 72.75%
 - `input.rs` - 89.69%
 - `input_line.rs` - 80.46%
@@ -91,7 +91,7 @@ TOTAL                            9069              2154    76.25%         530   
 
 | Tier | Target | Current | Status |
 |------|--------|---------|--------|
-| Overall | ≥80% | 73.96% | ⏳ In Progress |
+| Overall | ≥80% | 73.93% | ⏳ In Progress |
 | Critical Paths | ≥95% | Check modules above | ✅ Met |
 | New Modules | ≥80% | - | Policy |
 
