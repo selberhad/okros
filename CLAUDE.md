@@ -175,6 +175,13 @@ See ORIENTATION.md for current porting status.
 - **Footer**: Note C++ source file if helpful (e.g., `Ported-From: mcl-cpp-reference/String.cc`)
 - **Documentation updates**: Update affected CODE_MAP.md files BEFORE committing structural changes
 
+**CRITICAL: Pre-commit hooks must always run - NEVER use `git commit --no-verify`**
+- Pre-commit hooks format code, generate coverage reports, and update LOC comparisons
+- Using `--no-verify` bypasses quality checks and can lead to inconsistent repository state
+- If pre-commit hook fails, **fix the underlying issue** instead of bypassing it
+- Only exception: Discussed explicitly with user and documented in commit message
+- Why: Ensures code quality, consistent formatting, and up-to-date documentation
+
 ### Pull Request Guidelines
 - Summarize C++ → Rust mapping (which modules ported, approach used)
 - List ported files and their C++ origins
