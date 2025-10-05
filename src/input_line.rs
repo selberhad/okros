@@ -220,7 +220,8 @@ impl InputLine {
                 self.cursor_pos = 0;
                 self.max_pos = 0;
                 self.left_pos = 0;
-                // TODO: move/resize window (C++ lines 335-337)
+                self.input_buf.clear(); // Actually clear the buffer (C++ doesn't need this because max_pos=0 hides old data)
+                                        // TODO: move/resize window (C++ lines 335-337)
 
                 // Execute (C++ line 339)
                 self.execute(&text, command_queue);

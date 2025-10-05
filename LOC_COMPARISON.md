@@ -12,13 +12,13 @@
 
 | Metric | C++ (Reference) | Rust (okros) | Ratio |
 |--------|----------------|--------------|-------|
-| **Code Lines** | 8,815 | 9,209 | **1.04x** |
+| **Code Lines** | 8,815 | 9,210 | **1.04x** |
 | **Comments** | 637 | 1,307 | 2.05x |
 | **Blank Lines** | 2,219 | 1,360 | 0.61x |
-| **TOTAL** | 11,671 | 11,876 | **1.02x** |
+| **TOTAL** | 11,671 | 11,877 | **1.02x** |
 | **Files** | 79 | 41 | 0.52x |
 
-**Difference**: +394 lines of code (+4.5%)
+**Difference**: +395 lines of code (+4.5%)
 
 ---
 
@@ -36,7 +36,7 @@
 | Group.cc | 144 | SKIPPED/DEFERRED | - | - | ⏭️ |
 | Hotkey.cc | 93 | macro_def.rs | 54 | 0.58 | ✅ |
 | InputBox.cc | 50 | SKIPPED/DEFERRED | - | - | ⏭️ |
-| InputLine.cc | 522 | input_line.rs | 466 | 0.89 | ✅ |
+| InputLine.cc | 522 | input_line.rs | 467 | 0.89 | ✅ |
 | Interpreter.cc | 834 | plugins/stack.rs | 258 | 0.31 | ✅ ⚠️ SHORT |
 | MUD.cc | 135 | mud.rs | 375 | 2.78 | ✅ |
 | Option.cc | 136 | SKIPPED/DEFERRED | - | - | ⏭️ |
@@ -79,6 +79,6 @@ The following files are suspiciously short (<40% of C++ size) and may be incompl
 
 ---
 
-*Generated: Sat Oct  4 22:33:41 2025*
+*Generated: Sat Oct  4 22:42:07 2025*
 *Tool: [cloc](https://github.com/AlDanial/cloc) v
 *
