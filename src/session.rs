@@ -224,6 +224,11 @@ impl<D: Decompressor> Session<D> {
     pub fn current_line(&self) -> Vec<u8> {
         self.line_buf.iter().map(|(ch, _)| *ch).collect()
     }
+
+    /// Get current incomplete line with colors (for rendering)
+    pub fn current_line_colored(&self) -> &[(u8, u8)] {
+        &self.line_buf
+    }
 }
 
 #[cfg(test)]

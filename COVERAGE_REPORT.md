@@ -1,13 +1,13 @@
 # Test Coverage Report
 
-**Last Updated**: 2025-10-04 17:08
+**Last Updated**: 2025-10-04 21:03
 **Tool**: cargo-llvm-cov
-**Overall Coverage**: **71.90%** lines | **74.57%** regions | **77.58%** functions
+**Overall Coverage**: **72.12%** lines | **74.68%** regions | **77.61%** functions
 
 ## Summary
 
 ```
-TOTAL                           11839              3011    74.57%         669               150    77.58%        7063              1985    71.90%           0                 0         -
+TOTAL                           11842              2998    74.68%         670               150    77.61%        7066              1970    72.12%           0                 0         -
 ```
 
 ## Coverage by Module
@@ -16,7 +16,7 @@ TOTAL                           11839              3011    74.57%         669   
 |--------|--------------|-----------------|-----------|--------|
 | `action.rs` | 68.93% | 68.05% | 71.43% | 🟠 Moderate |
 | `alias.rs` | 94.01% | 94.52% | 100.00% | 🟢 Excellent |
-| `ansi.rs` | 86.99% | 88.94% | 100.00% | 🟡 Good |
+| `ansi.rs` | 88.36% | 89.82% | 100.00% | 🟡 Good |
 | `command_queue.rs` | 92.57% | 94.38% | 92.11% | 🟢 Excellent |
 | `config.rs` | 94.67% | 96.30% | 77.42% | 🟢 Excellent |
 | `control.rs` | 72.75% | 74.25% | 87.50% | 🟡 Good |
@@ -37,19 +37,19 @@ TOTAL                           11839              3011    74.57%         669   
 | `plugins/perl.rs` | 82.80% | 87.61% | 85.00% | 🟡 Good |
 | `plugins/python.rs` | 88.14% | 89.22% | 90.91% | 🟡 Good |
 | `plugins/stack.rs` | 78.11% | 80.95% | 60.00% | 🟡 Good |
-| `screen.rs` | 94.79% | 96.75% | 96.30% | 🟢 Excellent |
+| `screen.rs` | 93.22% | 95.25% | 88.89% | 🟢 Excellent |
 | `scrollback_search.rs` | 65.71% | 68.29% | 66.67% | 🟠 Moderate |
 | `scrollback.rs` | 93.73% | 94.86% | 100.00% | 🟢 Excellent |
 | `select.rs` | 97.50% | 96.61% | 100.00% | 🟢 Excellent |
 | `selectable.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
 | `selection.rs` | 77.73% | 82.46% | 77.78% | 🟡 Good |
 | `session_manager.rs` | 59.07% | 62.50% | 61.90% | 🟠 Moderate |
-| `session.rs` | 87.41% | 89.13% | 93.33% | 🟡 Good |
+| `session.rs` | 86.30% | 88.41% | 87.50% | 🟡 Good |
 | `socket.rs` | 91.54% | 92.35% | 100.00% | 🟢 Excellent |
 | `status_line.rs` | 91.43% | 94.55% | 83.33% | 🟢 Excellent |
 | `telnet.rs` | 97.67% | 99.02% | 100.00% | 🟢 Excellent |
 | `tty.rs` | 31.11% | 25.84% | 55.56% | 🔴 Needs Work |
-| `window.rs` | 54.88% | 53.51% | 60.00% | 🟠 Moderate |
+| `window.rs` | 60.00% | 56.83% | 60.00% | 🟠 Moderate |
 
 ## Coverage Tiers
 
@@ -61,7 +61,7 @@ TOTAL                           11839              3011    74.57%         669   
 - `macro_def.rs` - 100.00%
 - `offline_mud/game.rs` - 96.58%
 - `offline_mud/parser.rs` - 100.00%
-- `screen.rs` - 94.79%
+- `screen.rs` - 93.22%
 - `scrollback.rs` - 93.73%
 - `select.rs` - 97.50%
 - `selectable.rs` - 100.00%
@@ -70,7 +70,7 @@ TOTAL                           11839              3011    74.57%         669   
 - `telnet.rs` - 97.67%
 
 ### 🟡 Good (70-89% lines)
-- `ansi.rs` - 86.99%
+- `ansi.rs` - 88.36%
 - `control.rs` - 72.75%
 - `input.rs` - 89.69%
 - `mccp.rs` - 71.09%
@@ -80,7 +80,7 @@ TOTAL                           11839              3011    74.57%         669   
 - `plugins/python.rs` - 88.14%
 - `plugins/stack.rs` - 78.11%
 - `selection.rs` - 77.73%
-- `session.rs` - 87.41%
+- `session.rs` - 86.30%
 
 ### 🟠 Moderate (40-69% lines)
 - `action.rs` - 68.93%
@@ -90,7 +90,7 @@ TOTAL                           11839              3011    74.57%         669   
 - `output_window.rs` - 48.26%
 - `scrollback_search.rs` - 65.71%
 - `session_manager.rs` - 59.07%
-- `window.rs` - 54.88%
+- `window.rs` - 60.00%
 
 ### 🔴 Needs Work (<40% lines)
 - `curses.rs` - 18.56% (ncurses FFI - TTY dependent)
@@ -101,7 +101,7 @@ TOTAL                           11839              3011    74.57%         669   
 
 | Tier | Target | Current | Status |
 |------|--------|---------|--------|
-| Overall | ≥80% | 71.90% | ⏳ In Progress |
+| Overall | ≥80% | 72.12% | ⏳ In Progress |
 | Critical Paths | ≥95% | Check modules above | ✅ Met |
 | New Modules | ≥80% | - | Policy |
 
