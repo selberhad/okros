@@ -258,12 +258,17 @@ fn main() {
             ModalState::Normal => {}
         }
 
-        // OutputWindow composition workaround: manually call redraw before tree refresh
-        // C++ uses inheritance (OutputWindow IS-A Window), Rust uses composition (OutputWindow HAS-A Window)
-        // So output.win is in tree, but OutputWindow::redraw() must be called manually
+        // Composition workaround: manually call redraw before tree refresh
+        // C++ uses inheritance (IS-A Window), Rust uses composition (HAS-A Window)
+        // So win is in tree, but redraw() must be called manually (virtual dispatch equivalent)
         if output.win.dirty {
             output.redraw();
             output.win.dirty = true; // Keep dirty for tree refresh
+        }
+
+        if input.win.dirty {
+            input.redraw();
+            input.win.dirty = true; // Keep dirty for tree refresh
         }
 
         // Refresh Screen (calls Window::refresh() to composite tree, then refreshTTY) - C++ main.cc:142
