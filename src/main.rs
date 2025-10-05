@@ -4,7 +4,6 @@ use okros::curses::get_acs_caps;
 use okros::engine::SessionEngine;
 use okros::input::{KeyCode, KeyDecoder, KeyEvent};
 use okros::mccp::PassthroughDecomp;
-// screen module imported via screen2::Screen
 use okros::select::{poll_fds, READ, WRITE};
 use okros::session::Session;
 use okros::socket::{ConnState, Socket};
@@ -156,7 +155,7 @@ fn main() {
     let caps = get_acs_caps();
 
     // Create Screen (root Window) - C++ main.cc:52
-    let mut screen = okros::screen2::Screen::new(width, height);
+    let mut screen = okros::screen::Screen::new(width, height);
 
     // Create OutputWindow as child of Screen - C++ main.cc:69
     // C++ OutputWindow.cc:9-10: Window(_parent, wh_full, _parent->height-1)
@@ -777,7 +776,7 @@ fn run_offline_mode() {
     let caps = get_acs_caps();
 
     // Create Screen (root Window)
-    let mut screen = okros::screen2::Screen::new(width, height);
+    let mut screen = okros::screen::Screen::new(width, height);
 
     // Create OutputWindow as child of Screen - C++ OutputWindow.cc:9-10
     let mut output = okros::output_window::OutputWindow::new(
