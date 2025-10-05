@@ -148,7 +148,7 @@ impl MudControlServer {
             }
             "get_buffer" => {
                 // Extract scrollback as lines
-                let viewport = self.session.scrollback.viewport_slice();
+                let viewport = self.session.scrollback_viewport().unwrap();
                 let text: String = viewport.iter().map(|&a| (a & 0xFF) as u8 as char).collect();
 
                 // Split into lines and clean up

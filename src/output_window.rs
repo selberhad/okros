@@ -18,6 +18,8 @@ pub struct OutputWindow {
     pub win: Box<Window>,
     pub sb: Scrollback,
     color: u8,
+    cursor_x: usize, // Cursor position within scrollback (C++ Window.h:72-73)
+    cursor_y: usize,
     highlight: Highlight,
 }
 
@@ -32,11 +34,78 @@ impl OutputWindow {
             win,
             sb: Scrollback::new(width, height, lines),
             color,
+            cursor_x: 0,
+            cursor_y: 0,
             highlight: Highlight {
                 line: -1, // -1 = no highlight
                 x: 0,
                 len: 0,
             },
+        }
+    }
+
+    /// Print characters to scrollback like C++ Window::print (Window.cc:169-247)
+    /// Writes character-by-character at cursor position
+    pub fn print(&mut self, s: &[u8], color: u8) {
+        self.win.dirty = true;
+
+        for &ch in s {
+            if ch == b'\n' {
+                // Move to next line (C++ line 215-220)
+                self.cursor_x = 0;
+                self.cursor_y += 1;
+            } else if ch == b'\r' {
+                // Ignore carriage return (handled in ANSI parser)
+                continue;
+            } else {
+                // Regular character - need to scroll if at bottom
+                while self.cursor_y >= self.sb.height {
+                    self.scroll_one_line();
+                }
+
+                // Write character at cursor position
+                let offset = self.cursor_y * self.sb.width + self.cursor_x;
+                if offset < self.sb.buf.len() {
+                    self.sb.buf[offset] = ((color as u16) << 8) | (ch as u16);
+                }
+
+                self.cursor_x += 1;
+
+                // Wordwrap (C++ line 239-244)
+                if self.cursor_x >= self.sb.width {
+                    self.cursor_y += 1;
+                    self.cursor_x = 0;
+                }
+            }
+        }
+
+        // Copy scrollback to canvas after writing
+        self.redraw();
+    }
+
+    /// Scroll by one line (simplified version of OutputWindow::scroll)
+    fn scroll_one_line(&mut self) {
+        // Advance to next line in scrollback
+        self.sb.canvas_off += self.sb.width;
+
+        // If not frozen, advance viewpoint to follow
+        if !self.sb.is_frozen() {
+            let screen_span = self.sb.width * self.sb.height;
+            if self.sb.viewpoint + screen_span < self.sb.canvas_off {
+                self.sb.viewpoint = self.sb.canvas_off - screen_span;
+            }
+        }
+
+        // Move cursor back to last line
+        self.cursor_y = self.sb.height - 1;
+        self.cursor_x = 0;
+
+        // Clear the new line
+        let start = self.cursor_y * self.sb.width;
+        for i in 0..self.sb.width {
+            if start + i < self.sb.buf.len() {
+                self.sb.buf[start + i] = 0x0720; // space with default color
+            }
         }
     }
 

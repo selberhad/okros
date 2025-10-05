@@ -185,7 +185,9 @@ fn handle_command(cmd: Command, state: &Arc<ControlState>) -> Event {
             if let Some(data) = cmd.data {
                 let mut eng = state.engine.lock().unwrap();
                 if !data.is_empty() {
-                    eng.session.scrollback.print_line(data.as_bytes(), 0x07);
+                    if let Some(sb) = eng.session.scrollback_mut() {
+                        sb.print_line(data.as_bytes(), 0x07);
+                    }
                 }
                 Event::Ok
             } else {

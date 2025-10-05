@@ -37,7 +37,13 @@ pub struct Session<D: Decompressor> {
     decomp: D,
     telnet: TelnetParser,
     ansi: AnsiConverter,
-    pub scrollback: Scrollback,
+
+    // Output target (C++ Session.h:35 Window *window)
+    // TTY mode: writes to OutputWindow.sb (single source of truth)
+    // Headless/offline: writes to own scrollback
+    output_window: *mut crate::output_window::OutputWindow,
+    scrollback: Option<Scrollback>, // Only used when output_window is null
+
     cur_color: u8,
     line_buf: Vec<(u8, u8)>, // (char, color) pairs like C++ SET_COLOR stream
     prompt_events: usize,
@@ -60,13 +66,19 @@ pub struct Session<D: Decompressor> {
     output_callback: Option<OutputCallback>,
 }
 
+// SAFETY: Session is used in single-threaded context like C++ MCL
+// The raw pointer is only used locally, never shared across threads
+unsafe impl<D: Decompressor> Send for Session<D> {}
+
 impl<D: Decompressor> Session<D> {
+    /// Create Session with own scrollback (for headless/offline modes)
     pub fn new(decomp: D, width: usize, height: usize, lines: usize) -> Self {
         Self {
             decomp,
             telnet: TelnetParser::new(),
             ansi: AnsiConverter::new(),
-            scrollback: Scrollback::new(width, height, lines),
+            output_window: std::ptr::null_mut(),
+            scrollback: Some(Scrollback::new(width, height, lines)),
             cur_color: 0x07,
             line_buf: Vec::new(),
             prompt_events: 0,
@@ -78,6 +90,27 @@ impl<D: Decompressor> Session<D> {
             prompt_callback: None,
             output_callback: None,
         }
+    }
+
+    /// Attach OutputWindow for TTY mode (C++ Session.h:35 Window *window)
+    /// Once attached, Session writes directly to OutputWindow.sb instead of own scrollback
+    pub fn attach_window(&mut self, window: *mut crate::output_window::OutputWindow) {
+        self.output_window = window;
+        // Drop own scrollback since we'll use OutputWindow's
+        self.scrollback = None;
+    }
+
+    /// Write character to output (C++ Session::print → window->print)
+    /// TTY mode: writes character-by-character to OutputWindow
+    /// Headless mode: buffered line writing to scrollback
+    fn print_char(&mut self, ch: u8) {
+        if !self.output_window.is_null() {
+            // TTY mode - write character immediately like C++ Window::print
+            unsafe {
+                (*self.output_window).print(&[ch], self.cur_color);
+            }
+        }
+        // Headless mode: characters are buffered in line_buf, written on \n
     }
 
     /// Set trigger callback (C++ Session has MUD& and calls mud.checkActionMatch)
@@ -114,15 +147,29 @@ impl<D: Decompressor> Session<D> {
                 match ev {
                     AnsiEvent::SetColor(c) => self.cur_color = c,
                     AnsiEvent::Text(b'\n') => {
-                        // C++ Session.cc:524-538 - Check triggers on each line
+                        // C++ Session.cc:524-538 - Check triggers on complete line
                         let should_print = self.check_line_triggers();
-                        if should_print {
-                            self.scrollback.print_line_colored(&self.line_buf);
+
+                        // TTY mode: write newline immediately (C++ Window::print writes char-by-char)
+                        // Already written character-by-character above, always visible
+                        self.print_char(b'\n');
+
+                        // Headless mode: write buffered line to scrollback (respecting gag)
+                        if self.output_window.is_null() && should_print {
+                            if let Some(ref mut sb) = self.scrollback {
+                                sb.print_line_colored(&self.line_buf);
+                            }
                         }
+
                         self.line_buf.clear();
                     }
                     AnsiEvent::Text(b'\r') => { /* discard \r like C++ Session.cc:541 */ }
-                    AnsiEvent::Text(b) => self.line_buf.push((b, self.cur_color)),
+                    AnsiEvent::Text(b) => {
+                        // Write character immediately (C++ Window::print)
+                        self.print_char(b);
+                        // Also buffer for trigger checking
+                        self.line_buf.push((b, self.cur_color));
+                    }
                 }
             }
             // Handle prompt events (GA/EOR) with multi-read buffering (C++ Session.cc:455-499, 596-602)
@@ -149,9 +196,13 @@ impl<D: Decompressor> Session<D> {
             true // Default: show prompt
         };
 
-        // Print prompt if callback allows (C++ opt_showprompt check, lines 474, 488)
-        if should_show && !self.line_buf.is_empty() {
-            self.scrollback.print_line_colored(&self.line_buf);
+        // Note: Prompt characters were already written via print_char() as they arrived
+        // prompt_event (GA/EOR) just signals completion, nothing more to print
+        // In headless mode, write the buffered prompt to scrollback
+        if should_show && !self.line_buf.is_empty() && self.output_window.is_null() {
+            if let Some(ref mut sb) = self.scrollback {
+                sb.print_line_colored(&self.line_buf);
+            }
         }
 
         // Clear buffers for next prompt (C++ line 497: prompt[0] = NUL)
@@ -229,6 +280,32 @@ impl<D: Decompressor> Session<D> {
     pub fn current_line_colored(&self) -> &[(u8, u8)] {
         &self.line_buf
     }
+
+    /// Get scrollback viewport for headless mode
+    /// Returns None in TTY mode (use OutputWindow instead)
+    pub fn scrollback_viewport(&self) -> Option<&[crate::scrollback::Attrib]> {
+        self.scrollback.as_ref().map(|sb| sb.viewport_slice())
+    }
+
+    /// Get mutable scrollback for headless mode
+    /// Returns None in TTY mode (use OutputWindow instead)
+    pub fn scrollback_mut(&mut self) -> Option<&mut Scrollback> {
+        self.scrollback.as_mut()
+    }
+
+    /// Get immutable scrollback reference for headless mode
+    /// Returns None in TTY mode (use OutputWindow instead)
+    pub fn scrollback_ref(&self) -> Option<&Scrollback> {
+        self.scrollback.as_ref()
+    }
+
+    /// Get total lines written to scrollback (for headless mode)
+    pub fn total_lines(&self) -> usize {
+        self.scrollback
+            .as_ref()
+            .map(|sb| sb.total_lines())
+            .unwrap_or(0)
+    }
 }
 
 #[cfg(test)]
@@ -240,7 +317,7 @@ mod tests {
     fn session_pipeline_basic() {
         let mut ses = Session::new(PassthroughDecomp::new(), 5, 2, 20);
         ses.feed(b"Hello\nWorld\n");
-        let v = ses.scrollback.viewport_slice();
+        let v = ses.scrollback_viewport().unwrap();
         let text: Vec<u8> = v.iter().map(|a| (a & 0xFF) as u8).collect();
         assert_eq!(&text[0..5], b"Hello");
         assert_eq!(&text[5..10], b"World");
@@ -257,7 +334,7 @@ mod tests {
         ses.feed(nodeka_line);
 
         // Get the stored line
-        let v = ses.scrollback.viewport_slice();
+        let v = ses.scrollback_viewport().unwrap();
 
         // Extract text (should have "Welcome to Nodeka")
         let text: String = v[0..80].iter().map(|a| (a & 0xFF) as u8 as char).collect();

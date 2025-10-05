@@ -62,7 +62,7 @@ fn test_replacement_callback_modifies_text() {
     session.feed(b"This is a stupid test\n");
 
     // Check scrollback contains replaced text
-    let viewport = session.scrollback.viewport_slice();
+    let viewport = session.scrollback_viewport().unwrap();
     let text: String = viewport[0..80]
         .iter()
         .map(|&attr| (attr & 0xFF) as u8 as char)
@@ -88,17 +88,17 @@ fn test_gag_suppresses_line() {
 
     // Feed normal line
     session.feed(b"Normal message\n");
-    let lines_after_normal = session.scrollback.total_lines();
+    let lines_after_normal = session.total_lines();
     assert_eq!(lines_after_normal, 1);
 
     // Feed spam line (should be gagged)
     session.feed(b"spam spam spam\n");
-    let lines_after_spam = session.scrollback.total_lines();
+    let lines_after_spam = session.total_lines();
     assert_eq!(lines_after_spam, 1); // No new line added (gagged)
 
     // Feed another normal line
     session.feed(b"Another message\n");
-    let lines_after_second = session.scrollback.total_lines();
+    let lines_after_second = session.total_lines();
     assert_eq!(lines_after_second, 2); // This one was added
 }
 
@@ -283,12 +283,12 @@ fn test_prompt_hide_via_callback() {
         false // Hide all prompts
     }));
 
-    let lines_before = session.scrollback.total_lines();
+    let lines_before = session.total_lines();
 
     // Send prompt with IAC GA
     session.feed(b"HP: 100>\xFF\xF9");
 
-    let lines_after = session.scrollback.total_lines();
+    let lines_after = session.total_lines();
 
     // Prompt should not have been added to scrollback
     assert_eq!(lines_before, lines_after);

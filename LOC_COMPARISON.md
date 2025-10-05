@@ -8,17 +8,17 @@
 
 ## Overall Summary
 
-**Rust is 3% larger than C++** (1.03x the size)
+**Rust is 4% larger than C++** (1.04x the size)
 
 | Metric | C++ (Reference) | Rust (okros) | Ratio |
 |--------|----------------|--------------|-------|
-| **Code Lines** | 8,815 | 9,056 | **1.03x** |
-| **Comments** | 637 | 1,245 | 1.95x |
-| **Blank Lines** | 2,219 | 1,321 | 0.60x |
-| **TOTAL** | 11,671 | 11,622 | **1.00x** |
+| **Code Lines** | 8,815 | 9,167 | **1.04x** |
+| **Comments** | 637 | 1,289 | 2.02x |
+| **Blank Lines** | 2,219 | 1,345 | 0.61x |
+| **TOTAL** | 11,671 | 11,801 | **1.01x** |
 | **Files** | 79 | 40 | 0.51x |
 
-**Difference**: +241 lines of code (+2.7%)
+**Difference**: +352 lines of code (+4.0%)
 
 ---
 
@@ -40,12 +40,12 @@
 | Interpreter.cc | 834 | plugins/stack.rs | 258 | 0.31 | ✅ ⚠️ SHORT |
 | MUD.cc | 135 | mud.rs | 375 | 2.78 | ✅ |
 | Option.cc | 136 | SKIPPED/DEFERRED | - | - | ⏭️ |
-| OutputWindow.cc | 339 | output_window.rs | 442 | 1.30 | ✅ |
+| OutputWindow.cc | 339 | output_window.rs | 511 | 1.51 | ✅ |
 | Pipe.cc | 97 | SKIPPED/DEFERRED | - | - | ⏭️ |
 | Screen.cc | 350 | screen.rs | 678 | 1.94 | ✅ |
 | Selectable.cc | 47 | selectable.rs | 24 | 0.51 | ✅ |
 | Selection.cc | 213 | selection.rs | 350 | 1.64 | ✅ |
-| Session.cc | 684 | session.rs | 290 | 0.42 | ✅ |
+| Session.cc | 684 | session.rs | 367 | 0.54 | ✅ |
 | Shell.cc | 128 | SKIPPED/DEFERRED | - | - | ⏭️ |
 | Socket.cc | 290 | socket.rs | 198 | 0.68 | ✅ |
 | StaticBuffer.cc | 110 | SKIPPED/DEFERRED | - | - | ⏭️ |
@@ -53,7 +53,7 @@
 | String.cc | 19 | SKIPPED/DEFERRED | - | - | ⏭️ |
 | TTY.cc | 297 | tty.rs | 172 | 0.58 | ✅ |
 | Window.cc | 721 | window.rs | 349 | 0.48 | ✅ |
-| main.cc | 250 | main.rs | 1039 | 4.16 | ✅ |
+| main.cc | 250 | main.rs | 1037 | 4.15 | ✅ |
 | misc.cc | 209 | SKIPPED/DEFERRED | - | - | ⏭️ |
 | plugins/PerlEmbeddedInterpreter.cc | 260 | plugins/perl.rs | 533 | 2.05 | ✅ |
 | plugins/PythonEmbeddedInterpreter.cc | 268 | plugins/python.rs | 427 | 1.59 | ✅ |
@@ -79,6 +79,6 @@ The following files are suspiciously short (<40% of C++ size) and may be incompl
 
 ---
 
-*Generated: Sat Oct  4 21:03:55 2025*
+*Generated: Sat Oct  4 21:41:42 2025*
 *Tool: [cloc](https://github.com/AlDanial/cloc) v
 *

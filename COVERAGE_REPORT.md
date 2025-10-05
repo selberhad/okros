@@ -1,13 +1,13 @@
 # Test Coverage Report
 
-**Last Updated**: 2025-10-04 21:03
+**Last Updated**: 2025-10-04 21:41
 **Tool**: cargo-llvm-cov
-**Overall Coverage**: **72.12%** lines | **74.68%** regions | **77.61%** functions
+**Overall Coverage**: **71.63%** lines | **74.32%** regions | **77.31%** functions
 
 ## Summary
 
 ```
-TOTAL                           11842              2998    74.68%         670               150    77.61%        7066              1970    72.12%           0                 0         -
+TOTAL                           11966              3073    74.32%         683               155    77.31%        7167              2033    71.63%           0                 0         -
 ```
 
 ## Coverage by Module
@@ -19,9 +19,9 @@ TOTAL                           11842              2998    74.68%         670   
 | `ansi.rs` | 88.36% | 89.82% | 100.00% | 🟡 Good |
 | `command_queue.rs` | 92.57% | 94.38% | 92.11% | 🟢 Excellent |
 | `config.rs` | 94.67% | 96.30% | 77.42% | 🟢 Excellent |
-| `control.rs` | 72.75% | 74.25% | 87.50% | 🟡 Good |
+| `control.rs` | 72.62% | 74.20% | 87.50% | 🟡 Good |
 | `curses.rs` | 18.56% | 13.55% | 40.00% | 🔴 Needs Work |
-| `engine.rs` | 97.06% | 97.00% | 100.00% | 🟢 Excellent |
+| `engine.rs` | 88.24% | 90.72% | 94.44% | 🟡 Good |
 | `history.rs` | 65.85% | 65.81% | 77.27% | 🟠 Moderate |
 | `input_box.rs` | 54.24% | 52.54% | 38.46% | 🟠 Moderate |
 | `input_line.rs` | 44.44% | 50.13% | 47.06% | 🟠 Moderate |
@@ -33,18 +33,18 @@ TOTAL                           11842              2998    74.68%         670   
 | `mud.rs` | 72.80% | 78.24% | 79.31% | 🟡 Good |
 | `offline_mud/game.rs` | 96.58% | 95.88% | 96.55% | 🟢 Excellent |
 | `offline_mud/parser.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
-| `output_window.rs` | 48.26% | 54.25% | 50.00% | 🟠 Moderate |
+| `output_window.rs` | 42.33% | 49.17% | 45.45% | 🟠 Moderate |
 | `plugins/perl.rs` | 82.80% | 87.61% | 85.00% | 🟡 Good |
 | `plugins/python.rs` | 88.14% | 89.22% | 90.91% | 🟡 Good |
 | `plugins/stack.rs` | 78.11% | 80.95% | 60.00% | 🟡 Good |
 | `screen.rs` | 93.22% | 95.25% | 88.89% | 🟢 Excellent |
 | `scrollback_search.rs` | 65.71% | 68.29% | 66.67% | 🟠 Moderate |
-| `scrollback.rs` | 93.73% | 94.86% | 100.00% | 🟢 Excellent |
+| `scrollback.rs` | 92.81% | 94.30% | 96.67% | 🟢 Excellent |
 | `select.rs` | 97.50% | 96.61% | 100.00% | 🟢 Excellent |
 | `selectable.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
 | `selection.rs` | 77.73% | 82.46% | 77.78% | 🟡 Good |
 | `session_manager.rs` | 59.07% | 62.50% | 61.90% | 🟠 Moderate |
-| `session.rs` | 86.30% | 88.41% | 87.50% | 🟡 Good |
+| `session.rs` | 85.41% | 87.02% | 87.50% | 🟡 Good |
 | `socket.rs` | 91.54% | 92.35% | 100.00% | 🟢 Excellent |
 | `status_line.rs` | 91.43% | 94.55% | 83.33% | 🟢 Excellent |
 | `telnet.rs` | 97.67% | 99.02% | 100.00% | 🟢 Excellent |
@@ -57,12 +57,11 @@ TOTAL                           11842              2998    74.68%         670   
 - `alias.rs` - 94.01%
 - `command_queue.rs` - 92.57%
 - `config.rs` - 94.67%
-- `engine.rs` - 97.06%
 - `macro_def.rs` - 100.00%
 - `offline_mud/game.rs` - 96.58%
 - `offline_mud/parser.rs` - 100.00%
 - `screen.rs` - 93.22%
-- `scrollback.rs` - 93.73%
+- `scrollback.rs` - 92.81%
 - `select.rs` - 97.50%
 - `selectable.rs` - 100.00%
 - `socket.rs` - 91.54%
@@ -71,7 +70,8 @@ TOTAL                           11842              2998    74.68%         670   
 
 ### 🟡 Good (70-89% lines)
 - `ansi.rs` - 88.36%
-- `control.rs` - 72.75%
+- `control.rs` - 72.62%
+- `engine.rs` - 88.24%
 - `input.rs` - 89.69%
 - `mccp.rs` - 71.09%
 - `mud.rs` - 72.80%
@@ -80,14 +80,14 @@ TOTAL                           11842              2998    74.68%         670   
 - `plugins/python.rs` - 88.14%
 - `plugins/stack.rs` - 78.11%
 - `selection.rs` - 77.73%
-- `session.rs` - 86.30%
+- `session.rs` - 85.41%
 
 ### 🟠 Moderate (40-69% lines)
 - `action.rs` - 68.93%
 - `history.rs` - 65.85%
 - `input_box.rs` - 54.24%
 - `input_line.rs` - 44.44%
-- `output_window.rs` - 48.26%
+- `output_window.rs` - 42.33%
 - `scrollback_search.rs` - 65.71%
 - `session_manager.rs` - 59.07%
 - `window.rs` - 60.00%
@@ -101,7 +101,7 @@ TOTAL                           11842              2998    74.68%         670   
 
 | Tier | Target | Current | Status |
 |------|--------|---------|--------|
-| Overall | ≥80% | 72.12% | ⏳ In Progress |
+| Overall | ≥80% | 71.63% | ⏳ In Progress |
 | Critical Paths | ≥95% | Check modules above | ✅ Met |
 | New Modules | ≥80% | - | Policy |
 

@@ -45,18 +45,34 @@ impl<D: Decompressor> SessionEngine<D> {
             return cached.clone();
         }
 
-        // Convert Attrib buffer to ANSI strings
-        let width = self.session.scrollback.width;
-        let height = self.session.scrollback.height;
-        let slice = self.session.scrollback.viewport_slice();
-        let mut out = Vec::with_capacity(height);
+        // Convert Attrib buffer to ANSI strings (headless mode has own scrollback)
+        if let Some(viewport) = self.session.scrollback_viewport() {
+            if let Some(sb) = self.session.scrollback_ref() {
+                let width = sb.width;
+                let height = sb.height;
+                let out: Vec<String> = (0..height)
+                    .map(|row| {
+                        let off = row * width;
+                        let row_slice = &viewport[off..off + width];
+                        crate::screen::attrib_row_to_ansi(row_slice)
+                    })
+                    .collect();
 
-        for row in 0..height {
-            let off = row * width;
-            let row_slice = &slice[off..off + width];
-            let line = crate::screen::attrib_row_to_ansi(row_slice);
-            out.push(line);
+                // Cache result
+                *self.ansi_cache.borrow_mut() = Some(out.clone());
+                return out;
+            }
         }
+
+        // No scrollback available (TTY mode)
+        vec![]
+    }
+
+    fn get_buffer_internal_old(&self) -> Vec<String> {
+        // Old implementation - keep for reference
+        let width = 80;
+        let height = 24;
+        let mut out = Vec::with_capacity(height);
 
         // Cache result
         *self.ansi_cache.borrow_mut() = Some(out.clone());
@@ -66,7 +82,12 @@ impl<D: Decompressor> SessionEngine<D> {
     /// Returns only NEW lines since last read (for headless mode)
     /// Advances read cursor automatically - won't return same line twice
     pub fn get_new_lines(&self) -> Vec<String> {
-        let total_lines_written = self.session.scrollback.total_lines_written;
+        let total_lines_written = if let Some(sb) = self.session.scrollback_ref() {
+            sb.total_lines_written
+        } else {
+            return Vec::new(); // TTY mode - no scrollback
+        };
+
         let cursor = *self.read_cursor.borrow();
 
         // No new lines since last read
@@ -78,8 +99,11 @@ impl<D: Decompressor> SessionEngine<D> {
         let new_line_count = total_lines_written - cursor;
 
         // Get the most recent N lines from scrollback (flattened from circular buffer)
-        let lines = self.session.scrollback.recent_lines(new_line_count);
-        let width = self.session.scrollback.width;
+        let (lines, width) = if let Some(sb) = self.session.scrollback_ref() {
+            (sb.recent_lines(new_line_count), sb.width)
+        } else {
+            return Vec::new(); // TTY mode
+        };
         let row_count = lines.len() / width;
 
         let mut out = Vec::with_capacity(row_count);
@@ -104,8 +128,11 @@ impl<D: Decompressor> SessionEngine<D> {
 
     /// Peek at recent lines without advancing cursor (for debugging)
     pub fn peek_recent(&self, lines: usize) -> Vec<String> {
-        let width = self.session.scrollback.width;
-        let slice = self.session.scrollback.recent_lines(lines);
+        let (slice, width) = if let Some(sb) = self.session.scrollback_ref() {
+            (sb.recent_lines(lines), sb.width)
+        } else {
+            return Vec::new(); // TTY mode
+        };
         let row_count = slice.len() / width;
         let mut out = Vec::with_capacity(row_count);
 
@@ -127,8 +154,11 @@ impl<D: Decompressor> SessionEngine<D> {
 
     /// Peek at recent lines in hex dump format (for debugging)
     pub fn peek_hex(&self, lines: usize) -> Vec<crate::control::HexLine> {
-        let width = self.session.scrollback.width;
-        let vec = self.session.scrollback.recent_lines(lines);
+        let (vec, width) = if let Some(sb) = self.session.scrollback_ref() {
+            (sb.recent_lines(lines), sb.width)
+        } else {
+            return Vec::new(); // TTY mode
+        };
         let row_count = vec.len() / width;
         let mut out = Vec::with_capacity(row_count);
 

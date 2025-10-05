@@ -31,6 +31,9 @@ impl Scrollback {
     pub fn set_frozen(&mut self, f: bool) {
         self.frozen = f;
     }
+    pub fn is_frozen(&self) -> bool {
+        self.frozen
+    }
 
     /// Move viewpoint (C++ OutputWindow::moveViewpoint, lines 65-120)
     /// Returns true if reached boundary (for "quit scrollback" feature)

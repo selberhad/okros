@@ -149,7 +149,7 @@ fn test_mud_output_through_session() {
     session.feed(output.as_bytes());
 
     // Check scrollback contains room description
-    let viewport = session.scrollback.viewport_slice();
+    let viewport = session.scrollback_viewport().unwrap();
     let text: String = viewport.iter().map(|&a| (a & 0xFF) as u8 as char).collect();
 
     assert!(text.contains("Forest Clearing"), "Should show room name");
@@ -166,7 +166,7 @@ fn test_mud_navigation_through_session() {
     let output = world.go(Direction::North);
     session.feed(output.as_bytes());
 
-    let viewport = session.scrollback.viewport_slice();
+    let viewport = session.scrollback_viewport().unwrap();
     let text: String = viewport.iter().map(|&a| (a & 0xFF) as u8 as char).collect();
 
     assert!(text.contains("Dense Forest"), "Should be in forest");
@@ -181,7 +181,7 @@ fn test_mud_item_management_through_session() {
     let output = world.take("sword");
     session.feed(output.as_bytes());
 
-    let viewport = session.scrollback.viewport_slice();
+    let viewport = session.scrollback_viewport().unwrap();
     let text: String = viewport.iter().map(|&a| (a & 0xFF) as u8 as char).collect();
 
     assert!(
@@ -202,7 +202,7 @@ fn test_deterministic_command_sequence() {
     session.feed(world.go(Direction::South).as_bytes());
     session.feed(world.go(Direction::East).as_bytes());
 
-    let viewport = session.scrollback.viewport_slice();
+    let viewport = session.scrollback_viewport().unwrap();
     let text: String = viewport.iter().map(|&a| (a & 0xFF) as u8 as char).collect();
 
     // Should end in cave

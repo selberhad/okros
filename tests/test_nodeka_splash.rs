@@ -108,11 +108,11 @@ fn test_single_splash(ansi_data: &str, filename: &str) -> bool {
 
     // After all chunks, line_buf might have the prompt (no \n, no GA/EOR)
     // Overlay line_buf on viewport (matching main.rs fix)
-    let mut viewport = session.scrollback.viewport_slice().to_vec();
+    let mut viewport = session.scrollback_viewport().unwrap().to_vec();
 
     // Render partial line_buf after last complete line (matching main.rs:645-667)
     if !session.current_line().is_empty() {
-        let total_lines = session.scrollback.total_lines();
+        let total_lines = session.total_lines();
         let line_y = total_lines % (term_height - 1);
         let line_start = line_y * term_width;
 
@@ -264,11 +264,11 @@ fn test_window_rendering(ansi_data: &str, filename: &str) -> bool {
     );
 
     // Copy session scrollback to OutputWindow with line_buf overlay (main.rs:641-669)
-    let mut viewport = session.scrollback.viewport_slice().to_vec();
+    let mut viewport = session.scrollback_viewport().unwrap().to_vec();
 
     // Overlay line_buf (matching main.rs:645-667)
     if !session.current_line().is_empty() {
-        let total_lines = session.scrollback.total_lines();
+        let total_lines = session.total_lines();
         let line_y = total_lines % (term_height - 1);
         let line_start = line_y * term_width;
 

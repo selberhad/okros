@@ -171,8 +171,9 @@ fn main() {
     output.win.parent_y = 0;
 
     // Session for processing incoming bytes (MCCP->Telnet->ANSI->Scrollback)
-    // Session viewport size matches OutputWindow (height-1)
+    // TTY mode: Session writes directly to OutputWindow.sb (C++ Session.h:35 Window *window)
     let mut session = Session::new(PassthroughDecomp::new(), width, height - 1, 2000);
+    session.attach_window(&mut output as *mut okros::output_window::OutputWindow);
 
     // History and command queue
     let mut history = okros::history::HistorySet::new(100);
@@ -547,7 +548,7 @@ fn main() {
                                 }
                             } else if line.starts_with("#") {
                                 // Other # commands - just echo for now
-                                session.scrollback.print_line(line.as_bytes(), 0x07);
+                                output.print_line(line.as_bytes(), 0x07);
                             } else {
                                 // Check for alias expansion
                                 let mut send_text = line.clone();
@@ -586,7 +587,7 @@ fn main() {
                                         );
                                     }
                                 } else {
-                                    session.scrollback.print_line(send_text.as_bytes(), 0x07);
+                                    output.print_line(send_text.as_bytes(), 0x07);
                                 }
                             }
                         }
@@ -612,11 +613,7 @@ fn main() {
                         };
                         if n > 0 {
                             session.feed(&buf[..n as usize]);
-
-                            // Copy session scrollback to OutputWindow
-                            let viewport = session.scrollback.viewport_slice();
-                            output.win.blit(viewport);
-                            output.win.dirty = true;
+                            // NOTE: Session now writes directly to OutputWindow.sb (no manual blit needed)
 
                             // Check triggers/actions on current incomplete line
                             // TODO: This should check completed lines from scrollback,
@@ -828,10 +825,11 @@ fn run_offline_mode() {
 
     // Main event loop for offline mode
     while !quit {
-        // Copy session scrollback to OutputWindow
-        let viewport = session.scrollback.viewport_slice();
-        output.win.blit(viewport);
-        output.win.dirty = true;
+        // Copy session scrollback to OutputWindow (offline mode has own scrollback)
+        if let Some(viewport) = session.scrollback_viewport() {
+            output.win.blit(viewport);
+            output.win.dirty = true;
+        }
 
         // Render UI (Window hierarchy)
         screen.refresh(&caps);
@@ -975,8 +973,8 @@ fn run_headless_offline_mode(args: &[String]) {
                     }
                 }
                 "get_buffer" => {
-                    // Extract scrollback as lines
-                    let viewport = self.session.scrollback.viewport_slice();
+                    // Extract scrollback as lines (headless mode has own scrollback)
+                    let viewport = self.session.scrollback_viewport().unwrap_or(&[]);
                     let text: String = viewport.iter().map(|&a| (a & 0xFF) as u8 as char).collect();
 
                     let lines: Vec<String> = text
