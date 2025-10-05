@@ -15,6 +15,7 @@ This file tracks the structure and status of the codebase.
 - `PLAYBOOK.md` - Condensed porting workflow guide
 - `AGENTS.md` - Quick reference summary
 - `TOY_DEV.md` - Toy development methodology
+- `MCL_CODE_MAP.md` - C++ reference architecture deep dive (TTY rendering, virtual dispatch, porting pitfalls)
 - `CODE_MAP.md` - This file (project structure map)
 
 ### Configuration

@@ -226,6 +226,7 @@ quit                   # Exit
 - **`PORT_GAPS.md`** ← **START HERE for restoration work** (comprehensive gap analysis)
 - `PORTING_HISTORY.md` - Historical record of C++ → Rust porting (overly optimistic)
 - `LOC_COMPARISON.md` - Auto-generated line count comparison (flags short files)
+- `MCL_CODE_MAP.md` - C++ reference architecture (TTY rendering, virtual dispatch, key methods)
 - `README.md` - User-facing overview
 - `FUTURE_WORK.md` - Post-restoration enhancements
 - `CLAUDE.md` - Project-specific dev guidelines
