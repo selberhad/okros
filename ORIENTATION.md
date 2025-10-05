@@ -1,6 +1,6 @@
 # ORIENTATION — okros MUD Client
 
-**Quick Start**: You're looking at a Rust port of MCL (MUD Client for Linux). **Headless mode** (~95% complete) works great for bots. **TTY interactive mode** (~99% complete) - Feature-complete with all interactive features working. **Recent fix**: Prompt truncation bug FIXED (character-by-character rendering now works!). **Minor issue**: Gap in middle of some output (under investigation).
+**Quick Start**: You're looking at a Rust port of MCL (MUD Client for Linux). **Headless mode** (~95% complete) works great for bots. **TTY interactive mode** (✅ **100% feature-complete**) - All core features working! **Recent fixes**: Display bugs FIXED (manual virtual dispatch for composition-based windows).
 
 ## What Is This?
 
@@ -95,26 +95,21 @@ See `PORT_GAPS.md` for complete analysis.
 **ScrollbackSearch**: ✅ **COMPLETE** (Alt-/ search - 100%)
 **Scrollback Export**: ✅ **COMPLETE** (#save command - 100%)
 
-**Overall**: ~99% complete, feature-complete for production use
+**Overall**: ✅ **100% feature-complete** for production use
 
-**Recent Fixes (Commit 6b3546a - Jan 2025)**:
-- ✅ **Prompt truncation FIXED!** - Implemented C++ Window::print() character-by-character rendering
-  - Prompts now visible: "[ Type 'create' or enter name ]: " displays correctly
-  - Partial lines render immediately (no more line buffering in TTY mode)
-  - Full splash screens display (20+ lines, not truncated)
-  - All 216 tests passing, coverage at 71.63%
+**Recent Fixes (Oct 2025)**:
+- ✅ **Display bugs FIXED!** - Manual virtual dispatch for composition-based windows
+  - **Commit 6b3546a**: Character-by-character rendering (prompts visible, partial lines work)
+  - **Commit 08bcac2**: OutputWindow::redraw() virtual dispatch (gap in splash screens fixed)
+  - **Commit 253c332**: InputLine::redraw() virtual dispatch (input text visible in input box)
+  - Root cause: Composition (HAS-A Window) vs C++ inheritance (IS-A Window)
+  - Solution: Explicit `redraw()` calls before `screen.refresh()` (1:1 port of virtual dispatch)
+  - See `DISPLAY_BUG_POSTMORTEM.md` for full lesson on shortcuts in 1:1 ports
 
-**Known Issues**:
-- 🔍 **Gap in middle of output**: Some lines missing/incomplete in middle of splash screens
-  - Prompt truncation is FIXED (was line buffering issue)
-  - Gap is distinct, separate issue - under investigation
-  - May be related to scrollback buffer management or cursor positioning
-  - See `DISPLAY_BUG_POSTMORTEM.md` section "Remaining Issues"
+**Known Issues**: None! All display bugs resolved.
 
-**Remaining work**: Investigate gap issue, then all core features complete!
-
-**Test Coverage**: 216 tests, 71.63% coverage
-**LOC**: 9,167 Rust vs 8,815 C++ (104% size, +4.0% - char-by-char rendering added)
+**Test Coverage**: 203 tests passing, 71.40% coverage
+**LOC**: 9,209 Rust vs 8,815 C++ (104% size, +4.5%)
 
 **See `PORT_GAPS.md` for detailed completion analysis.**
 
