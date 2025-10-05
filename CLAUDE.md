@@ -4,9 +4,26 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is **okros** - a Rust port of MCL (MUD Client for Linux) reviving its design for modern use cases. The project translates ~11k LOC of C++ to Rust with a "simplicity first" approach: use Rust idioms when simpler, match C++ patterns when it reduces complexity, liberal use of unsafe/FFI where needed.
+This is **okros** - a Rust port of MCL (MUD Client for Linux) reviving its design for modern use cases. The project translates ~11k LOC of C++ to Rust with a **1:1 porting approach**: port the complete C++ execution path to Rust, including virtual dispatch patterns.
 
 **Philosophy**: okros is a transport layer. Perl/Python scripts handle command logic (aliases, triggers, automation).
+
+## ⚠️ CRITICAL LESSON: No Shortcuts in 1:1 Ports
+
+**Read `DISPLAY_BUG_POSTMORTEM.md` before making ANY code changes.**
+
+**The Iron Rule**: When your goal is a 1:1 port, every shortcut is a bug waiting to happen.
+
+**What happened**: We took a "simplification" shortcut (composition without hooking virtual dispatch), which caused 3 display bugs that took hours to debug. The correct 1:1 port was 5 lines of code that should have been written from the start.
+
+**The Lesson**:
+- ✅ **DO**: Port C++ behavior COMPLETELY (including virtual dispatch, call paths, execution order)
+- ❌ **DON'T**: "Simplify" or take shortcuts ("composition is close enough to inheritance")
+- ❌ **DON'T**: Assume "the data flows right" is sufficient (must port the CALL PATH too)
+
+**Key Pattern**: C++ `class Derived : public Base` with virtual methods → Rust requires manual dispatch hooks (see "C++ Inheritance → Rust Composition Patterns" section below).
+
+---
 
 ## Tech Stack & Architecture
 
@@ -26,13 +43,39 @@ This is **okros** - a Rust port of MCL (MUD Client for Linux) reviving its desig
 
 ### Development Best Practices
 
-**CRITICAL: Simplicity-first porting approach**
-- ✅ CORRECT: Use Rust idioms (String, Vec) when simpler than C++ patterns
-- ✅ CORRECT: Match C++ structure when it reduces complexity
-- ✅ CORRECT: Unsafe/FFI where needed (ncurses, interpreters, truly complex C++)
-- ❌ WRONG: Forcing C++ patterns when Rust stdlib is simpler
-- Why: Goal is working port with least complexity, not fidelity for its own sake
-- When: All porting work - choose simplest approach per module
+**CRITICAL: 1:1 Port - No Shortcuts**
+- **THE IRON RULE**: If C++ does X, Rust must do X (semantically). "Close enough" is a bug.
+- ✅ CORRECT: Port the C++ BEHAVIOR completely, including virtual dispatch patterns
+- ✅ CORRECT: Use Rust idioms (String, Vec) when they're 1:1 replacements (char*/std::string → String)
+- ✅ CORRECT: Unsafe/FFI where needed (ncurses, interpreters, raw pointers)
+- ❌ WRONG: "Composition is close enough to inheritance" - NO! Must hook virtual dispatch manually
+- ❌ WRONG: "I'll skip this step, the data flows right" - NO! Port the ENTIRE execution path
+- ❌ WRONG: "Simplifying" C++ patterns without understanding their purpose
+- **Why**: Every shortcut is a bug waiting to happen (see `DISPLAY_BUG_POSTMORTEM.md`)
+- **When**: ALL porting work - if unsure, trace C++ execution step-by-step and port each step
+
+**CRITICAL: C++ Inheritance → Rust Composition Patterns**
+- **C++ Pattern**: `class Derived : public Base` with virtual methods
+- **Rust Pattern**: `struct Derived { base: Box<Base> }` - composition, NOT inheritance
+- **THE CATCH**: Virtual dispatch doesn't happen automatically in Rust!
+- **Required Fix**: Manually hook derived class methods into refresh/event cycle
+- **Example** (see commits 08bcac2, 253c332):
+  ```rust
+  // C++: OutputWindow::redraw() called via vtable when output->refresh() runs
+  // Rust: Must manually call BEFORE tree refresh:
+  if output.win.dirty {
+      output.redraw();        // Manual "virtual dispatch"
+      output.win.dirty = true; // Keep dirty for tree
+  }
+  screen.refresh(&caps);      // Tree refresh continues
+  ```
+- **Checklist for every C++ class with virtual methods**:
+  - [ ] Identify all virtual methods in C++ (redraw(), keypress(), execute(), etc.)
+  - [ ] Find where C++ calls them via base class pointer (vtable dispatch)
+  - [ ] Add explicit calls in Rust at those same points
+  - [ ] Test that the method actually fires (add debug logging if unsure)
+- **Red Flags**: "Why isn't X showing up?" "Data is written but not displayed" → Check virtual dispatch!
+- **See**: `DISPLAY_BUG_POSTMORTEM.md` for detailed case study (3 bugs, all same root cause)
 
 **CRITICAL: Compare with C++ reference constantly**
 - Keep C++ source files open side-by-side when porting
@@ -78,13 +121,15 @@ This project follows **Doc-Driven Development (DDD)** in **Porting Mode** - a re
 - **README.md**: User-facing project overview
 
 ### Universal Principles (Porting)
-- **Simplicity first**: Use Rust idioms when simpler, preserve C++ patterns when it reduces complexity
+- **1:1 Port - No Shortcuts**: If C++ does X, Rust must do X (semantically). Every shortcut is a bug.
+- **Inheritance → Composition**: Manually hook virtual dispatch (redraw(), keypress(), etc.) - see above
 - **"Safety third"**: Liberal use of unsafe, raw pointers, FFI to replicate C++ patterns
 - **Tier-by-tier**: Port in dependency order (Foundation → Core → UI → Logic → App)
 - **Reference-driven**: Always compare with C++ source, test against C++ MCL behavior
-- **Behavioral equivalence**: Same inputs → same outputs (structure can differ)
+- **Execution path fidelity**: Port the CALL PATH, not just the data flow (C++ vtable → Rust explicit calls)
+- **Behavioral equivalence**: Same inputs → same outputs (same execution path → same results)
 - **Document deviations**: Mark any differences from C++ with comments
-- **Scope evolution**: MVP philosophy may emerge (defer features to scripts)
+- **Learn from failures**: See `DISPLAY_BUG_POSTMORTEM.md` for case study on composition shortcuts
 
 ## Discovery Mode Methodology
 
@@ -120,12 +165,16 @@ This project follows **Doc-Driven Development (DDD)** in **Porting Mode** - a re
 **Use this methodology for direct C++ → Rust translation** (primary porting mode):
 
 ### Execution Mode Principles (Porting)
+- **1:1 Port**: Trace C++ execution path completely, port every step (no shortcuts!)
+- **Virtual Dispatch**: When C++ uses inheritance, manually hook Rust composition (see above)
+- **Execution Path**: Port the CALL PATH, not just data flow (vtable → explicit calls)
 - Port following PLAN.md phases (Foundation → Core → UI → Logic → App)
 - Keep C++ reference open side-by-side during porting
 - Match structure: one .rs file per .cc file when feasible
-- Preserve C++ behavior exactly (same inputs → same outputs)
+- Preserve C++ behavior exactly (same inputs → same outputs, same call path → same results)
 - Use unsafe/FFI freely to replicate C++ patterns
 - Test against C++ MCL reference (golden tests)
+- **When in doubt**: Add debug logging, verify methods fire, compare with C++ step-by-step
 
 ## Documentation Structure
 
@@ -210,6 +259,7 @@ See ORIENTATION.md for current porting status.
 
 **Core Documentation**:
 - `ORIENTATION.md` - Executive summary (START HERE for quick overview)
+- `DISPLAY_BUG_POSTMORTEM.md` - **REQUIRED READING** - Lessons on 1:1 porting (shortcuts = bugs)
 - `PORTING_HISTORY.md` - Historical record of C++ → Rust porting (tier-by-tier completion)
 - `FUTURE_WORK.md` - Remaining tasks, post-MVP enhancements, deferred features
 - `README.md` - User-facing overview (okros MUD client)
