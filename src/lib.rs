@@ -3,6 +3,7 @@ pub mod color;
 pub mod command_queue;
 pub mod config;
 pub mod control;
+pub mod debug_log;
 pub mod engine;
 pub mod history;
 pub mod input_box;

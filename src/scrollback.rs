@@ -3,7 +3,7 @@ pub type Attrib = u16;
 pub struct Scrollback {
     pub width: usize,
     pub height: usize,
-    lines: usize,
+    pub(crate) lines: usize, // Made pub(crate) for OutputWindow::scroll_one_line
     pub(crate) buf: Vec<Attrib>,
     pub(crate) canvas_off: usize, // Made pub(crate) for OutputWindow::search
     pub viewpoint: usize,

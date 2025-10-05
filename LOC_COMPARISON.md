@@ -12,13 +12,13 @@
 
 | Metric | C++ (Reference) | Rust (okros) | Ratio |
 |--------|----------------|--------------|-------|
-| **Code Lines** | 8,815 | 9,167 | **1.04x** |
-| **Comments** | 637 | 1,289 | 2.02x |
-| **Blank Lines** | 2,219 | 1,345 | 0.61x |
-| **TOTAL** | 11,671 | 11,801 | **1.01x** |
-| **Files** | 79 | 40 | 0.51x |
+| **Code Lines** | 8,815 | 9,205 | **1.04x** |
+| **Comments** | 637 | 1,307 | 2.05x |
+| **Blank Lines** | 2,219 | 1,359 | 0.61x |
+| **TOTAL** | 11,671 | 11,871 | **1.02x** |
+| **Files** | 79 | 41 | 0.52x |
 
-**Difference**: +352 lines of code (+4.0%)
+**Difference**: +390 lines of code (+4.4%)
 
 ---
 
@@ -40,7 +40,7 @@
 | Interpreter.cc | 834 | plugins/stack.rs | 258 | 0.31 | ✅ ⚠️ SHORT |
 | MUD.cc | 135 | mud.rs | 375 | 2.78 | ✅ |
 | Option.cc | 136 | SKIPPED/DEFERRED | - | - | ⏭️ |
-| OutputWindow.cc | 339 | output_window.rs | 511 | 1.51 | ✅ |
+| OutputWindow.cc | 339 | output_window.rs | 542 | 1.60 | ✅ |
 | Pipe.cc | 97 | SKIPPED/DEFERRED | - | - | ⏭️ |
 | Screen.cc | 350 | screen.rs | 678 | 1.94 | ✅ |
 | Selectable.cc | 47 | selectable.rs | 24 | 0.51 | ✅ |
@@ -53,7 +53,7 @@
 | String.cc | 19 | SKIPPED/DEFERRED | - | - | ⏭️ |
 | TTY.cc | 297 | tty.rs | 172 | 0.58 | ✅ |
 | Window.cc | 721 | window.rs | 349 | 0.48 | ✅ |
-| main.cc | 250 | main.rs | 1037 | 4.15 | ✅ |
+| main.cc | 250 | main.rs | 1048 | 4.19 | ✅ |
 | misc.cc | 209 | SKIPPED/DEFERRED | - | - | ⏭️ |
 | plugins/PerlEmbeddedInterpreter.cc | 260 | plugins/perl.rs | 533 | 2.05 | ✅ |
 | plugins/PythonEmbeddedInterpreter.cc | 268 | plugins/python.rs | 427 | 1.59 | ✅ |
@@ -79,6 +79,6 @@ The following files are suspiciously short (<40% of C++ size) and may be incompl
 
 ---
 
-*Generated: Sat Oct  4 21:41:42 2025*
+*Generated: Sat Oct  4 22:31:05 2025*
 *Tool: [cloc](https://github.com/AlDanial/cloc) v
 *

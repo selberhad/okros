@@ -34,6 +34,9 @@ fn resolve_hostname(hostname: &str, port: u16) -> Result<Ipv4Addr, String> {
 }
 
 fn main() {
+    // Clear debug log at startup
+    okros::debug_log::clear_debug_log();
+
     // CLI: --headless [--offline] --instance NAME | --attach NAME | --offline
     let args: Vec<String> = std::env::args().collect();
     if args.len() > 2 && args[1] == "--headless" {
@@ -253,6 +256,14 @@ fn main() {
                 dialog.window().dirty = true;
             }
             ModalState::Normal => {}
+        }
+
+        // OutputWindow composition workaround: manually call redraw before tree refresh
+        // C++ uses inheritance (OutputWindow IS-A Window), Rust uses composition (OutputWindow HAS-A Window)
+        // So output.win is in tree, but OutputWindow::redraw() must be called manually
+        if output.win.dirty {
+            output.redraw();
+            output.win.dirty = true; // Keep dirty for tree refresh
         }
 
         // Refresh Screen (calls Window::refresh() to composite tree, then refreshTTY) - C++ main.cc:142

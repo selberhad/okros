@@ -1,13 +1,13 @@
 # Test Coverage Report
 
-**Last Updated**: 2025-10-04 21:41
+**Last Updated**: 2025-10-04 22:31
 **Tool**: cargo-llvm-cov
-**Overall Coverage**: **71.63%** lines | **74.32%** regions | **77.31%** functions
+**Overall Coverage**: **71.44%** lines | **74.11%** regions | **77.19%** functions
 
 ## Summary
 
 ```
-TOTAL                           11966              3073    74.32%         683               155    77.31%        7167              2033    71.63%           0                 0         -
+TOTAL                           11999              3106    74.11%         684               156    77.19%        7186              2052    71.44%           0                 0         -
 ```
 
 ## Coverage by Module
@@ -21,6 +21,7 @@ TOTAL                           11966              3073    74.32%         683   
 | `config.rs` | 94.67% | 96.30% | 77.42% | 🟢 Excellent |
 | `control.rs` | 72.62% | 74.20% | 87.50% | 🟡 Good |
 | `curses.rs` | 18.56% | 13.55% | 40.00% | 🔴 Needs Work |
+| `debug_log.rs` | 0.00% | 0.00% | 0.00% | 🔴 Needs Work |
 | `engine.rs` | 88.24% | 90.72% | 94.44% | 🟡 Good |
 | `history.rs` | 65.85% | 65.81% | 77.27% | 🟠 Moderate |
 | `input_box.rs` | 54.24% | 52.54% | 38.46% | 🟠 Moderate |
@@ -33,7 +34,7 @@ TOTAL                           11966              3073    74.32%         683   
 | `mud.rs` | 72.80% | 78.24% | 79.31% | 🟡 Good |
 | `offline_mud/game.rs` | 96.58% | 95.88% | 96.55% | 🟢 Excellent |
 | `offline_mud/parser.rs` | 100.00% | 100.00% | 100.00% | 🟢 Excellent |
-| `output_window.rs` | 42.33% | 49.17% | 45.45% | 🟠 Moderate |
+| `output_window.rs` | 40.84% | 46.73% | 45.45% | 🟠 Moderate |
 | `plugins/perl.rs` | 82.80% | 87.61% | 85.00% | 🟡 Good |
 | `plugins/python.rs` | 88.14% | 89.22% | 90.91% | 🟡 Good |
 | `plugins/stack.rs` | 78.11% | 80.95% | 60.00% | 🟡 Good |
@@ -87,13 +88,14 @@ TOTAL                           11966              3073    74.32%         683   
 - `history.rs` - 65.85%
 - `input_box.rs` - 54.24%
 - `input_line.rs` - 44.44%
-- `output_window.rs` - 42.33%
+- `output_window.rs` - 40.84%
 - `scrollback_search.rs` - 65.71%
 - `session_manager.rs` - 59.07%
 - `window.rs` - 60.00%
 
 ### 🔴 Needs Work (<40% lines)
 - `curses.rs` - 18.56% (ncurses FFI - TTY dependent)
+- `debug_log.rs` - 0.00%
 - `main.rs` - 0.00% (event loop - needs integration tests)
 - `tty.rs` - 31.11% (requires real TTY)
 
@@ -101,7 +103,7 @@ TOTAL                           11966              3073    74.32%         683   
 
 | Tier | Target | Current | Status |
 |------|--------|---------|--------|
-| Overall | ≥80% | 71.63% | ⏳ In Progress |
+| Overall | ≥80% | 71.44% | ⏳ In Progress |
 | Critical Paths | ≥95% | Check modules above | ✅ Met |
 | New Modules | ≥80% | - | Policy |
 

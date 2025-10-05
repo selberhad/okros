@@ -63,8 +63,8 @@ impl OutputWindow {
                     self.scroll_one_line();
                 }
 
-                // Write character at cursor position
-                let offset = self.cursor_y * self.sb.width + self.cursor_x;
+                // Write character at cursor position (relative to canvas_off like C++ canvas pointer)
+                let offset = self.sb.canvas_off + self.cursor_y * self.sb.width + self.cursor_x;
                 if offset < self.sb.buf.len() {
                     self.sb.buf[offset] = ((color as u16) << 8) | (ch as u16);
                 }
@@ -79,34 +79,65 @@ impl OutputWindow {
             }
         }
 
-        // Copy scrollback to canvas after writing
-        self.redraw();
+        // C++ Window::print() sets dirty=true, redraw() happens in refresh() cycle (Window.cc:174, 337-340)
+        // We already set win.dirty = true at start of this function
     }
 
-    /// Scroll by one line (simplified version of OutputWindow::scroll)
+    /// Scroll by one line (C++ OutputWindow::scroll, lines 32-64)
     fn scroll_one_line(&mut self) {
-        // Advance to next line in scrollback
-        self.sb.canvas_off += self.sb.width;
+        const COPY_LINES: usize = 250;
 
-        // If not frozen, advance viewpoint to follow
-        if !self.sb.is_frozen() {
-            let screen_span = self.sb.width * self.sb.height;
-            if self.sb.viewpoint + screen_span < self.sb.canvas_off {
-                self.sb.viewpoint = self.sb.canvas_off - screen_span;
+        let max_canvas_off = self.sb.width * (self.sb.lines - self.sb.height);
+
+        // C++ line 35: if (canvas == scrollback + width * (scrollback_lines - height))
+        if self.sb.canvas_off == max_canvas_off {
+            // At end of buffer - shift everything up (C++ lines 37-51)
+            let copy_start = self.sb.width * COPY_LINES;
+            let copy_len = self.sb.width * (self.sb.lines - COPY_LINES);
+
+            // C++ line 38-39: memmove(scrollback, scrollback + width * COPY_LINES, ...)
+            self.sb
+                .buf
+                .copy_within(copy_start..copy_start + copy_len, 0);
+
+            // C++ line 40-41: Shift canvas and viewpoint back
+            self.sb.canvas_off -= self.sb.width * COPY_LINES;
+            self.sb.viewpoint = self.sb.viewpoint.saturating_sub(self.sb.width * COPY_LINES);
+
+            // C++ line 43: Adjust top_line counter
+            self.sb.top_line += COPY_LINES;
+
+            // C++ line 45-46: Ensure viewpoint stays in bounds (already handled by saturating_sub above)
+
+            // C++ line 49-51: Clear screen area at new canvas position
+            let clear_start = self.sb.canvas_off + self.sb.height * self.sb.width;
+            let clear_end = clear_start + self.sb.width * self.sb.height;
+            for i in clear_start..clear_end.min(self.sb.buf.len()) {
+                self.sb.buf[i] = 0x0720;
+            }
+        } else {
+            // Normal case - just advance canvas (C++ lines 54-60)
+            self.sb.canvas_off += self.sb.width; // C++ line 55
+
+            // C++ line 56: clear_line(height-1)
+            let clear_start = self.sb.canvas_off + (self.sb.height - 1) * self.sb.width;
+            for i in 0..self.sb.width {
+                if clear_start + i < self.sb.buf.len() {
+                    self.sb.buf[clear_start + i] = 0x0720;
+                }
+            }
+
+            // C++ line 57: cursor_y-- (ONLY in normal scroll, NOT in memmove case)
+            self.cursor_y = self.cursor_y.saturating_sub(1);
+
+            // C++ line 59-60: If not frozen, advance viewpoint too
+            if !self.sb.is_frozen() {
+                self.sb.viewpoint += self.sb.width;
             }
         }
 
-        // Move cursor back to last line
-        self.cursor_y = self.sb.height - 1;
+        // Always reset cursor_x to 0 after any scroll
         self.cursor_x = 0;
-
-        // Clear the new line
-        let start = self.cursor_y * self.sb.width;
-        for i in 0..self.sb.width {
-            if start + i < self.sb.buf.len() {
-                self.sb.buf[start + i] = 0x0720; // space with default color
-            }
-        }
     }
 
     /// Print line to scrollback and mark dirty (C++ OutputWindow prints to canvas)
